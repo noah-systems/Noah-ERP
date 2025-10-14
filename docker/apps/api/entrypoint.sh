@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env sh
 set -e
-echo "[api] prisma migrate deploy..."
-node ./apps/api/node_modules/.bin/prisma migrate deploy --schema ./prisma/schema.prisma || true
-echo "[api] starting..."
-node ./apps/api/dist/main.js
+cd /app/apps/api
+node ./node_modules/.bin/prisma generate --schema ../prisma/schema.prisma
+node ./node_modules/.bin/prisma migrate deploy --schema ../prisma/schema.prisma
+exec node dist/main.js

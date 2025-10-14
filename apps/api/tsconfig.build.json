@@ -1,4 +1,4 @@
 {
   "extends": "./tsconfig.json",
-  "compilerOptions": { "incremental": false }
+  "compilerOptions": { "declaration": false }
 }

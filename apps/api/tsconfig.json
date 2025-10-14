@@ -1,23 +1,18 @@
 {
-  "compileOnSave": false,
   "compilerOptions": {
     "target": "ES2021",
     "module": "commonjs",
-    "lib": ["es2021"],
-    "declaration": false,
-    "sourceMap": true,
+    "moduleResolution": "node",
     "outDir": "./dist",
-    "removeComments": true,
+    "rootDir": "./src",
     "strict": true,
-    "noImplicitOverride": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
     "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "useDefineForClassFields": false,
-    "types": ["node", "reflect-metadata"]
+    "useDefineForClassFields": false
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts"],
-  "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "test", "**/*.spec.ts"]
 }
