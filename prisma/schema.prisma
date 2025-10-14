@@ -1,0 +1,220 @@
+datasource db { provider = "postgresql"; url = env("DATABASE_URL") }
+generator client { provider = "prisma-client-js" }
+
+enum Role { ADMIN_NOAH SUPPORT_NOAH FINANCE_NOAH SELLER PARTNER_MASTER PARTNER_FINANCE PARTNER_OPS }
+enum LeadSource { GOOGLE META MANUAL }
+enum ImplStatus { PENDING_SCHED SCHEDULED DONE NO_SHOW }
+enum Channel { INTERNAL WHITE_LABEL }
+enum ItemKind { PLAN ADDON MODULE }
+enum PartnerAccountStatus { PENDING_CREATE ACTIVE PENDING_CHANGE CANCELED }
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  passwordHash  String
+  role          Role     @default(SELLER)
+  partnerId     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  leads         Lead[]   @relation("LeadOwner")
+  opportunities Opportunity[] @relation("OppOwner")
+}
+
+model LeadStatus {
+  id    String @id @default(cuid())
+  name  String
+  color String?
+  tmkReasonRequired Boolean @default(false)
+  leads Lead[]
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+  company   String
+  segment   String?
+  headcount Int?
+  contact   String?
+  phone     String?
+  email     String?
+  notes     String?
+  source    LeadSource @default(MANUAL)
+  statusId  String
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  status LeadStatus @relation(fields: [statusId], references: [id])
+  owner  User       @relation("LeadOwner", fields: [ownerId], references: [id])
+}
+
+model OpportunityStage {
+  id    String @id @default(cuid())
+  name  String
+  order Int
+  lostReasonRequired Boolean @default(false)
+  opportunities Opportunity[]
+}
+
+type ModuleFlags { campaign Boolean crm Boolean voip Boolean glpi Boolean }
+
+model HostingProvider {
+  id   String @id @default(cuid())
+  name String
+}
+
+model Opportunity {
+  id        String   @id @default(cuid())
+  leadId    String?
+  ownerId   String
+  stageId   String
+
+  legalName    String?
+  cnpj         String?
+  address      String?
+  finEmail     String?
+  finOwner     String?
+  finPhone     String?
+  contactEmail String?
+  contactOwner String?
+  contactPhone String?
+
+  subdomain  String?
+  users      Int?
+  whatsapp   Int?
+  instagram  Int?
+  facebook   Int?
+  waba       Int?
+  modules    ModuleFlags
+  hostingId  String?
+  serverIp   String?
+
+  trialStart DateTime?
+  activation DateTime?
+  canceledAt DateTime?
+  billingBaseDay Int?
+
+  priceSubtotal Decimal? @db.Decimal(10,2)
+  discountPct  Decimal? @db.Decimal(5,2)
+  priceTotal   Decimal? @db.Decimal(10,2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lead   Lead?   @relation(fields: [leadId], references: [id])
+  owner  User    @relation("OppOwner", fields: [ownerId], references: [id])
+  stage  OpportunityStage @relation(fields: [stageId], references: [id])
+  hosting HostingProvider? @relation(fields: [hostingId], references: [id])
+  history OppHistory[]
+}
+
+model OppHistory {
+  id        String   @id @default(cuid())
+  oppId     String
+  actorId   String
+  fromStage String?
+  toStage   String?
+  note      String?
+  createdAt DateTime @default(now())
+  opp   Opportunity @relation(fields: [oppId], references: [id])
+  actor User        @relation(fields: [actorId], references: [id])
+}
+
+model ImplementationTask {
+  id        String   @id @default(cuid())
+  oppId     String
+  status    ImplStatus @default(PENDING_SCHED)
+  schedule  DateTime?
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  opp Opportunity @relation(fields: [oppId], references: [id])
+}
+
+model PriceItem {
+  id        String  @id @default(cuid())
+  sku       String  @unique
+  name      String
+  price     Decimal @db.Decimal(10,2)
+  channel   Channel
+  kind      ItemKind
+  active    Boolean @default(true)
+}
+
+model PriceTier {
+  id           String  @id @default(cuid())
+  channel      Channel
+  minUsers     Int
+  maxUsers     Int?
+  pricePerUser Decimal @db.Decimal(10,2)
+}
+
+model DiscountPolicy {
+  id         String @id @default(cuid())
+  role       Role   @unique
+  maxPercent Decimal @db.Decimal(5,2)
+}
+
+model CanceledSale {
+  id        String   @id @default(cuid())
+  oppId     String
+  reason    String
+  summary   String?
+  createdAt DateTime @default(now())
+  opp Opportunity @relation(fields:[oppId], references:[id])
+}
+
+model Partner {
+  id        String  @id @default(cuid())
+  legalName String
+  cnpj      String  @unique
+  nickname  String
+  address   String?
+  contact   String?
+  whatsapp  String?
+  financeEmail String?
+  domain    String?
+  priceTable Json?
+  accounts  PartnerAccount[]
+  users     User[]
+}
+
+model PartnerAccount {
+  id        String @id @default(cuid())
+  partnerId String
+  legalName String
+  cnpj      String
+  email     String
+  phone     String?
+  subdomain String
+  users     Int
+  connections Json?
+  modules    ModuleFlags
+  hostingId  String?
+  serverIp   String?
+  activatedAt DateTime?
+  canceledAt DateTime?
+  billingBaseDay Int?
+  status    PartnerAccountStatus @default(PENDING_CREATE)
+  history   PartnerAccountEvent[]
+  partner Partner @relation(fields:[partnerId], references:[id])
+}
+
+model PartnerAccountEvent {
+  id        String   @id @default(cuid())
+  accountId String
+  type      String
+  payload   Json?
+  createdAt DateTime @default(now())
+  account PartnerAccount @relation(fields:[accountId], references:[id])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  entity    String
+  entityId  String
+  action    String
+  before    Json?
+  after     Json?
+  createdAt DateTime @default(now())
+}
