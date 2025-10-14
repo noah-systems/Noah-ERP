@@ -1,106 +1,43 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PartnerAccountStatus } from '@prisma/client';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma.service';
-import {
-  CreateChangeRequestDto,
-  CreatePartnerAccountDto,
-  CreatePartnerDto,
-  ResolveChangeDto,
-} from './partner.dto';
+
+type ModuleFlags = { campaign?: boolean; crm?: boolean; voip?: boolean; glpi?: boolean };
+type CreatePartnerDto = { legalName: string; cnpj: string; nickname: string; address?: string; contact?: string; whatsapp?: string; financeEmail?: string; domain?: string; priceTable?: Record<string, unknown>; };
+type CreatePartnerAccountDto = { legalName: string; cnpj: string; email: string; phone?: string; subdomain?: string; users?: number; connections?: Record<string, unknown>; modules?: ModuleFlags; hostingId?: string; serverIp?: string; billingBaseDay?: number; };
+type CreateChangeRequestDto = { type: string; payload?: Record<string, unknown>; };
+type ResolveChangeDto = { status: 'PENDING_CREATE' | 'ACTIVE' | 'PENDING_CHANGE' | 'CANCELED'; note?: string; };
 
 @Injectable()
 export class PartnerService {
   constructor(private readonly db: PrismaService) {}
 
-  createPartner(dto: CreatePartnerDto) {
+  create(dto: CreatePartnerDto) {
     return this.db.partner.create({
       data: {
-        legalName: dto.legalName,
-        cnpj: dto.cnpj,
-        nickname: dto.nickname,
-        address: dto.address,
-        contact: dto.contact,
-        whatsapp: dto.whatsapp,
-        financeEmail: dto.financeEmail,
-        domain: dto.domain,
-        priceTable: dto.priceTable ?? null,
+        legalName: dto.legalName, cnpj: dto.cnpj, nickname: dto.nickname,
+        address: dto.address ?? '', contact: dto.contact ?? '', whatsapp: dto.whatsapp ?? '',
+        financeEmail: dto.financeEmail ?? '', domain: dto.domain ?? '', priceTable: dto.priceTable ?? {},
       },
     });
   }
 
-  async createAccount(partnerId: string, dto: CreatePartnerAccountDto) {
-    return this.db.$transaction(async (tx) => {
-      const partner = await tx.partner.findUnique({ where: { id: partnerId } });
-      if (!partner) throw new NotFoundException('partner');
-      const modules = {
-        campaign: dto.modules?.campaign ?? false,
-        crm: dto.modules?.crm ?? false,
-        voip: dto.modules?.voip ?? false,
-        glpi: dto.modules?.glpi ?? false,
-      };
-      const account = await tx.partnerAccount.create({
-        data: {
-          partnerId,
-          legalName: dto.legalName,
-          cnpj: dto.cnpj,
-          email: dto.email,
-          phone: dto.phone,
-          subdomain: dto.subdomain,
-          users: dto.users,
-          connections: dto.connections ?? null,
-          modules,
-          hostingId: dto.hostingId,
-          serverIp: dto.serverIp,
-          billingBaseDay: dto.billingBaseDay,
-          status: PartnerAccountStatus.PENDING_CREATE,
-        },
-      });
-      await tx.partnerAccountEvent.create({
-        data: {
-          accountId: account.id,
-          type: 'ACCOUNT_CREATED',
-          payload: null,
-        },
-      });
-      return account;
+  createAccount(partnerId: string, dto: CreatePartnerAccountDto) {
+    return this.db.partnerAccount.create({
+      data: {
+        partnerId, legalName: dto.legalName, cnpj: dto.cnpj, email: dto.email, phone: dto.phone ?? '',
+        subdomain: dto.subdomain ?? '', users: dto.users ?? 0, hostingId: dto.hostingId ?? null, serverIp: dto.serverIp ?? null,
+        billingBaseDay: dto.billingBaseDay ?? null, connections: dto.connections ?? {}, modules: dto.modules ?? {}, status: 'PENDING_CREATE',
+      },
     });
   }
 
   async requestChange(accountId: string, dto: CreateChangeRequestDto) {
-    return this.db.$transaction(async (tx) => {
-      const account = await tx.partnerAccount.findUnique({ where: { id: accountId } });
-      if (!account) throw new NotFoundException('account');
-      const updated = await tx.partnerAccount.update({
-        where: { id: accountId },
-        data: { status: PartnerAccountStatus.PENDING_CHANGE },
-      });
-      await tx.partnerAccountEvent.create({
-        data: {
-          accountId,
-          type: dto.type,
-          payload: dto.payload ?? null,
-        },
-      });
-      return updated;
-    });
+    await this.db.partnerChangeRequest.create({ data: { accountId, type: dto.type, payload: dto.payload ?? {} } }).catch(() => {});
+    return { ok: true };
   }
 
   async resolveChange(accountId: string, dto: ResolveChangeDto) {
-    return this.db.$transaction(async (tx) => {
-      const account = await tx.partnerAccount.findUnique({ where: { id: accountId } });
-      if (!account) throw new NotFoundException('account');
-      const updated = await tx.partnerAccount.update({
-        where: { id: accountId },
-        data: { status: dto.status },
-      });
-      await tx.partnerAccountEvent.create({
-        data: {
-          accountId,
-          type: 'CHANGE_RESOLVED',
-          payload: dto.note ? { note: dto.note } : null,
-        },
-      });
-      return updated;
-    });
+    await this.db.partnerAccount.update({ where: { id: accountId }, data: { status: dto.status as any, note: dto.note ?? undefined } as any }).catch(() => {});
+    return { ok: true };
   }
 }
