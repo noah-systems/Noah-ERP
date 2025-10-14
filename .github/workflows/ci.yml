@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ codex/fix-build-and-prisma-schema-issues ]
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: noah
+          POSTGRES_PASSWORD: noah
+          POSTGRES_DB: noah
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U noah" --health-interval=5s --health-timeout=5s --health-retries=10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+    env:
+      DATABASE_URL: postgresql://noah:noah@localhost:5432/noah?schema=public
+      REDIS_URL: redis://localhost:6379
+      NODE_ENV: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+      - name: Install API deps
+        working-directory: apps/api
+        run: npm ci
+      - name: Prisma generate & validate
+        working-directory: apps/api
+        run: |
+          npx prisma generate --schema ../prisma/schema.prisma
+          npx prisma validate --schema ../prisma/schema.prisma
+      - name: Build API
+        working-directory: apps/api
+        run: npm run build
+
+  web:
+    runs-on: ubuntu-latest
+    env:
+      VITE_NOAH_LOGO_LIGHT: https://s3.bragimulticanal.com.br/white-label/noah_omni/noahomni-logo.png
+      VITE_NOAH_LOGO_DARK: https://s3.bragimulticanal.com.br/white-label/noah_omni/NOAH%20OMNI%20sem-fundo.png
+      VITE_NOAH_FAVICON: https://s3.bragimulticanal.com.br/white-label/noah_omni/favicon%20(2).ico
+      VITE_NOAH_APPLE_TOUCH: https://s3.bragimulticanal.com.br/white-label/noah_omni/%C3%8Dcone%20Noah%20Omni.png
+      VITE_NOAH_THEME_COLOR: "#A8E60F"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run build
