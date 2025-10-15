@@ -18,6 +18,8 @@ COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/apps/api/prisma ./apps/api/prisma
+RUN ln -s /app/apps/api/node_modules /app/node_modules \
+  && ln -s /app/apps/api/package.json /app/package.json
 COPY docker/apps/api/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 EXPOSE 3000
