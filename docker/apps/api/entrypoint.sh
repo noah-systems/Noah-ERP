@@ -1,6 +1,8 @@
 #!/usr/bin/env sh
 set -e
 
+apk add --no-cache openssl1.1-compat || apk add --no-cache openssl || true
+
 if [ "$#" -gt 0 ]; then
   exec "$@"
 fi
@@ -82,7 +84,13 @@ run_with_retry() {
 }
 
 cd /app/apps/api
-node ./node_modules/.bin/prisma generate --schema ./prisma/schema.prisma
-run_with_retry "Prisma migrate deploy" "$MAX_ATTEMPTS" "$SLEEP_SECONDS" \
-  node ./node_modules/.bin/prisma migrate deploy --schema ./prisma/schema.prisma
+
+if [ "${PRISMA_MIGRATE_ON_START:-0}" = "1" ]; then
+  node ./node_modules/.bin/prisma generate --schema ./prisma/schema.prisma
+  run_with_retry "Prisma migrate deploy" "$MAX_ATTEMPTS" "$SLEEP_SECONDS" \
+    node ./node_modules/.bin/prisma migrate deploy --schema ./prisma/schema.prisma
+else
+  echo "Skipping Prisma migrate deploy; PRISMA_MIGRATE_ON_START=${PRISMA_MIGRATE_ON_START:-0}."
+fi
+
 exec node dist/main.js
