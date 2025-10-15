@@ -1,8 +1,6 @@
 #!/usr/bin/env sh
 set -e
 
-apk add --no-cache openssl1.1-compat || apk add --no-cache openssl || true
-
 if [ "$#" -gt 0 ]; then
   exec "$@"
 fi
