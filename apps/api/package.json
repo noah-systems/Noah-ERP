@@ -6,7 +6,11 @@
     "build": "tsc -p tsconfig.build.json",
     "start:prod": "node dist/main.js",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
-    "prisma:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma"
+    "prisma:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
+    "ci:deps": "npm ci",
+    "ci:prisma:validate": "prisma validate --schema prisma/schema.ci.prisma",
+    "ci:prisma:generate": "prisma generate --schema prisma/schema.ci.prisma",
+    "ci:build": "tsc -p tsconfig.build.json"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
