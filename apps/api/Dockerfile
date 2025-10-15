@@ -8,12 +8,13 @@ WORKDIR /app
 COPY prisma ./prisma
 COPY apps/api ./apps/api
 WORKDIR /app/apps/api
-RUN npx prisma generate --schema /app/prisma/schema.prisma
+RUN npx prisma generate --schema /app/apps/api/prisma/schema.prisma
 RUN npm run build
 
 FROM node:20-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+RUN apk add --no-cache postgresql-client
 COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/prisma ./prisma
