@@ -56,7 +56,7 @@ const statusColors: Record<string, string> = {
   'Não Qualificado': 'bg-gray-100 text-gray-700',
 };
 
-export function LeadsTable({ userRole }: { userRole: string }) {
+export function LeadsTable() {
   return (
     <div className="bg-white rounded-lg border border-gray-200">
       <Table>

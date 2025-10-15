@@ -1,0 +1,128 @@
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+}
+
+.login-bg {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at top left, rgba(24, 69, 169, 0.2), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(10, 187, 181, 0.2), transparent 50%),
+    linear-gradient(135deg, #0f172a, #1d2b64);
+  background-attachment: fixed;
+}
+
+.login-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('https://www.transparenttextures.com/patterns/cubes.png');
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.login-card {
+  position: relative;
+  z-index: 1;
+  width: min(420px, 100%);
+  padding: 3rem 2.5rem;
+  border-radius: 1.5rem;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.4);
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.login-card h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+  color: #f8fafc;
+  text-align: center;
+}
+
+.login-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(226, 232, 240, 0.25);
+  background: rgba(15, 23, 42, 0.35);
+  color: #f8fafc;
+  font-size: 1rem;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login-card input::placeholder {
+  color: rgba(248, 250, 252, 0.6);
+}
+
+.login-card input:focus {
+  outline: none;
+  border-color: rgba(94, 234, 212, 0.8);
+  box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.25);
+}
+
+.login-card button {
+  margin-top: 0.5rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  border: none;
+  background: linear-gradient(135deg, #22d3ee, #6366f1);
+  color: #0f172a;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login-card button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(99, 102, 241, 0.35);
+}
+
+.login-card button[disabled] {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.login-card .logo {
+  max-width: 180px;
+  margin: 0 auto 0.5rem;
+}
+
+.login-card .error {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: rgba(248, 113, 113, 0.18);
+  color: #fecaca;
+  font-size: 0.95rem;
+}
+
+.login-card footer {
+  margin-top: 0.5rem;
+  text-align: center;
+  font-size: 0.9rem;
+  color: rgba(248, 250, 252, 0.7);
+}
+
+.login-card strong {
+  color: #ffffff;
+}

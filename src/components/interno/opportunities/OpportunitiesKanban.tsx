@@ -96,7 +96,7 @@ const columns = [
   { id: 'vendaPerdida', title: 'Venda Perdida', color: 'bg-red-100 border-red-300' },
 ];
 
-export function OpportunitiesKanban({ userRole }: { userRole: string }) {
+export function OpportunitiesKanban() {
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
 
   return (
@@ -186,7 +186,6 @@ export function OpportunitiesKanban({ userRole }: { userRole: string }) {
         opportunity={selectedOpportunity}
         open={!!selectedOpportunity}
         onClose={() => setSelectedOpportunity(null)}
-        userRole={userRole}
       />
     </>
   );

@@ -1,101 +1,124 @@
-import { 
-  LayoutDashboard, 
-  Users, 
-  TrendingUp, 
-  Wrench, 
-  XCircle, 
-  DollarSign, 
-  Settings,
-  Building2,
-  UserPlus,
+import { type ComponentType } from 'react';
+import {
   Briefcase,
-  LifeBuoy
+  Building2,
+  DollarSign,
+  LayoutDashboard,
+  LifeBuoy,
+  Settings,
+  TrendingUp,
+  UserPlus,
+  Users,
+  Wrench,
+  XCircle,
 } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+import { useAuth } from '@/auth/AuthContext';
+import type { Role } from '@/auth/AuthContext';
 
-interface SidebarProps {
-  currentView: string;
-  onNavigate: (view: string) => void;
-  isPartnerModule: boolean;
-  onModuleChange: (isPartner: boolean) => void;
-  userRole: string;
-}
+type ModuleKind = 'internal' | 'partner';
 
-export function Sidebar({ currentView, onNavigate, isPartnerModule, onModuleChange, userRole }: SidebarProps) {
-  const internoMenuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'leads', label: 'Leads', icon: Users },
-    { id: 'opportunities', label: 'Oportunidades', icon: TrendingUp },
-    { id: 'implementation', label: 'Implantação', icon: Wrench },
-    { id: 'canceled', label: 'Canceladas', icon: XCircle },
-    { id: 'pricing', label: 'Valores & Preços', icon: DollarSign },
-    { id: 'settings', label: 'Configurações', icon: Settings },
-  ];
+type MenuItem = {
+  id: string;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  to: string;
+  exact?: boolean;
+  roles?: Role[];
+};
 
-  const partnerMenuItems = [
-    { id: 'partner-dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'partner-accounts', label: 'Contas', icon: Briefcase },
-    ...(userRole === 'partner-master' || userRole === 'admin' ? [
-      { id: 'create-partner', label: 'Criar Parceiro', icon: UserPlus }
-    ] : []),
-    ...(userRole === 'admin' || userRole === 'suporte' ? [
-      { id: 'support-panel', label: 'Painel Suporte', icon: LifeBuoy }
-    ] : []),
-  ];
+type SidebarProps = {
+  module: ModuleKind;
+  onModuleChange: (module: ModuleKind) => void;
+};
 
-  const menuItems = isPartnerModule ? partnerMenuItems : internoMenuItems;
+const INTERNAL_MENU: MenuItem[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, to: '/', exact: true },
+  { id: 'leads', label: 'Leads', icon: Users, to: '/leads', roles: ['ADMIN_NOAH', 'SELLER', 'SUPPORT_NOAH'] },
+  { id: 'opportunities', label: 'Oportunidades', icon: TrendingUp, to: '/opportunities', roles: ['ADMIN_NOAH', 'SELLER'] },
+  { id: 'implementation', label: 'Implantação', icon: Wrench, to: '/implementation', roles: ['ADMIN_NOAH', 'SUPPORT_NOAH'] },
+  { id: 'canceled', label: 'Canceladas', icon: XCircle, to: '/canceled', roles: ['ADMIN_NOAH', 'SUPPORT_NOAH'] },
+  { id: 'pricing', label: 'Valores & Preços', icon: DollarSign, to: '/pricing', roles: ['ADMIN_NOAH'] },
+  { id: 'settings', label: 'Configurações', icon: Settings, to: '/settings', roles: ['ADMIN_NOAH'] },
+];
+
+const PARTNER_MENU: MenuItem[] = [
+  { id: 'partner-dashboard', label: 'Dashboard', icon: LayoutDashboard, to: '/partner', exact: true, roles: ['ADMIN_NOAH', 'ADMIN_PARTNER'] },
+  { id: 'partner-accounts', label: 'Contas', icon: Briefcase, to: '/partner/accounts', roles: ['ADMIN_NOAH', 'ADMIN_PARTNER'] },
+  { id: 'create-partner', label: 'Criar Parceiro', icon: UserPlus, to: '/partner/create', roles: ['ADMIN_NOAH', 'ADMIN_PARTNER'] },
+  { id: 'support-panel', label: 'Painel Suporte', icon: LifeBuoy, to: '/partner/support', roles: ['ADMIN_NOAH', 'SUPPORT_NOAH'] },
+];
+
+export function Sidebar({ module, onModuleChange }: SidebarProps) {
+  const { hasRole } = useAuth();
+  const logo = import.meta.env.VITE_NOAH_LOGO_DARK as string | undefined;
+  const canAccessPartner = hasRole('ADMIN_PARTNER', 'ADMIN_NOAH');
+
+  const items = (module === 'partner' ? PARTNER_MENU : INTERNAL_MENU).filter((item) =>
+    item.roles ? hasRole(...item.roles) : true
+  );
 
   return (
-    <aside className="w-64 bg-gray-900 text-white flex flex-col">
-      <div className="p-6">
-        <h1 className="text-xl tracking-wide">Noah ERP</h1>
+    <aside className="flex w-64 flex-col bg-gray-900 text-white">
+      <div className="flex items-center justify-center px-6 py-6">
+        {logo ? (
+          <img src={logo} alt="Noah Omni" className="max-h-12 object-contain" />
+        ) : (
+          <h1 className="text-lg font-semibold tracking-wide">Noah ERP</h1>
+        )}
       </div>
-      
-      <div className="px-4 mb-4">
-        <div className="flex gap-2 bg-gray-800 rounded-lg p-1">
+
+      <div className="px-4 pb-4">
+        <div className="flex items-center gap-2 rounded-xl bg-gray-800 p-1 text-sm">
           <button
-            onClick={() => onModuleChange(false)}
-            className={`flex-1 px-3 py-2 rounded text-sm transition-colors ${
-              !isPartnerModule ? 'bg-blue-600' : 'hover:bg-gray-700'
+            type="button"
+            className={`flex-1 rounded-lg px-3 py-2 transition-colors ${
+              module === 'internal' ? 'bg-blue-600 text-white' : 'hover:bg-gray-700 text-gray-300'
             }`}
+            onClick={() => onModuleChange('internal')}
           >
             Interno
           </button>
           <button
-            onClick={() => onModuleChange(true)}
-            className={`flex-1 px-3 py-2 rounded text-sm transition-colors ${
-              isPartnerModule ? 'bg-blue-600' : 'hover:bg-gray-700'
-            }`}
+            type="button"
+            className={`flex-1 rounded-lg px-3 py-2 transition-colors ${
+              module === 'partner' ? 'bg-blue-600 text-white' : 'hover:bg-gray-700 text-gray-300'
+            } ${canAccessPartner ? '' : 'cursor-not-allowed opacity-40'}`}
+            onClick={() => canAccessPartner && onModuleChange('partner')}
+            disabled={!canAccessPartner}
           >
             Partner
           </button>
         </div>
       </div>
 
-      <nav className="flex-1 px-4">
-        {menuItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = currentView === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${
-                isActive 
-                  ? 'bg-blue-600 text-white' 
-                  : 'text-gray-300 hover:bg-gray-800'
-              }`}
-            >
-              <Icon className="w-5 h-5" />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
+      <nav className="flex-1 space-y-1 px-4">
+        {items.map(({ id, label, icon: Icon, to, exact }) => (
+          <NavLink
+            key={id}
+            to={to}
+            end={exact}
+            className={({ isActive }) =>
+              `flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm transition-colors ${
+                isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-gray-300 hover:bg-gray-800'
+              }`
+            }
+          >
+            <Icon className="h-5 w-5" />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+        {items.length === 0 && (
+          <div className="rounded-lg border border-dashed border-gray-700 px-4 py-8 text-center text-xs text-gray-400">
+            Sem permissões para este módulo.
+          </div>
+        )}
       </nav>
 
-      <div className="p-4 border-t border-gray-800">
-        <div className="flex items-center gap-3 text-sm text-gray-400">
-          <Building2 className="w-5 h-5" />
-          <span>Noah Tech</span>
+      <div className="px-6 py-4 text-xs text-gray-500">
+        <div className="flex items-center gap-2">
+          <Building2 className="h-4 w-4" />
+          <span>Noah Omni</span>
         </div>
       </div>
     </aside>

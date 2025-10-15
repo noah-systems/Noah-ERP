@@ -10,7 +10,6 @@ import {
 
 interface AccountsTableProps {
   status: 'active' | 'pending' | 'upgrade' | 'canceled';
-  userRole: string;
 }
 
 const mockData = {
@@ -29,7 +28,7 @@ const mockData = {
   ],
 };
 
-export function AccountsTable({ status, userRole }: AccountsTableProps) {
+export function AccountsTable({ status }: AccountsTableProps) {
   const data = mockData[status] || [];
 
   if (status === 'active' || status === 'pending') {

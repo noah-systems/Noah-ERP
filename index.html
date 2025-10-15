@@ -3,28 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#A8E60F" />
+    <meta name="theme-color" content="#0B1F33" />
+    <link rel="icon" type="image/x-icon" href="%VITE_NOAH_FAVICON%" />
+    <link rel="apple-touch-icon" href="%VITE_NOAH_APPLE_TOUCH%" />
     <title>Noah ERP</title>
-    <script type="module">
-      import { branding } from '/src/branding.ts';
-      if (branding.appName) document.title = branding.appName;
-      const theme = document.querySelector('meta[name="theme-color"]') || document.createElement('meta');
-      theme.setAttribute('name', 'theme-color');
-      theme.setAttribute('content', branding.themeColor || '#A8E60F');
-      document.head.appendChild(theme);
-      const ensureLink = (rel, href, attrs = {}) => {
-        if (!href) return;
-        let l = [...document.querySelectorAll(`link[rel="${rel}"]`)].find(Boolean);
-        if (!l) { l = document.createElement('link'); l.rel = rel; document.head.appendChild(l); }
-        l.href = href; Object.entries(attrs).forEach(([k,v]) => l.setAttribute(k, String(v)));
-      };
-      ensureLink('icon', branding.favicon, { type: 'image/x-icon' });
-      ensureLink('apple-touch-icon', branding.appleTouch, { sizes: '180x180' });
-      window.__NOAH_BRAND__ = branding;
-    </script>
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

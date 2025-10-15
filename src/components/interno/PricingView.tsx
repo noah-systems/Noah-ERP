@@ -1,15 +1,11 @@
-import { useState } from 'react';
 import { Plus, Edit, Trash } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
-import { Label } from '../ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-
-interface PricingViewProps {
-  userRole: string;
-}
+import Can from '@/auth/Can';
+import { useAuth } from '@/auth/AuthContext';
 
 const catalogItems = [
   { id: '1', name: 'Usuário', description: 'Licença de usuário do sistema', unit: 'por usuário', price: 45 },
@@ -30,22 +26,23 @@ const discountPolicies = [
   { role: 'Admin Noah', maxDiscount: 100 },
 ];
 
-export function PricingView({ userRole }: PricingViewProps) {
-  const canEdit = userRole === 'admin' || userRole === 'financeiro';
+export function PricingView() {
+  const { hasRole } = useAuth();
+  const canEdit = hasRole('ADMIN_NOAH');
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl text-gray-900">Valores & Preços</h1>
-          <p className="text-gray-500">Catálogo de itens e regras de precificação</p>
+          <h1 className="text-2xl font-semibold text-gray-900">Valores & Preços</h1>
+          <p className="text-sm text-gray-500">Catálogo de itens e regras de precificação</p>
         </div>
-        {canEdit && (
+        <Can roles={['ADMIN_NOAH']}>
           <Button>
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="mr-2 h-4 w-4" />
             Novo Item
           </Button>
-        )}
+        </Can>
       </div>
 
       <Tabs defaultValue="catalog">
@@ -56,7 +53,7 @@ export function PricingView({ userRole }: PricingViewProps) {
         </TabsList>
 
         <TabsContent value="catalog">
-          <div className="bg-white rounded-lg border border-gray-200">
+          <div className="rounded-lg border border-gray-200 bg-white">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -77,11 +74,11 @@ export function PricingView({ userRole }: PricingViewProps) {
                     {canEdit && (
                       <TableCell>
                         <div className="flex gap-2">
-                          <button className="p-1 hover:bg-gray-100 rounded">
-                            <Edit className="w-4 h-4 text-gray-600" />
+                          <button className="rounded p-1 transition hover:bg-gray-100">
+                            <Edit className="h-4 w-4 text-gray-600" />
                           </button>
-                          <button className="p-1 hover:bg-gray-100 rounded">
-                            <Trash className="w-4 h-4 text-red-600" />
+                          <button className="rounded p-1 transition hover:bg-gray-100">
+                            <Trash className="h-4 w-4 text-red-600" />
                           </button>
                         </div>
                       </TableCell>
@@ -101,29 +98,24 @@ export function PricingView({ userRole }: PricingViewProps) {
             <CardContent>
               <div className="space-y-4">
                 {discountPolicies.map((policy, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div key={index} className="flex items-center justify-between rounded-lg border p-4">
                     <div>
                       <p className="text-gray-900">{policy.role}</p>
                       <p className="text-sm text-gray-500">Desconto máximo permitido</p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Input 
-                        type="number" 
-                        defaultValue={policy.maxDiscount} 
-                        className="w-20"
-                        disabled={!canEdit}
-                      />
+                      <Input type="number" defaultValue={policy.maxDiscount} className="w-20" disabled={!canEdit} />
                       <span className="text-gray-600">%</span>
                     </div>
                   </div>
                 ))}
 
-                {canEdit && (
+                <Can roles={['ADMIN_NOAH']}>
                   <Button variant="outline" className="w-full">
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="mr-2 h-4 w-4" />
                     Adicionar Perfil
                   </Button>
-                )}
+                </Can>
               </div>
             </CardContent>
           </Card>
@@ -135,14 +127,14 @@ export function PricingView({ userRole }: PricingViewProps) {
               <CardTitle>Impostos e Taxas</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-gray-500">
+              <div className="py-12 text-center text-gray-500">
                 <p className="mb-4">Configuração de impostos e taxas</p>
-                {canEdit && (
+                <Can roles={['ADMIN_NOAH']}>
                   <Button variant="outline">
-                    <Plus className="w-4 h-4 mr-2" />
+                    <Plus className="mr-2 h-4 w-4" />
                     Adicionar Taxa
                   </Button>
-                )}
+                </Can>
               </div>
             </CardContent>
           </Card>

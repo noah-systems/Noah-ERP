@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
+import { useAuth } from '@/auth/AuthContext';
 
 const pendingCreation = [
   { id: '1', partner: 'Parceiro A', url: 'novaconta1', company: 'Nova Conta 1', users: 10, modules: ['CRM', 'WhatsApp'], requestedAt: '10/10/2025', requestedBy: 'João Operações' },
@@ -20,6 +21,17 @@ const pendingCancelation = [
 ];
 
 export function SupportPanel() {
+  const { hasRole } = useAuth();
+  const allowed = hasRole('ADMIN_NOAH', 'SUPPORT_NOAH');
+
+  if (!allowed) {
+    return (
+      <div className="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-gray-500">
+        Você não possui acesso ao painel de suporte.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>

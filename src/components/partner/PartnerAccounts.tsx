@@ -4,34 +4,41 @@ import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { AccountsTable } from './accounts/AccountsTable';
 import { CreateAccountModal } from './accounts/CreateAccountModal';
+import { useAuth } from '@/auth/AuthContext';
 
-interface PartnerAccountsProps {
-  userRole: string;
-}
-
-export function PartnerAccounts({ userRole }: PartnerAccountsProps) {
+export function PartnerAccounts() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const canCreate = userRole === 'partner-master' || userRole === 'partner-operacoes' || userRole === 'admin';
+  const { hasRole } = useAuth();
+  const allowed = hasRole('ADMIN_NOAH', 'ADMIN_PARTNER');
+  const canCreate = hasRole('ADMIN_NOAH', 'ADMIN_PARTNER');
+
+  if (!allowed) {
+    return (
+      <div className="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-gray-500">
+        Você não possui acesso ao módulo de parceiros.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl text-gray-900">Contas</h1>
-          <p className="text-gray-500">Gerencie todas as contas do parceiro</p>
+          <h1 className="text-2xl font-semibold text-gray-900">Contas</h1>
+          <p className="text-sm text-gray-500">Gerencie todas as contas do parceiro</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline">
-            <Filter className="w-4 h-4 mr-2" />
+            <Filter className="mr-2 h-4 w-4" />
             Filtros
           </Button>
           <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
+            <Download className="mr-2 h-4 w-4" />
             Exportar
           </Button>
           {canCreate && (
             <Button onClick={() => setIsCreateModalOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Nova Conta
             </Button>
           )}
@@ -47,26 +54,23 @@ export function PartnerAccounts({ userRole }: PartnerAccountsProps) {
         </TabsList>
 
         <TabsContent value="active">
-          <AccountsTable status="active" userRole={userRole} />
+          <AccountsTable status="active" />
         </TabsContent>
 
         <TabsContent value="pending">
-          <AccountsTable status="pending" userRole={userRole} />
+          <AccountsTable status="pending" />
         </TabsContent>
 
         <TabsContent value="upgrade">
-          <AccountsTable status="upgrade" userRole={userRole} />
+          <AccountsTable status="upgrade" />
         </TabsContent>
 
         <TabsContent value="canceled">
-          <AccountsTable status="canceled" userRole={userRole} />
+          <AccountsTable status="canceled" />
         </TabsContent>
       </Tabs>
 
-      <CreateAccountModal 
-        open={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)} 
-      />
+      <CreateAccountModal open={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
     </div>
   );
 }
