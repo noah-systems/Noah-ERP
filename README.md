@@ -22,3 +22,71 @@ Para reproduzir rapidamente a sequência de atualização utilizada em produçã
 ### Aplicando migrations Prisma manualmente
 
 Caso precise rodar apenas as validações e migrations do Prisma em um ambiente semelhante ao de produção, utilize o script `scripts/prisma_migrate_deploy.sh`. Ele inicializa os serviços do PostgreSQL e do Redis, aguarda o banco de dados aceitar conexões via `pg_isready` diretamente no contêiner do banco e executa `prisma validate`, `prisma generate` e `prisma migrate deploy` na sequência. Isso evita falhas por tentar acessar o banco antes dele estar pronto para uso.
+
+## HTTPS (erp.noahomni.com.br e erpapi.noahomni.com.br)
+
+1. Construa e suba todos os serviços, incluindo o loop de renovação automática do Certbot:
+
+   ```bash
+   docker compose -f docker/compose.prod.yml up -d --build
+   ```
+
+2. Solicite os certificados para os dois domínios usando o webroot compartilhado com o Nginx:
+
+   ```bash
+   docker compose -f docker/compose.prod.yml run --rm certbot \
+     certonly --webroot -w /var/www/certbot \
+     -d erp.noahomni.com.br -d erpapi.noahomni.com.br \
+     --email admin@noahomni.com.br --agree-tos --no-eff-email
+   ```
+
+3. Valide e recarregue a configuração do Nginx para carregar os certificados recém-criados:
+
+   ```bash
+   docker compose -f docker/compose.prod.yml exec proxy nginx -t
+   docker compose -f docker/compose.prod.yml exec proxy nginx -s reload
+   ```
+
+4. Teste rapidamente os hosts protegidos por TLS:
+
+   ```bash
+   curl -I https://erp.noahomni.com.br
+   curl -sS https://erpapi.noahomni.com.br/api/worker/health
+   ```
+
+O serviço `certbot` executa `certbot renew` a cada 12 horas. Quando a renovação ocorrer, os certificados atualizados serão carregados automaticamente pelas próximas conexões do Nginx, mas você pode executar `docker compose -f docker/compose.prod.yml exec proxy nginx -s reload` caso deseje forçar o reload imediato.
+
+## Front end de produção
+
+O projeto agora inclui uma tela mínima de autenticação em Vite que conversa diretamente com a API NestJS (`/api/auth/login` e `/api/auth/me`). O objetivo é validar o fluxo completo (login + sessão) enquanto o layout definitivo do Figma é implementado por etapas.
+
+### Variáveis de ambiente do front
+
+Crie um arquivo `.env` na raiz do front (mesma pasta deste README) com os valores de branding e URL da API:
+
+```env
+VITE_API_BASE=https://erpapi.noahomni.com.br/api
+VITE_NOAH_LOGO_LIGHT=https://s3.bragimulticanal.com.br/white-label/noah_omni/noahomni-logo.png
+VITE_NOAH_LOGO_DARK=https://s3.bragimulticanal.com.br/white-label/noah_omni/NOAH%20OMNI%20sem-fundo.png
+VITE_NOAH_FAVICON=https://s3.bragimulticanal.com.br/white-label/noah_omni/favicon%20(2).ico
+VITE_NOAH_APPLE_TOUCH=https://s3.bragimulticanal.com.br/white-label/noah_omni/%C3%8Dcone%20Noah%20Omni.png
+```
+
+A variável `VITE_API_BASE` aceita tanto a raiz `/api` (quando o front é servido pelo mesmo host) quanto a URL completa com domínio. Se você apontar apenas para `https://erpapi.noahomni.com.br`, o cliente automaticamente prefixará as rotas com `/api`.
+
+### Publicando o front definitivo (bundle do Figma)
+
+Se você já possui o bundle final (build do front), coloque os arquivos em `webapp/` e execute:
+
+```bash
+docker compose -f docker/compose.prod.yml build web proxy
+docker compose -f docker/compose.prod.yml up -d web proxy
+```
+
+Caso o diretório `webapp/` não exista ou esteja vazio, o Dockerfile atual continuará gerando e servindo a tela mínima construída com Vite.
+
+### Próximos passos sugeridos
+
+- Após o login, implemente as rotas “/leads”, “/opps” e “/pricing” consumindo as rotas já mapeadas no NestJS.
+- Componentize o layout (sidebar/topbar) e aplique o design final do Figma.
+- Para suportar múltiplas marcas, carregue dinamicamente os logos e cores utilizando as variáveis expostas no arquivo `.env`.
