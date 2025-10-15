@@ -8,6 +8,15 @@ import {
   ResolveChangeDto,
 } from './partner.dto';
 
+const toJsonInput = (
+  value?: unknown
+): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput => {
+  if (value === undefined || value === null) {
+    return Prisma.JsonNull;
+  }
+  return value as Prisma.InputJsonValue;
+};
+
 @Injectable()
 export class PartnerService {
   constructor(private readonly prisma: PrismaService) {}
@@ -23,12 +32,14 @@ export class PartnerService {
         whatsapp: dto.whatsapp ?? null,
         financeEmail: dto.financeEmail ?? null,
         domain: dto.domain ?? null,
-        priceTable: dto.priceTable ?? Prisma.JsonNull,
+        priceTable: toJsonInput(dto.priceTable ? { ...dto.priceTable } : undefined),
       },
     });
   }
 
   createAccount(partnerId: string, dto: CreatePartnerAccountDto) {
+    const connections = dto.connections ? { ...dto.connections } : undefined;
+    const modules = dto.modules ? { ...dto.modules } : undefined;
     return this.prisma.partnerAccount.create({
       data: {
         partnerId,
@@ -41,8 +52,8 @@ export class PartnerService {
         hostingId: dto.hostingId ?? null,
         serverIp: dto.serverIp ?? null,
         billingBaseDay: dto.billingBaseDay ?? null,
-        connections: dto.connections ?? Prisma.JsonNull,
-        modules: dto.modules ?? Prisma.JsonNull,
+        connections: toJsonInput(connections),
+        modules: toJsonInput(modules),
         status: PartnerAccountStatus.PENDING_CREATE,
       },
     });
@@ -53,7 +64,7 @@ export class PartnerService {
       data: {
         accountId,
         type: dto.type,
-        payload: dto.payload ?? Prisma.JsonNull,
+        payload: toJsonInput(dto.payload ? { ...dto.payload } : undefined),
       },
     });
   }

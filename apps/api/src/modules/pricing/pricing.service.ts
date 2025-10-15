@@ -48,7 +48,7 @@ export class PricingService {
       data: {
         channel: dto.channel,
         minUsers: dto.minUsers,
-        maxUsers: dto.maxUsers,
+        maxUsers: dto.maxUsers ?? null,
         pricePerUser: new Prisma.Decimal(dto.pricePerUser.toFixed(2)),
       },
     });
@@ -59,8 +59,9 @@ export class PricingService {
   }
 
   async createDiscountPolicy(dto: CreateDiscountPolicyDto) {
+    const where: Prisma.DiscountPolicyWhereUniqueInput = { role: dto.role };
     return this.db.discountPolicy.upsert({
-      where: { role: dto.role },
+      where,
       update: { maxPercent: new Prisma.Decimal(dto.maxPercent.toFixed(2)) },
       create: {
         role: dto.role,
