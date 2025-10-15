@@ -4,7 +4,7 @@ WORKDIR /app
 # Install dependencies for the API workspace
 COPY apps/api/package*.json ./apps/api/
 WORKDIR /app/apps/api
-RUN npm ci --no-audit --no-fund && npm i -D @types/bcryptjs --no-audit --no-fund
+RUN npm ci --no-audit --no-fund
 
 # Copy project sources and Prisma schema
 WORKDIR /app
