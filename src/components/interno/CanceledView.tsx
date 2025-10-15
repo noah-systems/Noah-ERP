@@ -3,10 +3,6 @@ import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
 
-interface CanceledViewProps {
-  userRole: string;
-}
-
 const mockCanceled = [
   {
     id: '1',
@@ -47,7 +43,7 @@ const reasonColors: Record<string, string> = {
   'Insatisfação com suporte': 'bg-orange-100 text-orange-700',
 };
 
-export function CanceledView({ userRole }: CanceledViewProps) {
+export function CanceledView() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">

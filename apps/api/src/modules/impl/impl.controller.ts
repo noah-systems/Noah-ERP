@@ -1,7 +1,12 @@
-import { Body, Controller, Get, Param, Patch } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
 import { ImplService } from './impl.service';
 import { UpdateImplementationDto } from './impl.dto';
+import { JwtAuthGuard } from '../auth/jwt.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN_NOAH', 'SUPPORT_NOAH')
 @Controller('impl')
 export class ImplController {
   constructor(private readonly impl: ImplService) {}

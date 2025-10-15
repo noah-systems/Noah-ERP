@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { OppsService } from './opps.service';
 import {
   ApplyPricingDto,
@@ -6,7 +6,12 @@ import {
   MarkOpportunityLostDto,
   UpdateOppStageDto,
 } from './opps.dto';
+import { JwtAuthGuard } from '../auth/jwt.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN_NOAH', 'SELLER')
 @Controller('opps')
 export class OppsController {
   constructor(private readonly opps: OppsService) {}
@@ -27,6 +32,7 @@ export class OppsController {
   }
 
   @Post(':id/pricing')
+  @Roles('ADMIN_NOAH')
   applyPricing(@Param('id') id: string, @Body() dto: ApplyPricingDto) {
     return this.opps.applyPricing(id, dto);
   }

@@ -5,10 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
-
-interface SettingsViewProps {
-  userRole: string;
-}
+import Can from '@/auth/Can';
+import { useAuth } from '@/auth/AuthContext';
 
 const leadStatuses = [
   { id: '1', name: 'Nutrição', color: '#EAB308', order: 1 },
@@ -38,15 +36,16 @@ const integrations = [
   { id: '3', name: 'RD Station', status: 'disconnected', account: '-' },
 ];
 
-export function SettingsView({ userRole }: SettingsViewProps) {
-  const canEdit = userRole === 'admin';
+export function SettingsView() {
+  const { hasRole } = useAuth();
+  const canEdit = hasRole('ADMIN_NOAH');
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl text-gray-900">Configurações</h1>
-          <p className="text-gray-500">Configure o sistema Noah ERP</p>
+          <h1 className="text-2xl font-semibold text-gray-900">Configurações</h1>
+          <p className="text-sm text-gray-500">Configure o sistema Noah ERP</p>
         </div>
       </div>
 
@@ -63,12 +62,12 @@ export function SettingsView({ userRole }: SettingsViewProps) {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Status de Lead</CardTitle>
-              {canEdit && (
+              <Can roles={['ADMIN_NOAH']}>
                 <Button size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Novo Status
                 </Button>
-              )}
+              </Can>
             </CardHeader>
             <CardContent>
               <Table>
@@ -86,10 +85,7 @@ export function SettingsView({ userRole }: SettingsViewProps) {
                       <TableCell>{status.name}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div 
-                            className="w-6 h-6 rounded border" 
-                            style={{ backgroundColor: status.color }}
-                          />
+                          <div className="h-6 w-6 rounded border" style={{ backgroundColor: status.color }} />
                           <span className="text-sm text-gray-600">{status.color}</span>
                         </div>
                       </TableCell>
@@ -97,11 +93,11 @@ export function SettingsView({ userRole }: SettingsViewProps) {
                       {canEdit && (
                         <TableCell>
                           <div className="flex gap-2">
-                            <button className="p-1 hover:bg-gray-100 rounded">
-                              <Edit className="w-4 h-4 text-gray-600" />
+                            <button className="rounded p-1 transition hover:bg-gray-100">
+                              <Edit className="h-4 w-4 text-gray-600" />
                             </button>
-                            <button className="p-1 hover:bg-gray-100 rounded">
-                              <Trash className="w-4 h-4 text-red-600" />
+                            <button className="rounded p-1 transition hover:bg-gray-100">
+                              <Trash className="h-4 w-4 text-red-600" />
                             </button>
                           </div>
                         </TableCell>
@@ -118,12 +114,12 @@ export function SettingsView({ userRole }: SettingsViewProps) {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Etapas do Pipeline de Vendas</CardTitle>
-              {canEdit && (
+              <Can roles={['ADMIN_NOAH']}>
                 <Button size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Nova Etapa
                 </Button>
-              )}
+              </Can>
             </CardHeader>
             <CardContent>
               <Table>
@@ -142,11 +138,11 @@ export function SettingsView({ userRole }: SettingsViewProps) {
                       {canEdit && (
                         <TableCell>
                           <div className="flex gap-2">
-                            <button className="p-1 hover:bg-gray-100 rounded">
-                              <Edit className="w-4 h-4 text-gray-600" />
+                            <button className="rounded p-1 transition hover:bg-gray-100">
+                              <Edit className="h-4 w-4 text-gray-600" />
                             </button>
-                            <button className="p-1 hover:bg-gray-100 rounded">
-                              <Trash className="w-4 h-4 text-red-600" />
+                            <button className="rounded p-1 transition hover:bg-gray-100">
+                              <Trash className="h-4 w-4 text-red-600" />
                             </button>
                           </div>
                         </TableCell>
@@ -163,12 +159,12 @@ export function SettingsView({ userRole }: SettingsViewProps) {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Fornecedores de Hospedagem</CardTitle>
-              {canEdit && (
+              <Can roles={['ADMIN_NOAH']}>
                 <Button size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Novo Fornecedor
                 </Button>
-              )}
+              </Can>
             </CardHeader>
             <CardContent>
               <Table>
@@ -186,18 +182,16 @@ export function SettingsView({ userRole }: SettingsViewProps) {
                       <TableCell>{provider.name}</TableCell>
                       <TableCell>{provider.address}</TableCell>
                       <TableCell>
-                        <code className="text-sm bg-gray-100 px-2 py-1 rounded">
-                          {provider.ipTemplate}
-                        </code>
+                        <code className="rounded bg-gray-100 px-2 py-1 text-sm">{provider.ipTemplate}</code>
                       </TableCell>
                       {canEdit && (
                         <TableCell>
                           <div className="flex gap-2">
-                            <button className="p-1 hover:bg-gray-100 rounded">
-                              <Edit className="w-4 h-4 text-gray-600" />
+                            <button className="rounded p-1 transition hover:bg-gray-100">
+                              <Edit className="h-4 w-4 text-gray-600" />
                             </button>
-                            <button className="p-1 hover:bg-gray-100 rounded">
-                              <Trash className="w-4 h-4 text-red-600" />
+                            <button className="rounded p-1 transition hover:bg-gray-100">
+                              <Trash className="h-4 w-4 text-red-600" />
                             </button>
                           </div>
                         </TableCell>
@@ -214,16 +208,36 @@ export function SettingsView({ userRole }: SettingsViewProps) {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Usuários e Perfis</CardTitle>
-              {canEdit && (
+              <Can roles={['ADMIN_NOAH']}>
                 <Button size="sm">
-                  <Plus className="w-4 h-4 mr-2" />
+                  <Plus className="mr-2 h-4 w-4" />
                   Novo Usuário
                 </Button>
-              )}
+              </Can>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12 text-gray-500">
-                <p>Gerenciamento de usuários e permissões</p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div>
+                    <p className="text-gray-900">Admin Noah</p>
+                    <p className="text-sm text-gray-500">Acesso total ao ERP</p>
+                  </div>
+                  <Badge>2 usuários</Badge>
+                </div>
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div>
+                    <p className="text-gray-900">Suporte Noah</p>
+                    <p className="text-sm text-gray-500">Implantação e suporte técnico</p>
+                  </div>
+                  <Badge>5 usuários</Badge>
+                </div>
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div>
+                    <p className="text-gray-900">Time Comercial</p>
+                    <p className="text-sm text-gray-500">Leads e oportunidades</p>
+                  </div>
+                  <Badge>12 usuários</Badge>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -231,33 +245,51 @@ export function SettingsView({ userRole }: SettingsViewProps) {
 
         <TabsContent value="integrations">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Integrações</CardTitle>
+              <Can roles={['ADMIN_NOAH']}>
+                <Button size="sm">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nova Integração
+                </Button>
+              </Can>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {integrations.map((integration) => (
-                  <div key={integration.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div>
-                      <p className="text-gray-900">{integration.name}</p>
-                      <p className="text-sm text-gray-500">{integration.account}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge 
-                        variant={integration.status === 'connected' ? 'default' : 'secondary'}
-                        className={integration.status === 'connected' ? 'bg-green-600' : ''}
-                      >
-                        {integration.status === 'connected' ? 'Conectado' : 'Desconectado'}
-                      </Badge>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Integração</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Conta</TableHead>
+                    {canEdit && <TableHead className="w-24">Ações</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {integrations.map((integration) => (
+                    <TableRow key={integration.id}>
+                      <TableCell>{integration.name}</TableCell>
+                      <TableCell>
+                        <Badge variant={integration.status === 'connected' ? 'secondary' : 'outline'}>
+                          {integration.status === 'connected' ? 'Conectado' : 'Desconectado'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{integration.account}</TableCell>
                       {canEdit && (
-                        <Button size="sm" variant="outline">
-                          {integration.status === 'connected' ? 'Configurar' : 'Conectar'}
-                        </Button>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <button className="rounded p-1 transition hover:bg-gray-100">
+                              <Edit className="h-4 w-4 text-gray-600" />
+                            </button>
+                            <button className="rounded p-1 transition hover:bg-gray-100">
+                              <Trash className="h-4 w-4 text-red-600" />
+                            </button>
+                          </div>
+                        </TableCell>
                       )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>

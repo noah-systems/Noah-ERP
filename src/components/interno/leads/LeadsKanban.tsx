@@ -94,7 +94,7 @@ const originColors = {
   'Manual': 'bg-gray-100 text-gray-700',
 };
 
-export function LeadsKanban({ userRole }: { userRole: string }) {
+export function LeadsKanban() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   return (

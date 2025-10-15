@@ -28,11 +28,7 @@ interface Implementation {
   scheduledDate?: string;
 }
 
-interface ImplementationViewProps {
-  userRole: string;
-}
-
-export function ImplementationView({ userRole }: ImplementationViewProps) {
+export function ImplementationView() {
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [selectedImpl, setSelectedImpl] = useState<Implementation | null>(null);
 

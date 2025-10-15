@@ -6,6 +6,8 @@ import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Checkbox } from '../../ui/checkbox';
 import { Lock, FileText, Calendar } from 'lucide-react';
+import Can from '@/auth/Can';
+import { useAuth } from '@/auth/AuthContext';
 
 interface Opportunity {
   id: string;
@@ -23,7 +25,6 @@ interface OpportunityDetailModalProps {
   opportunity: Opportunity | null;
   open: boolean;
   onClose: () => void;
-  userRole: string;
 }
 
 const catalogItems = [
@@ -39,11 +40,13 @@ const catalogItems = [
   { id: 'setup', name: 'Setup', price: 500, unit: 'único' },
 ];
 
-export function OpportunityDetailModal({ opportunity, open, onClose, userRole }: OpportunityDetailModalProps) {
-  if (!opportunity) return null;
+export function OpportunityDetailModal({ opportunity, open, onClose }: OpportunityDetailModalProps) {
+  const { hasRole } = useAuth();
+  const canViewHosting = hasRole('ADMIN_NOAH', 'SUPPORT_NOAH');
+  const canViewFinancial = hasRole('ADMIN_NOAH');
+  const canEditCatalog = hasRole('ADMIN_NOAH', 'SELLER');
 
-  const canViewHosting = userRole === 'admin' || userRole === 'suporte';
-  const canViewFinancial = userRole === 'admin' || userRole === 'financeiro';
+  if (!opportunity) return null;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -52,7 +55,7 @@ export function OpportunityDetailModal({ opportunity, open, onClose, userRole }:
           <div className="flex items-start justify-between">
             <div>
               <DialogTitle>{opportunity.company}</DialogTitle>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="mt-1 text-sm text-gray-500">
                 Valor: R$ {opportunity.value.toLocaleString('pt-BR')} • Responsável: {opportunity.owner}
               </p>
             </div>
@@ -82,27 +85,34 @@ export function OpportunityDetailModal({ opportunity, open, onClose, userRole }:
                 <Label>Endereço</Label>
                 <Input placeholder="Rua, número, bairro, cidade, estado" />
               </div>
-              
+
               <div className="col-span-2">
-                <h3 className="text-sm text-gray-700 mb-3">Contato Financeiro</h3>
+                <div className="mb-3 flex items-center gap-2 text-sm text-gray-700">
+                  <h3>Contato Financeiro</h3>
+                  {!canViewFinancial && (
+                    <Badge variant="secondary" className="text-xs">
+                      <Lock className="mr-1 h-3 w-3" /> Somente Admin
+                    </Badge>
+                  )}
+                </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label>E-mail Financeiro</Label>
-                    <Input type="email" placeholder="financeiro@empresa.com" />
+                    <Input type="email" placeholder="financeiro@empresa.com" disabled={!canViewFinancial} />
                   </div>
                   <div className="space-y-2">
                     <Label>Responsável Financeiro</Label>
-                    <Input placeholder="Nome completo" />
+                    <Input placeholder="Nome completo" disabled={!canViewFinancial} />
                   </div>
                   <div className="space-y-2">
                     <Label>Telefone Financeiro</Label>
-                    <Input placeholder="(00) 00000-0000" />
+                    <Input placeholder="(00) 00000-0000" disabled={!canViewFinancial} />
                   </div>
                 </div>
               </div>
 
               <div className="col-span-2">
-                <h3 className="text-sm text-gray-700 mb-3">Contato Principal</h3>
+                <h3 className="mb-3 text-sm text-gray-700">Contato Principal</h3>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label>E-mail Contato</Label>
@@ -126,8 +136,8 @@ export function OpportunityDetailModal({ opportunity, open, onClose, userRole }:
               <div className="col-span-2 space-y-2">
                 <Label>URL (Subdomínio)</Label>
                 <div className="flex items-center gap-2">
-                  <Input 
-                    defaultValue={opportunity.url || opportunity.company.toLowerCase().replace(/\s+/g, '')} 
+                  <Input
+                    defaultValue={opportunity.url || opportunity.company.toLowerCase().replace(/\s+/g, '')}
                     className="flex-1"
                   />
                   <span className="text-sm text-gray-500">.noahomni.com.br</span>
@@ -162,22 +172,14 @@ export function OpportunityDetailModal({ opportunity, open, onClose, userRole }:
               <div className="col-span-2">
                 <Label className="mb-3 block">Módulos</Label>
                 <div className="grid grid-cols-4 gap-3">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="mod-campanha" defaultChecked />
-                    <label htmlFor="mod-campanha" className="text-sm">Campanha</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="mod-crm" defaultChecked />
-                    <label htmlFor="mod-crm" className="text-sm">CRM</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="mod-voip" />
-                    <label htmlFor="mod-voip" className="text-sm">VOIP</label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="mod-glpi" />
-                    <label htmlFor="mod-glpi" className="text-sm">GLPI</label>
-                  </div>
+                  {['Campanha', 'CRM', 'VOIP', 'GLPI'].map((module) => (
+                    <div key={module} className="flex items-center space-x-2">
+                      <Checkbox id={`mod-${module.toLowerCase()}`} defaultChecked={module !== 'VOIP'} disabled={!canEditCatalog} />
+                      <label htmlFor={`mod-${module.toLowerCase()}`} className="text-sm">
+                        {module}
+                      </label>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -186,8 +188,7 @@ export function OpportunityDetailModal({ opportunity, open, onClose, userRole }:
                   Hospedagem (Fornecedor)
                   {!canViewHosting && (
                     <Badge variant="secondary" className="text-xs">
-                      <Lock className="w-3 h-3 mr-1" />
-                      Admin/Suporte
+                      <Lock className="mr-1 h-3 w-3" /> Admin/Suporte
                     </Badge>
                   )}
                 </Label>
@@ -199,8 +200,7 @@ export function OpportunityDetailModal({ opportunity, open, onClose, userRole }:
                   IP do Servidor
                   {!canViewHosting && (
                     <Badge variant="secondary" className="text-xs">
-                      <Lock className="w-3 h-3 mr-1" />
-                      Admin/Suporte
+                      <Lock className="mr-1 h-3 w-3" /> Admin/Suporte
                     </Badge>
                   )}
                 </Label>
@@ -230,19 +230,20 @@ export function OpportunityDetailModal({ opportunity, open, onClose, userRole }:
           </TabsContent>
 
           <TabsContent value="valores" className="space-y-4">
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="text-sm text-gray-700 mb-4">Catálogo de Itens</h3>
+            <div className="rounded-lg bg-gray-50 p-4">
+              <h3 className="mb-4 text-sm text-gray-700">Catálogo de Itens</h3>
               <div className="space-y-2">
                 {catalogItems.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-3 bg-white rounded border">
+                  <div key={item.id} className="flex items-center justify-between rounded border bg-white p-3">
                     <div className="flex items-center gap-3">
-                      <Checkbox id={`item-${item.id}`} />
+                      <Checkbox id={`item-${item.id}`} disabled={!canEditCatalog} />
                       <label htmlFor={`item-${item.id}`} className="text-sm">
                         {item.name}
                       </label>
                     </div>
                     <div className="text-sm text-gray-600">
-                      R$ {item.price} <span className="text-xs text-gray-400">({item.unit})</span>
+                      R$ {item.price}{' '}
+                      <span className="text-xs text-gray-400">({item.unit})</span>
                     </div>
                   </div>
                 ))}
@@ -252,14 +253,12 @@ export function OpportunityDetailModal({ opportunity, open, onClose, userRole }:
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>% Desconto</Label>
-                <Input type="number" min="0" max="100" defaultValue="0" />
-                <p className="text-xs text-gray-500">
-                  Máximo permitido para seu perfil: 25%
-                </p>
+                <Input type="number" min="0" max="100" defaultValue="0" disabled={!canEditCatalog} />
+                <p className="text-xs text-gray-500">Máximo permitido para seu perfil: 25%</p>
               </div>
             </div>
 
-            <div className="bg-blue-50 p-4 rounded-lg space-y-2">
+            <div className="space-y-2 rounded-lg bg-blue-50 p-4">
               <div className="flex justify-between">
                 <span className="text-sm">Subtotal</span>
                 <span className="text-sm">R$ 1.000,00</span>
@@ -278,41 +277,41 @@ export function OpportunityDetailModal({ opportunity, open, onClose, userRole }:
               </div>
             </div>
 
-            <div className="flex gap-2">
-              <Button variant="outline">Gerar Proposta (PDF)</Button>
-              <Button>Enviar Proposta</Button>
-            </div>
+            <Can roles={['ADMIN_NOAH', 'SELLER']}>
+              <div className="flex gap-2">
+                <Button variant="outline">Gerar Proposta (PDF)</Button>
+                <Button>Enviar Proposta</Button>
+              </div>
+            </Can>
           </TabsContent>
 
           <TabsContent value="historico">
             <div className="space-y-4">
               <div className="flex gap-4">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <FileText className="w-4 h-4 text-blue-600" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
+                  <FileText className="h-4 w-4 text-blue-600" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-gray-900">Oportunidade criada</p>
-                  <p className="text-xs text-gray-500 mt-1">Sistema • {opportunity.createdAt}</p>
+                  <p className="mt-1 text-xs text-gray-500">Sistema • {opportunity.createdAt}</p>
                 </div>
               </div>
 
               <div className="flex gap-4">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Calendar className="w-4 h-4 text-green-600" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100">
+                  <Calendar className="h-4 w-4 text-green-600" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-gray-900">Apresentação agendada para 20/10/2025</p>
-                  <p className="text-xs text-gray-500 mt-1">{opportunity.owner} • {opportunity.createdAt}</p>
+                  <p className="mt-1 text-xs text-gray-500">{opportunity.owner} • {opportunity.createdAt}</p>
                 </div>
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="perda">
-            <div className="text-center py-12">
-              <p className="text-sm text-gray-500 mb-4">
-                Esta oportunidade ainda não foi marcada como perdida
-              </p>
+            <div className="py-12 text-center">
+              <p className="mb-4 text-sm text-gray-500">Esta oportunidade ainda não foi marcada como perdida</p>
               <Button variant="outline" size="sm">
                 Marcar como Venda Perdida
               </Button>

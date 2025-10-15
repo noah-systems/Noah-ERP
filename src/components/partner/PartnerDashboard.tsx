@@ -9,10 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
-
-interface PartnerDashboardProps {
-  userRole: string;
-}
+import { useAuth } from '@/auth/AuthContext';
 
 const activeAccounts = [
   { id: '1', url: 'empresaativa1', company: 'Empresa Ativa 1 Ltda', users: 15, connections: 3, createdAt: '01/08/2025' },
@@ -30,25 +27,35 @@ const upgradeDowngrade = [
   { id: '2', url: 'empresadown', company: 'Empresa Downgrade Ltda', type: 'downgrade', from: '20 usuários', to: '15 usuários', requestedAt: '14/10/2025', status: 'completed' },
 ];
 
-export function PartnerDashboard({ userRole }: PartnerDashboardProps) {
-  const canCreate = userRole === 'partner-master' || userRole === 'partner-operacoes' || userRole === 'admin';
+export function PartnerDashboard() {
+  const { hasRole } = useAuth();
+  const allowed = hasRole('ADMIN_NOAH', 'ADMIN_PARTNER');
+  const canCreate = hasRole('ADMIN_NOAH', 'ADMIN_PARTNER');
+
+  if (!allowed) {
+    return (
+      <div className="rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-gray-500">
+        Você não possui acesso ao módulo de parceiros.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl text-gray-900">Painel do Parceiro</h1>
-          <p className="text-gray-500">Gerencie suas contas e clientes</p>
+          <h1 className="text-2xl font-semibold text-gray-900">Painel do Parceiro</h1>
+          <p className="text-sm text-gray-500">Gerencie suas contas e clientes</p>
         </div>
         <div className="flex gap-2">
           {canCreate && (
             <Button>
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="mr-2 h-4 w-4" />
               Cadastrar Nova Conta
             </Button>
           )}
           <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
+            <Download className="mr-2 h-4 w-4" />
             Exportar
           </Button>
         </div>
@@ -61,7 +68,7 @@ export function PartnerDashboard({ userRole }: PartnerDashboardProps) {
             <Badge variant="secondary">{activeAccounts.length}</Badge>
           </CardHeader>
           <CardContent>
-            <div className="overflow-auto max-h-[400px]">
+            <div className="max-h-[400px] overflow-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -90,8 +97,8 @@ export function PartnerDashboard({ userRole }: PartnerDashboardProps) {
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button className="p-1 hover:bg-gray-100 rounded">
-                              <MoreVertical className="w-4 h-4 text-gray-400" />
+                            <button className="rounded p-1 hover:bg-gray-100">
+                              <MoreVertical className="h-4 w-4 text-gray-400" />
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
@@ -116,7 +123,7 @@ export function PartnerDashboard({ userRole }: PartnerDashboardProps) {
             <Badge variant="secondary">{pendingAccounts.length}</Badge>
           </CardHeader>
           <CardContent>
-            <div className="overflow-auto max-h-[400px]">
+            <div className="max-h-[400px] overflow-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -145,8 +152,8 @@ export function PartnerDashboard({ userRole }: PartnerDashboardProps) {
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button className="p-1 hover:bg-gray-100 rounded">
-                              <MoreVertical className="w-4 h-4 text-gray-400" />
+                            <button className="rounded p-1 hover:bg-gray-100">
+                              <MoreVertical className="h-4 w-4 text-gray-400" />
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
@@ -168,7 +175,7 @@ export function PartnerDashboard({ userRole }: PartnerDashboardProps) {
             <Badge variant="secondary">{upgradeDowngrade.length}</Badge>
           </CardHeader>
           <CardContent>
-            <div className="overflow-auto max-h-[400px]">
+            <div className="max-h-[400px] overflow-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -198,7 +205,7 @@ export function PartnerDashboard({ userRole }: PartnerDashboardProps) {
                       <TableCell>{item.requestedAt}</TableCell>
                       <TableCell>
                         <Badge className={item.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
-                          {item.status === 'completed' ? 'Realizado' : 'Pendente'}
+                          {item.status === 'completed' ? 'Concluído' : 'Pendente'}
                         </Badge>
                       </TableCell>
                     </TableRow>
