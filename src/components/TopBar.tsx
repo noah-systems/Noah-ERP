@@ -28,7 +28,7 @@ export function TopBar() {
           <input
             type="text"
             placeholder="Buscar... (pressione / para focar)"
-            className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm text-gray-700 shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+            className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-sm text-gray-700 shadow-sm transition focus:border-[var(--primary)] focus:outline-none focus:ring-2 focus:ring-[color:rgba(168,230,15,0.25)]"
             onKeyDown={(event) => {
               if (event.key === '/') {
                 event.preventDefault();
@@ -43,7 +43,7 @@ export function TopBar() {
           <p className="text-sm font-medium text-gray-900">{user?.name ?? 'Noah Omni'}</p>
           <p className="text-xs text-gray-500">{user ? ROLE_LABELS[user.role] : 'Acesso Noah'}</p>
         </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-semibold text-white">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--primary)] text-sm font-semibold text-[#0A1400]">
           {user?.name ? initials : <User className="h-5 w-5" />}
         </div>
         <button

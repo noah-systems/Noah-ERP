@@ -15,6 +15,7 @@ import {
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
 import type { Role } from '@/auth/AuthContext';
+import { BRAND } from '@/lib/brand';
 
 type ModuleKind = 'internal' | 'partner';
 
@@ -51,7 +52,7 @@ const PARTNER_MENU: MenuItem[] = [
 
 export function Sidebar({ module, onModuleChange }: SidebarProps) {
   const { hasRole } = useAuth();
-  const logo = import.meta.env.VITE_NOAH_LOGO_DARK as string | undefined;
+  const logo = BRAND.logoDark;
   const canAccessPartner = hasRole('ADMIN_PARTNER', 'ADMIN_NOAH');
 
   const items = (module === 'partner' ? PARTNER_MENU : INTERNAL_MENU).filter((item) =>
@@ -73,7 +74,9 @@ export function Sidebar({ module, onModuleChange }: SidebarProps) {
           <button
             type="button"
             className={`flex-1 rounded-lg px-3 py-2 transition-colors ${
-              module === 'internal' ? 'bg-blue-600 text-white' : 'hover:bg-gray-700 text-gray-300'
+              module === 'internal'
+                ? 'bg-[var(--primary)] text-[#0A1400] shadow-[0_10px_24px_rgba(12,24,4,0.35)]'
+                : 'hover:bg-gray-700 text-gray-300'
             }`}
             onClick={() => onModuleChange('internal')}
           >
@@ -82,7 +85,9 @@ export function Sidebar({ module, onModuleChange }: SidebarProps) {
           <button
             type="button"
             className={`flex-1 rounded-lg px-3 py-2 transition-colors ${
-              module === 'partner' ? 'bg-blue-600 text-white' : 'hover:bg-gray-700 text-gray-300'
+              module === 'partner'
+                ? 'bg-[var(--primary)] text-[#0A1400] shadow-[0_10px_24px_rgba(12,24,4,0.35)]'
+                : 'hover:bg-gray-700 text-gray-300'
             } ${canAccessPartner ? '' : 'cursor-not-allowed opacity-40'}`}
             onClick={() => canAccessPartner && onModuleChange('partner')}
             disabled={!canAccessPartner}
@@ -100,7 +105,9 @@ export function Sidebar({ module, onModuleChange }: SidebarProps) {
             end={exact}
             className={({ isActive }) =>
               `flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm transition-colors ${
-                isActive ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-gray-300 hover:bg-gray-800'
+                isActive
+                  ? 'bg-[var(--primary)] text-[#0A1400] shadow-[0_16px_32px_rgba(12,24,4,0.3)]'
+                  : 'text-gray-300 hover:bg-gray-800'
               }`
             }
           >

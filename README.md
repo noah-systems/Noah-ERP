@@ -62,15 +62,21 @@ O projeto agora inclui uma tela mínima de autenticação em Vite que conversa d
 
 ### Variáveis de ambiente do front
 
-Crie um arquivo `.env` na raiz do front (mesma pasta deste README) com os valores de branding e URL da API:
+Copie o arquivo `.env.example` para `.env` na raiz do front (mesma pasta deste README) e ajuste os valores de branding/URL da API conforme necessário:
 
 ```env
 VITE_API_BASE=https://erpapi.noahomni.com.br/api
-VITE_NOAH_LOGO_LIGHT=https://s3.bragimulticanal.com.br/white-label/noah_omni/noahomni-logo.png
-VITE_NOAH_LOGO_DARK=https://s3.bragimulticanal.com.br/white-label/noah_omni/NOAH%20OMNI%20sem-fundo.png
-VITE_NOAH_FAVICON=https://s3.bragimulticanal.com.br/white-label/noah_omni/favicon%20(2).ico
-VITE_NOAH_APPLE_TOUCH=https://s3.bragimulticanal.com.br/white-label/noah_omni/%C3%8Dcone%20Noah%20Omni.png
+VITE_LOGO_LIGHT=/brand/logo-light.png
+VITE_LOGO_DARK=/brand/logo-dark.png
+VITE_FAVICON=/brand/favicon.png
+VITE_APPLE_TOUCH=/brand/apple-touch.png
+VITE_THEME_COLOR=#A8E60F
+VITE_LOGIN_BG=/brand/login-bg.jpg
 ```
+
+A pasta `public/brand/` já está versionada apenas com um README de instruções.
+Adicione manualmente os arquivos de imagem (logos, favicon, apple-touch, login background)
+antes de fazer o deploy ou gerar o build final.
 
 A variável `VITE_API_BASE` aceita tanto a raiz `/api` (quando o front é servido pelo mesmo host) quanto a URL completa com domínio. Se você apontar apenas para `https://erpapi.noahomni.com.br`, o cliente automaticamente prefixará as rotas com `/api`.
 

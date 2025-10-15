@@ -1,6 +1,7 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, type CSSProperties, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
+import { BRAND } from '@/lib/brand';
 import './login.css';
 
 export default function LoginPage() {
@@ -10,7 +11,17 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [err, setErr] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const logo = import.meta.env.VITE_NOAH_LOGO_LIGHT as string | undefined;
+  const logo = BRAND.logoLight;
+  const backgroundImage = BRAND.loginBg;
+
+  const backgroundStyle = useMemo(
+    () =>
+      ({
+        backgroundImage: `url(${backgroundImage})`,
+        ['--login-background-image' as const]: `url(${backgroundImage})`,
+      }) as CSSProperties,
+    [backgroundImage]
+  );
 
   useEffect(() => {
     if (user) {
@@ -34,7 +45,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="login-bg">
+    <div className="login-bg" style={backgroundStyle}>
       <div className="login-card">
         {logo && <img src={logo} alt="Noah Omni" className="logo" />}
         <h1>Acessar</h1>

@@ -1,5 +1,12 @@
 # O que solicitar ao Codex (em issues)
 
+> ℹ️ **Observação sobre assets binários**
+>
+> O viewer do Codex não exibe diff de arquivos PNG/JPG e costuma mostrar o aviso
+> "Arquivos binários não são compatíveis". Isso não bloqueia o fluxo — faça o
+> commit normalmente e abra o pull request direto pelo GitHub (Compare & pull
+> request da sua branch para `main`).
+
 ## 1.1 Monorepo + Fundações
 
 **Título:** Bootstrap monorepo (web + api + worker + infra)
@@ -106,11 +113,11 @@ Solicitar:
 
 - `apps/web/.env.example` com variáveis:
   - `NEXT_PUBLIC_NOAH_APP_NAME=Noah ERP`
-  - `NEXT_PUBLIC_NOAH_LOGO_LIGHT=https://.../noah-logo-light.png`
-  - `NEXT_PUBLIC_NOAH_LOGO_DARK=https://.../noah-logo-dark.png`
-  - `NEXT_PUBLIC_NOAH_FAVICON=https://.../favicon.png`
-  - `NEXT_PUBLIC_NOAH_APPLE_TOUCH=https://.../apple-touch.png`
-  - `NEXT_PUBLIC_NOAH_THEME_COLOR=#A8E60F`
+  - `NEXT_PUBLIC_LOGO_LIGHT=https://.../noah-logo-light.png`
+  - `NEXT_PUBLIC_LOGO_DARK=https://.../noah-logo-dark.png`
+  - `NEXT_PUBLIC_FAVICON=https://.../favicon.png`
+  - `NEXT_PUBLIC_APPLE_TOUCH=https://.../apple-touch.png`
+    - `NEXT_PUBLIC_THEME_COLOR=#A8E60F`
 - `public/brand/*` com fallbacks para garantir que os assets nunca sumam.
 - `src/styles/brand.css` com tokens vindos do Figma (variáveis CSS) e `tailwind.config.ts` mapeando `brand.*`.
 - Componente `BrandLogo` lendo as variáveis de ambiente (`light`/`dark`) sem aplicar filtros (ex.: `invert`).

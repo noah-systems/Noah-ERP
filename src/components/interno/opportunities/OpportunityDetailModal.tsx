@@ -258,7 +258,7 @@ export function OpportunityDetailModal({ opportunity, open, onClose }: Opportuni
               </div>
             </div>
 
-            <div className="space-y-2 rounded-lg bg-blue-50 p-4">
+            <div className="space-y-2 rounded-lg bg-[color:rgba(168,230,15,0.08)] p-4">
               <div className="flex justify-between">
                 <span className="text-sm">Subtotal</span>
                 <span className="text-sm">R$ 1.000,00</span>
@@ -267,7 +267,7 @@ export function OpportunityDetailModal({ opportunity, open, onClose }: Opportuni
                 <span className="text-sm">Desconto (0%)</span>
                 <span className="text-sm">R$ 0,00</span>
               </div>
-              <div className="flex justify-between border-t border-blue-200 pt-2">
+              <div className="flex justify-between border-t border-[color:rgba(168,230,15,0.25)] pt-2">
                 <span className="text-gray-900">Total Mensal</span>
                 <span className="text-gray-900">R$ 1.000,00</span>
               </div>
@@ -288,8 +288,8 @@ export function OpportunityDetailModal({ opportunity, open, onClose }: Opportuni
           <TabsContent value="historico">
             <div className="space-y-4">
               <div className="flex gap-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
-                  <FileText className="h-4 w-4 text-blue-600" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[color:rgba(168,230,15,0.14)]">
+                  <FileText className="h-4 w-4 text-[var(--primary)]" />
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-gray-900">Oportunidade criada</p>
