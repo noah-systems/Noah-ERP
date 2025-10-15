@@ -133,8 +133,8 @@ export function LeadDetailModal({ lead, open, onClose }: LeadDetailModalProps) {
             <div className="space-y-4">
               {activities.map((activity, index) => (
                 <div key={index} className="flex gap-4">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-4 h-4 text-blue-600" />
+                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[color:rgba(168,230,15,0.14)]">
+                    <FileText className="h-4 w-4 text-[var(--primary)]" />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-gray-900">{activity.action}</p>

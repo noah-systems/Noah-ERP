@@ -24,14 +24,28 @@ export function Dashboard() {
 
   const stats = useMemo(
     () => [
-      { label: 'Leads', value: 47, icon: Users, color: 'bg-yellow-500', trend: '+12%' },
-      { label: 'Oportunidades', value: 23, icon: TrendingUp, color: 'bg-blue-500', trend: '+8%' },
-      { label: 'Implantação', value: 8, icon: Wrench, color: 'bg-purple-500', trend: '+3' },
-      { label: 'Canceladas', value: 5, icon: XCircle, color: 'bg-red-500', trend: '-2' },
-      { label: 'Bots', value: 152, icon: Bot, color: 'bg-red-400', trend: '+18' },
-      { label: 'Operadores', value: 89, icon: UserCog, color: 'bg-yellow-400', trend: '+5' },
-      { label: 'Estabelecimentos', value: 34, icon: Building2, color: 'bg-blue-400', trend: '+7' },
-      { label: 'Saldo', value: 'R$ 45.8k', icon: Wallet, color: 'bg-green-500', trend: '+15%' },
+      { label: 'Leads', value: 47, icon: Users, color: 'bg-yellow-500', iconColor: 'text-white', trend: '+12%' },
+      {
+        label: 'Oportunidades',
+        value: 23,
+        icon: TrendingUp,
+        color: 'bg-[var(--primary)]',
+        iconColor: 'text-[#0A1400]',
+        trend: '+8%',
+      },
+      { label: 'Implantação', value: 8, icon: Wrench, color: 'bg-purple-500', iconColor: 'text-white', trend: '+3' },
+      { label: 'Canceladas', value: 5, icon: XCircle, color: 'bg-red-500', iconColor: 'text-white', trend: '-2' },
+      { label: 'Bots', value: 152, icon: Bot, color: 'bg-red-400', iconColor: 'text-white', trend: '+18' },
+      { label: 'Operadores', value: 89, icon: UserCog, color: 'bg-yellow-400', iconColor: 'text-white', trend: '+5' },
+      {
+        label: 'Estabelecimentos',
+        value: 34,
+        icon: Building2,
+        color: 'bg-[color:rgba(168,230,15,0.2)]',
+        iconColor: 'text-[var(--primary)]',
+        trend: '+7%',
+      },
+      { label: 'Saldo', value: 'R$ 45.8k', icon: Wallet, color: 'bg-green-500', iconColor: 'text-white', trend: '+15%' },
     ],
     []
   );
@@ -71,6 +85,7 @@ export function Dashboard() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
+          const iconColor = stat.iconColor ?? 'text-white';
           return (
             <Card key={index} className="transition-shadow hover:shadow-lg">
               <CardContent className="p-6">
@@ -81,7 +96,7 @@ export function Dashboard() {
                     <p className="text-xs text-gray-500">{stat.trend} vs. mês passado</p>
                   </div>
                   <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${stat.color}`}>
-                    <Icon className="h-6 w-6 text-white" />
+                    <Icon className={`h-6 w-6 ${iconColor}`} />
                   </div>
                 </div>
               </CardContent>
@@ -105,7 +120,7 @@ export function Dashboard() {
                   </div>
                   <div className="h-2 w-full rounded-full bg-gray-200">
                     <div
-                      className="h-2 rounded-full bg-blue-600 transition-all"
+                      className="h-2 rounded-full bg-[var(--primary)] transition-all"
                       style={{ width: `${stage.percentage}%` }}
                     />
                   </div>
@@ -145,8 +160,8 @@ export function Dashboard() {
                   className="flex w-full items-center justify-between rounded-lg border border-gray-200 p-4 text-left transition hover:bg-gray-50"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
-                      <TrendingUp className="h-5 w-5 text-blue-600" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:rgba(168,230,15,0.14)]">
+                      <TrendingUp className="h-5 w-5 text-[var(--primary)]" />
                     </div>
                     <div>
                       <div className="text-sm font-medium text-gray-900">Pipeline de Vendas</div>
