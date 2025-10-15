@@ -38,7 +38,7 @@ Seeds obrigatórios:
 - Status de Lead: `Nutrição`, `Não Qualificado*`, `Qualificado`.
 - Etapas de Oportunidade: `Negociação → Apresentação → Proposta → Trial → Vencimento Trial → Ganha → Perdida*`.
 - Pricing: Noah e White Label com tiers WL `1–19`, `20–39`, `40–79`, `80+`.
-- Usuário master (`ADMIN_NOAH`) criado via `prisma/seed.ts` usando variáveis de ambiente:
+- Usuário master (`ADMIN_NOAH`) criado via `apps/api/prisma/seed.js` usando variáveis de ambiente:
   - `MASTER_NAME=Admin Noah`
   - `MASTER_EMAIL=admin@noahomni.com.br`
   - `MASTER_PASSWORD=TroqueEssaSenha`

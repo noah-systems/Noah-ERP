@@ -28,5 +28,8 @@
     "@types/bcryptjs": "^2.4.2",
     "prisma": "^5.22.0",
     "typescript": "^5.5.4"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   }
 }

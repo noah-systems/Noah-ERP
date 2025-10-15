@@ -1,5 +1,5 @@
-import { PrismaClient, Role, Channel, ItemKind } from '@prisma/client'
-import * as bcrypt from 'bcryptjs'
+const { PrismaClient, Role, Channel, ItemKind } = require('@prisma/client')
+const bcrypt = require('bcryptjs')
 
 const db = new PrismaClient()
 
@@ -71,7 +71,7 @@ async function main() {
     })
   }
 
-  const tiers: { channel: Channel; minUsers: number; maxUsers: number | null; pricePerUser: number }[] = [
+  const tiers = [
     { channel: Channel.WHITE_LABEL, minUsers: 1, maxUsers: 19, pricePerUser: 26.9 },
     { channel: Channel.WHITE_LABEL, minUsers: 20, maxUsers: 39, pricePerUser: 20.9 },
     { channel: Channel.WHITE_LABEL, minUsers: 40, maxUsers: 79, pricePerUser: 17.9 },
