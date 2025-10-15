@@ -65,6 +65,19 @@ declare module '@prisma/client' {
     type InputJsonValue = unknown;
     type NullableJsonNullValueInput = null;
     const JsonNull: null;
+
+    interface PartnerCreateInput {
+      priceTable?: InputJsonValue | NullableJsonNullValueInput;
+    }
+
+    interface PartnerAccountCreateInput {
+      connections?: InputJsonValue | NullableJsonNullValueInput;
+      modules?: InputJsonValue | NullableJsonNullValueInput;
+    }
+
+    interface PartnerChangeRequestCreateInput {
+      payload?: InputJsonValue | NullableJsonNullValueInput;
+    }
   }
 
   export class PrismaClient {
