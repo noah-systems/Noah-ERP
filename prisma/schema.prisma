@@ -7,12 +7,46 @@ generator client {
   provider = "prisma-client-js"
 }
 
-enum Role { ADMIN_NOAH SUPPORT_NOAH FINANCE_NOAH SELLER PARTNER_MASTER PARTNER_FINANCE PARTNER_OPS }
-enum LeadSource { GOOGLE META MANUAL }
-enum ImplStatus { PENDING_SCHED SCHEDULED DONE NO_SHOW }
-enum Channel { INTERNAL WHITE_LABEL }
-enum ItemKind { PLAN ADDON MODULE }
-enum PartnerAccountStatus { PENDING_CREATE ACTIVE PENDING_CHANGE CANCELED }
+enum Role {
+  ADMIN_NOAH
+  SUPPORT_NOAH
+  FINANCE_NOAH
+  SELLER
+  PARTNER_MASTER
+  PARTNER_FINANCE
+  PARTNER_OPS
+}
+
+enum LeadSource {
+  GOOGLE
+  META
+  MANUAL
+}
+
+enum ImplStatus {
+  PENDING_SCHED
+  SCHEDULED
+  DONE
+  NO_SHOW
+}
+
+enum Channel {
+  INTERNAL
+  WHITE_LABEL
+}
+
+enum ItemKind {
+  PLAN
+  ADDON
+  MODULE
+}
+
+enum PartnerAccountStatus {
+  PENDING_CREATE
+  ACTIVE
+  PENDING_CHANGE
+  CANCELED
+}
 
 model User {
   id           String   @id @default(cuid())
@@ -42,11 +76,11 @@ model LeadStatus {
 model Lead {
   id        String     @id @default(cuid())
   company   String
-  segment   String
-  headcount Int        @default(0)
-  contact   String
-  phone     String
-  email     String
+  segment   String?
+  headcount Int?       @default(0)
+  contact   String?
+  phone     String?
+  email     String?
   notes     String?
   source    LeadSource @default(MANUAL)
   statusId  String
@@ -64,6 +98,8 @@ model OpportunityStage {
   order     Int    @default(0)
   lostReasonRequired Boolean @default(false)
   opportunities Opportunity[]
+  historyFrom OppHistory[] @relation("OppHistoryFromStage")
+  historyTo   OppHistory[] @relation("OppHistoryToStage")
 }
 
 model HostingProvider {
@@ -111,6 +147,10 @@ model OppHistory {
   opp     Opportunity @relation(fields: [oppId], references: [id])
   actorId String
   actor   User      @relation("UserActorHistory", fields: [actorId], references: [id])
+  fromStageId String?
+  fromStage   OpportunityStage? @relation("OppHistoryFromStage", fields: [fromStageId], references: [id])
+  toStageId   String?
+  toStage     OpportunityStage? @relation("OppHistoryToStage", fields: [toStageId], references: [id])
   note    String?
   createdAt DateTime @default(now())
 }
@@ -171,6 +211,7 @@ model PartnerAccount {
   activatedAt   DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  changeRequests PartnerChangeRequest[]
 }
 
 model PartnerChangeRequest {
@@ -196,12 +237,14 @@ model PriceTier {
   id           String  @id @default(cuid())
   channel      Channel
   minUsers     Int
-  maxUsers     Int
+  maxUsers     Int?
   pricePerUser Decimal @db.Decimal(10,2)
+
+  @@unique([channel, minUsers])
 }
 
 model DiscountPolicy {
   id         String @id @default(cuid())
-  role       Role
+  role       Role   @unique
   maxPercent Decimal @db.Decimal(5,2)
 }

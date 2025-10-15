@@ -62,8 +62,8 @@ export class ImplService {
             data: {
               oppId: task.oppId,
               actorId: dto.actorId,
-              fromStage: task.opp.stageId,
-              toStage: stage.id,
+              fromStageId: task.opp.stageId,
+              toStageId: stage.id,
               note:
                 dto.status === ImplStatus.DONE
                   ? 'Implementation completed'

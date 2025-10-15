@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule } from './jwt/jwt.module';
 import { PrismaService } from '../prisma.service';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -12,7 +12,7 @@ import { WorkerModule } from './worker/worker.module';
 
 @Module({
   imports: [
-    JwtModule.register({ global: true, secret: process.env.JWT_SECRET }),
+    JwtModule.register({ global: true, secret: process.env.JWT_SECRET ?? 'change-me' }),
     AuthModule,
     UsersModule,
     LeadsModule,

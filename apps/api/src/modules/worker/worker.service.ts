@@ -6,13 +6,13 @@ type JobName = 'trial-dminus5' | 'trial-end';
 
 @Injectable()
 export class WorkerService implements OnModuleInit {
-  private queue!: Queue;
-  private worker!: Worker;
+  private queue!: Queue<any, any, JobName>;
+  private worker!: Worker<any, any, JobName>;
 
   onModuleInit() {
     const connection = new IORedis(process.env.REDIS_URL || 'redis://localhost:6379');
-    this.queue = new Queue('noah', { connection });
-    this.worker = new Worker(
+    this.queue = new Queue<any, any, JobName>('noah', { connection });
+    this.worker = new Worker<any, any, JobName>(
       'noah',
       async (job: Job<any, any, JobName>) => {
         if (job.name === 'trial-dminus5') {
