@@ -1,6 +1,6 @@
 FROM node:20-alpine AS build
 WORKDIR /app
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl1.1-compat || apk add --no-cache openssl
 COPY apps/api/package*.json ./apps/api/
 WORKDIR /app/apps/api
 RUN npm install --no-audit --no-fund && npm i -D @types/bcryptjs --no-audit --no-fund
@@ -15,6 +15,7 @@ FROM node:20-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 RUN apk add --no-cache postgresql-client
+RUN apk add --no-cache openssl1.1-compat || apk add --no-cache openssl
 COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/prisma ./prisma
