@@ -1,0 +1,19 @@
+# Ignore local environment files that must not be baked into Docker images
+prisma/.env
+apps/api/prisma/.env
+
+# Speed up Docker builds by ignoring dependencies and build outputs
+node_modules
+apps/api/node_modules
+apps/api/dist
+apps/api/.turbo
+apps/api/.next
+
+# Git metadata
+.git
+.gitignore
+
+# Local environment files
+.env
+.env.*
+

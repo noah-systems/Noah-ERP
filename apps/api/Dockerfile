@@ -12,7 +12,7 @@ RUN npm ci --no-audit --no-fund
 # Copy project sources and Prisma schema
 COPY apps/api /app/apps/api
 
-RUN npx prisma generate --schema prisma/schema.prisma
+RUN rm -f prisma/.env && npx prisma generate --schema prisma/schema.prisma
 
 # Build TypeScript sources
 RUN npm run build
