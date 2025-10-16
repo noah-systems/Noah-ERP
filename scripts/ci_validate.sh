@@ -108,10 +108,13 @@ success "ACL validada para SELLER (403 em /api/users)."
 info "8/9 Smoke tests HTTPS"
 curl -fsSI "$FRONT_DOMAIN" | head -n 1
 FRONT_HTML=$(curl -fsS "$FRONT_DOMAIN")
-printf '%s' "$FRONT_HTML" | grep -q "noah_omni/noahomni-logo" || {
-  error "HTML do front não referencia os assets de branding."; exit 1;
+printf '%s' "$FRONT_HTML" | grep -q "/brand/favicon" || {
+  error "HTML do front não referencia os assets locais em /brand."; exit 1;
 }
-success "Front acessível via HTTPS."
+if printf '%s' "$FRONT_HTML" | grep -qi "s3\.bragi"; then
+  error "Encontrada referência a S3 no HTML do front."; exit 1;
+fi
+success "Front acessível via HTTPS e usando assets locais."
 
 info "Verificando CORS"
 CORS_HEADERS=$(curl -sS -o /dev/null -D - -X OPTIONS "$API_BASE/auth/login" \
