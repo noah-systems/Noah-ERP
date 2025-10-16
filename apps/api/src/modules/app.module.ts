@@ -10,9 +10,15 @@ import { PricingModule } from './pricing/pricing.module';
 import { PartnerModule } from './partner/partner.module';
 import { WorkerModule } from './worker/worker.module';
 
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required for the API to start.');
+}
+
 @Module({
   imports: [
-    JwtModule.register({ global: true, secret: process.env.JWT_SECRET ?? 'change-me' }),
+    JwtModule.register({ global: true, secret: JWT_SECRET }),
     AuthModule,
     UsersModule,
     LeadsModule,

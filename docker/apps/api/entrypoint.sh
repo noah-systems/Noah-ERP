@@ -87,6 +87,8 @@ if [ "${PRISMA_MIGRATE_ON_START:-0}" = "1" ]; then
   npx prisma generate --schema ./prisma/schema.prisma
   run_with_retry "Prisma migrate deploy" "$MAX_ATTEMPTS" "$SLEEP_SECONDS" \
     npx prisma migrate deploy --schema ./prisma/schema.prisma
+  echo "Running Prisma seed..."
+  npx prisma db seed --schema ./prisma/schema.prisma
 else
   echo "Skipping Prisma migrate deploy; PRISMA_MIGRATE_ON_START=${PRISMA_MIGRATE_ON_START:-0}."
 fi

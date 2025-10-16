@@ -16,7 +16,7 @@ Solicitar a criação de um monorepo com a seguinte estrutura e tecnologias:
 - `apps/web`: Next.js 14, TypeScript, Tailwind CSS e shadcn/ui.
 - `apps/api`: NestJS, Prisma, PostgreSQL, Zod/DTO e JWT.
 - `apps/worker`: BullMQ/Redis para jobs Trial/D−5.
-- `prisma/`: schema, migrations e seed.
+- `apps/api/prisma/`: schema, migrations e seed.
 - `docker/compose.dev.yml` e `docker/compose.prod.yml`: serviços de db, redis, api, web, worker e proxy HTTPS.
 - `.github/workflows/ci.yml`: pipeline de build e testes.
 
@@ -39,9 +39,9 @@ Seeds obrigatórios:
 - Etapas de Oportunidade: `Negociação → Apresentação → Proposta → Trial → Vencimento Trial → Ganha → Perdida*`.
 - Pricing: Noah e White Label com tiers WL `1–19`, `20–39`, `40–79`, `80+`.
 - Usuário master (`ADMIN_NOAH`) criado via `apps/api/prisma/seed.js` usando variáveis de ambiente:
-  - `MASTER_NAME=Admin Noah`
-  - `MASTER_EMAIL=admin@noahomni.com.br`
-  - `MASTER_PASSWORD=TroqueEssaSenha`
+  - `ADMIN_NAME=Admin Noah`
+  - `ADMIN_EMAIL=admin@noahomni.com.br`
+  - `ADMIN_PASSWORD=<senha forte>`
 
 Endpoints a serem expostos:
 

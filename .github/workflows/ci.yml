@@ -48,10 +48,10 @@ jobs:
   web:
     runs-on: ubuntu-latest
     env:
-      VITE_NOAH_LOGO_LIGHT: https://s3.bragimulticanal.com.br/white-label/noah_omni/noahomni-logo.png
-      VITE_NOAH_LOGO_DARK: https://s3.bragimulticanal.com.br/white-label/noah_omni/NOAH%20OMNI%20sem-fundo.png
-      VITE_NOAH_FAVICON: https://s3.bragimulticanal.com.br/white-label/noah_omni/favicon%20(2).ico
-      VITE_NOAH_APPLE_TOUCH: https://s3.bragimulticanal.com.br/white-label/noah_omni/%C3%8Dcone%20Noah%20Omni.png
+      VITE_NOAH_LOGO_LIGHT: /brand/logo-light.png
+      VITE_NOAH_LOGO_DARK: /brand/logo-dark.png
+      VITE_NOAH_FAVICON: /brand/favicon.ico
+      VITE_NOAH_APPLE_TOUCH: /brand/apple-touch-icon.png
       VITE_NOAH_THEME_COLOR: "#A8E60F"
     steps:
       - uses: actions/checkout@v4
