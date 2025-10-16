@@ -24,12 +24,12 @@ services:
       PORT: 3000
       DATABASE_URL: postgres://noah:noah@db:5432/noah
       PRISMA_MIGRATE_ON_START: 1
-      JWT_SECRET: supersecret-change-me
+      JWT_SECRET: ${JWT_SECRET:-}
       REDIS_URL: redis://redis:6379
-      CORS_ORIGINS: https://erp.noahomni.com.br
-      MASTER_NAME: ${MASTER_NAME:-Admin Noah}
-      MASTER_EMAIL: ${MASTER_EMAIL:-admin@noahomni.com.br}
-      MASTER_PASSWORD: ${MASTER_PASSWORD:-TroqueEstaSenha}
+      CORS_ORIGIN: https://erp.noahomni.com.br,https://erpapi.noahomni.com.br
+      ADMIN_NAME: ${ADMIN_NAME:-Admin Noah}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@noahomni.com.br}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-D2W3£Qx!0Du#}
     depends_on: [db, redis]
     networks: [noah]
 
@@ -48,8 +48,8 @@ services:
       - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - letsencrypt:/etc/letsencrypt
-      - certbot-www:/var/www/certbot
+      - letsencrypt:/etc/letsencrypt:ro
+      - certbot-www:/var/www/certbot:ro
     networks: [noah]
 
   certbot:

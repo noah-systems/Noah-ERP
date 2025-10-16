@@ -10,13 +10,9 @@ WORKDIR /app/apps/api
 RUN npm ci --no-audit --no-fund
 
 # Copy project sources and Prisma schema
-WORKDIR /app
-COPY prisma ./prisma
-COPY apps/api ./apps/api
+COPY apps/api /app/apps/api
 
-WORKDIR /app/apps/api
-RUN mkdir -p prisma && cp /app/prisma/schema.prisma /app/apps/api/prisma/schema.prisma
-RUN npx prisma generate --schema /app/apps/api/prisma/schema.prisma
+RUN npx prisma generate --schema prisma/schema.prisma
 
 # Build TypeScript sources
 RUN npm run build

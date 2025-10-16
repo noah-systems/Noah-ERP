@@ -1,6 +1,15 @@
 # Noah brand assets
 
-Coloque aqui os arquivos de marca (logo-light.png, logo-dark.png, favicon.png, apple-touch.png, login-bg.jpg) antes de fazer o deploy.
-Eles são referenciados pelas variáveis `VITE_NOAH_LOGO_LIGHT`, `VITE_NOAH_LOGO_DARK`, `VITE_NOAH_FAVICON`, `VITE_NOAH_APPLE_TOUCH` e `VITE_NOAH_LOGIN_BG` do front-end.
+Os arquivos desta pasta são servidos diretamente pelo build estático do front (`/brand/*`).
+Eles devem ser mantidos **locais** e versionados no repositório para garantir que o deploy
+não dependa de S3 ou de qualquer domínio externo.
 
-Eles não são versionados neste repositório para evitar problemas com arquivos binários grandes. Faça o upload manual via GitHub quando necessário.
+Arquivos esperados:
+
+- `logo-light.png`
+- `logo-dark.png`
+- `favicon.png`
+- `apple-touch.png`
+- `login-bg.jpg`
+
+Você pode substituir por versões oficiais seguindo o mesmo nome/estrutura.
