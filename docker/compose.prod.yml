@@ -23,9 +23,13 @@ services:
       NODE_ENV: production
       PORT: 3000
       DATABASE_URL: postgres://noah:noah@db:5432/noah
-      PRISMA_MIGRATE_ON_START: 0
+      PRISMA_MIGRATE_ON_START: 1
       JWT_SECRET: supersecret-change-me
       REDIS_URL: redis://redis:6379
+      CORS_ORIGINS: https://erp.noahomni.com.br
+      MASTER_NAME: ${MASTER_NAME:-Admin Noah}
+      MASTER_EMAIL: ${MASTER_EMAIL:-admin@noahomni.com.br}
+      MASTER_PASSWORD: ${MASTER_PASSWORD:-TroqueEstaSenha}
     depends_on: [db, redis]
     networks: [noah]
 

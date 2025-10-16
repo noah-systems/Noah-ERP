@@ -55,14 +55,17 @@ $COMPOSE logs --no-log-prefix --tail=80 api || true
 # 8b) fallback de migrations caso o entrypoint não rode
 if ! $COMPOSE logs api | grep -qi "migrate"; then
   $COMPOSE exec api \
-    node node_modules/.bin/prisma migrate deploy --schema prisma/schema.prisma
+    npx prisma migrate deploy --schema prisma/schema.prisma
 fi
 
 # 9) garantir admin padrão (idempotente)
 ADMIN_EMAIL="${ADMIN_EMAIL:-admin@noahomni.com.br}"
 ADMIN_PASS="${ADMIN_PASS:-Admin@2024}"
 
-$COMPOSE exec -T api node - <<'JS'
+$COMPOSE exec -T \
+  -e ADMIN_EMAIL="$ADMIN_EMAIL" \
+  -e ADMIN_PASS="$ADMIN_PASS" \
+  api node - <<'JS'
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 (async () => {

@@ -60,5 +60,8 @@
     "ci:api": "npm run --prefix apps/api ci:deps && npm run --prefix apps/api ci:prisma:validate && npm run --prefix apps/api ci:prisma:generate && npm run --prefix apps/api ci:build",
     "ci:web": "npm ci && npm run build",
     "ci:all": "npm run ci:api && npm run ci:web"
+  },
+  "prisma": {
+    "seed": "node apps/api/prisma/seed.js"
   }
 }

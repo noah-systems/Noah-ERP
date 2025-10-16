@@ -1,98 +1,131 @@
 # Noah ERP Mockups
 
-This is a code bundle for Noah ERP Mockups. The original project is available at https://www.figma.com/design/7bPowTaiTuZjAda0gbT0aL/Noah-ERP-Mockups.
+Este repositório contém a base de código Vite + NestJS + Prisma utilizada para validar o Noah ERP de ponta a ponta (login, ACL, cadastros e integrações). O layout deriva do [Figma oficial](https://www.figma.com/design/7bPowTaiTuZjAda0gbT0aL/Noah-ERP-Mockups) e foi adaptado para funcionar com a API real.
 
-## Running the code
+## Desenvolvimento local
 
-Run `npm i` to install the dependencies.
+1. Instale as dependências com `npm install` na raiz do projeto.
+2. Inicie a aplicação web com `npm run dev`.
+3. Para levantar o Postgres + Redis locais utilize `docker compose -f docker/compose.dev.yml up -d db redis`.
+4. A URL do banco consumida pelo Prisma local fica em `prisma/.env` (`postgres://noah:noah@localhost:5432/noah`).
+5. Ao executar os comandos Prisma dentro do contêiner da API, as variáveis `DATABASE_URL` e `REDIS_URL` apontam para `db` e `redis` respectivamente, evitando erros `P1001` por hostname incorreto.
 
-Run `npm run dev` to start the development server.
+### Scripts auxiliares
 
-### Executando Prisma e o banco de dados localmente
+- `scripts/prisma_migrate_deploy.sh`: roda `prisma validate`, `prisma generate` e `prisma migrate deploy` aguardando o banco ficar disponível.
+- `scripts/update_and_rebuild.sh`: reproduz o fluxo de atualização utilizado no servidor (parar serviços, rebuild, migrations e seed idempotente do admin).
 
-- Inicie os serviços de infraestrutura com `docker compose -f docker/compose.dev.yml up -d db redis` para expor o PostgreSQL em `localhost:5432`.
-- As credenciais padrão criam o banco `noah` com usuário e senha `noah`.
-- Os comandos Prisma executados fora dos contêineres leem a URL de conexão de `prisma/.env`, que já aponta para `postgres://noah:noah@localhost:5432/noah`.
-- Ao usar o `docker/compose.dev.yml`, o serviço `api` tem as variáveis `DATABASE_URL` e `REDIS_URL` sobrescritas para utilizar os hosts `db` e `redis` dentro da rede Docker, evitando o erro `P1001: Can't reach database server at db:5432` quando os comandos são executados na máquina local.
+## Instalação em produção
 
-## Manutenção do ambiente com Docker
+As instruções abaixo assumem um host limpo com Docker + Docker Compose instalados e DNS já apontando para o servidor.
 
-Para reproduzir rapidamente a sequência de atualização utilizada em produção, execute o script `scripts/update_and_rebuild.sh`. Ele realiza o stash das alterações locais, atualiza a branch via `git pull --rebase` e reconstrói os serviços Docker definidos em `docker/compose.prod.yml`, garantindo também que as migrations Prisma e o usuário administrador padrão sejam aplicados.
+### 1. Clonar o projeto e preparar variáveis
 
-### Aplicando migrations Prisma manualmente
+```bash
+sudo mkdir -p /opt/noah-erp
+cd /opt/noah-erp
+git clone https://github.com/noah-systems/Noah-ERP.git
+cd Noah-ERP
 
-Caso precise rodar apenas as validações e migrations do Prisma em um ambiente semelhante ao de produção, utilize o script `scripts/prisma_migrate_deploy.sh`. Ele inicializa os serviços do PostgreSQL e do Redis, aguarda o banco de dados aceitar conexões via `pg_isready` diretamente no contêiner do banco e executa `prisma validate`, `prisma generate` e `prisma migrate deploy` na sequência. Isso evita falhas por tentar acessar o banco antes dele estar pronto para uso.
+# Opcional: definir secrets em /etc/environment ou exportar na sessão atual
+export MASTER_PASSWORD="<senha-admin-noah>"
+export MASTER_EMAIL="admin@noahomni.com.br"
+export MASTER_NAME="Admin Noah"
+export ADMIN_PASS="<senha-admin-login>"
+export ADMIN_EMAIL="admin@noahomni.com.br"
+export CORS_ORIGINS="https://erp.noahomni.com.br"
+```
 
-## HTTPS (erp.noahomni.com.br e erpapi.noahomni.com.br)
+Copie o `.env.example` da raiz para `.env` e ajuste URLs/ativos de branding do front:
 
-1. Construa e suba todos os serviços, incluindo o loop de renovação automática do Certbot:
+```bash
+cp .env.example .env
+vim .env  # configure VITE_API_BASE e logos (light/dark, favicon, apple-touch)
+```
 
-   ```bash
-   docker compose -f docker/compose.prod.yml up -d --build
-   ```
+### 2. Build e subida inicial dos contêineres
 
-2. Solicite os certificados para os dois domínios usando o webroot compartilhado com o Nginx:
+```bash
+docker compose -f docker/compose.prod.yml build
+docker compose -f docker/compose.prod.yml up -d db redis
 
-   ```bash
-   docker compose -f docker/compose.prod.yml run --rm certbot \
-     certonly --webroot -w /var/www/certbot \
-     -d erp.noahomni.com.br -d erpapi.noahomni.com.br \
-     --email admin@noahomni.com.br --agree-tos --no-eff-email
-   ```
+# aguarde o Postgres responder
+docker compose -f docker/compose.prod.yml exec -T db pg_isready -U noah
 
-3. Valide e recarregue a configuração do Nginx para carregar os certificados recém-criados:
+# subir API (executa prisma migrate deploy automaticamente) e web
+docker compose -f docker/compose.prod.yml up -d api web proxy certbot
 
-   ```bash
-   docker compose -f docker/compose.prod.yml exec proxy nginx -t
-   docker compose -f docker/compose.prod.yml exec proxy nginx -s reload
-   ```
+# garantir que o seed padrão criou/atualizou o admin
+docker compose -f docker/compose.prod.yml exec api npx prisma db seed
+```
 
-4. Teste rapidamente os hosts protegidos por TLS:
+A imagem da API instala `openssl` + `openssl1.1-compat`, aplicando migrations via `PRISMA_MIGRATE_ON_START=1` antes de expor a porta 3000.
 
-   ```bash
-   curl -I https://erp.noahomni.com.br
-   curl -sS https://erpapi.noahomni.com.br/api/worker/health
-   ```
+### 3. Emitir certificados TLS (HTTPS)
 
-O serviço `certbot` executa `certbot renew` a cada 12 horas. Quando a renovação ocorrer, os certificados atualizados serão carregados automaticamente pelas próximas conexões do Nginx, mas você pode executar `docker compose -f docker/compose.prod.yml exec proxy nginx -s reload` caso deseje forçar o reload imediato.
+```bash
+docker compose -f docker/compose.prod.yml run --rm certbot \
+  certonly --webroot -w /var/www/certbot \
+  -d erp.noahomni.com.br -d erpapi.noahomni.com.br \
+  --email admin@noahomni.com.br --agree-tos --no-eff-email
+
+docker compose -f docker/compose.prod.yml exec proxy nginx -t
+docker compose -f docker/compose.prod.yml exec proxy nginx -s reload
+```
+
+O serviço `certbot` do compose renova automaticamente os certificados a cada 12 horas. Sempre que quiser forçar o reload execute `docker compose -f docker/compose.prod.yml exec proxy nginx -s reload`.
+
+### 4. Atualizações recorrentes
+
+No servidor de produção, utilize o script abaixo (ele executa stash, pull --rebase, rebuild, migrations, seed idempotente e smoke tests):
+
+```bash
+chmod +x scripts/update_and_rebuild.sh
+./scripts/update_and_rebuild.sh
+```
+
+O script lê `ADMIN_EMAIL` e `ADMIN_PASS` da sessão para verificar o login via cURL após subir os contêineres.
+
+### 5. Checklist de testes
+
+Após cada deploy valide manualmente:
+
+```bash
+curl -sS -H "Host: erpapi.noahomni.com.br" http://127.0.0.1/api/worker/health
+curl -sS https://erpapi.noahomni.com.br/api/worker/health
+curl -sS -X POST https://erpapi.noahomni.com.br/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@noahomni.com.br","password":"<ADMIN_PASSWORD>"}'
+
+# Front-end
+open https://erp.noahomni.com.br/login  # deve carregar login com branding correto
+```
+
+Na interface web garanta que:
+
+- Após autenticação o usuário é redirecionado para o Dashboard real.
+- As ações aparecem apenas quando o papel possui permissão (`<Can roles={...}>`).
+- Logos, favicon e ícone apple-touch usam os valores de `VITE_NOAH_*`.
+
+## HTTPS e reverse proxy
+
+O `docker/nginx.conf` expõe:
+
+- `erp.noahomni.com.br` → container `web:80` (SPA, `try_files $uri /index.html`).
+- `erpapi.noahomni.com.br` → container `api:3000` (domínio dedicado à API com prefixo `/`).
+- Redirecionamento automático de HTTP (80) para HTTPS (443) exceto para o desafio ACME (`/.well-known/acme-challenge/`).
+
+O comando `docker compose -f docker/compose.prod.yml exec proxy nginx -t` precisa retornar sucesso antes de qualquer reload ou deploy.
 
 ## Front end de produção
 
-O projeto agora inclui uma tela mínima de autenticação em Vite que conversa diretamente com a API NestJS (`/api/auth/login` e `/api/auth/me`). O objetivo é validar o fluxo completo (login + sessão) enquanto o layout definitivo do Figma é implementado por etapas.
+O build Vite lê `VITE_API_BASE` (obrigatoriamente com `/api` no final) e os assets de branding definidos via `VITE_NOAH_*`. Adicione os arquivos finais em `public/brand/` antes de gerar o build para produção (`npm run build`).
 
-### Variáveis de ambiente do front
+## API / Prisma
 
-Copie o arquivo `.env.example` para `.env` na raiz do front (mesma pasta deste README) e ajuste os valores de branding/URL da API conforme necessário:
+- `npm run --prefix apps/api build` valida decorators/Typescript.
+- `docker compose -f docker/compose.prod.yml exec api npx prisma validate`
+- `docker compose -f docker/compose.prod.yml exec api npx prisma generate`
+- `docker compose -f docker/compose.prod.yml exec api npx prisma migrate deploy`
 
-```env
-VITE_API_BASE=https://erpapi.noahomni.com.br/api
-VITE_LOGO_LIGHT=/brand/logo-light.png
-VITE_LOGO_DARK=/brand/logo-dark.png
-VITE_FAVICON=/brand/favicon.png
-VITE_APPLE_TOUCH=/brand/apple-touch.png
-VITE_THEME_COLOR=#A8E60F
-VITE_LOGIN_BG=/brand/login-bg.jpg
-```
-
-A pasta `public/brand/` já está versionada apenas com um README de instruções.
-Adicione manualmente os arquivos de imagem (logos, favicon, apple-touch, login background)
-antes de fazer o deploy ou gerar o build final.
-
-A variável `VITE_API_BASE` aceita tanto a raiz `/api` (quando o front é servido pelo mesmo host) quanto a URL completa com domínio. Se você apontar apenas para `https://erpapi.noahomni.com.br`, o cliente automaticamente prefixará as rotas com `/api`.
-
-### Publicando o front definitivo (bundle do Figma)
-
-Se você já possui o bundle final (build do front), coloque os arquivos em `webapp/` e execute:
-
-```bash
-docker compose -f docker/compose.prod.yml build web proxy
-docker compose -f docker/compose.prod.yml up -d web proxy
-```
-
-Caso o diretório `webapp/` não exista ou esteja vazio, o Dockerfile atual continuará gerando e servindo a tela mínima construída com Vite.
-
-### Próximos passos sugeridos
-
-- Após o login, implemente as rotas “/leads”, “/opps” e “/pricing” consumindo as rotas já mapeadas no NestJS.
-- Componentize o layout (sidebar/topbar) e aplique o design final do Figma.
-- Para suportar múltiplas marcas, carregue dinamicamente os logos e cores utilizando as variáveis expostas no arquivo `.env`.
+Todos os comandos acima são executados automaticamente pelo `update_and_rebuild.sh`, mas estão listados aqui para auditoria manual.
