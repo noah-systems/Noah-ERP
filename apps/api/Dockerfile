@@ -2,7 +2,7 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 # Install runtime libraries required by Prisma's engines during the build.
-RUN apk add --no-cache openssl
+RUN apk add --no-cache openssl openssl1.1-compat
 
 # Install dependencies for the API workspace
 COPY apps/api/package*.json ./apps/api/
@@ -28,10 +28,12 @@ ENV NODE_ENV=production
 ENV PRISMA_MIGRATE_ON_START=0
 
 # Required tools for the entrypoint checks and Prisma engine
-RUN apk add --no-cache postgresql-client openssl
+RUN apk add --no-cache postgresql-client openssl openssl1.1-compat
 
 # Copy only the runtime artifacts
 COPY --from=build /app/apps/api/node_modules ./node_modules
+COPY --from=build /app/apps/api/package.json ./
+COPY --from=build /app/apps/api/package-lock.json ./
 COPY --from=build /app/apps/api/prisma ./prisma
 COPY --from=build /app/apps/api/dist ./dist
 

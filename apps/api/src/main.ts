@@ -15,9 +15,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const origins = parseCorsEnv();
+  const defaultOrigins = ['https://erp.noahomni.com.br'];
 
   app.setGlobalPrefix('api');
-  app.enableCors({ origin: origins.length ? origins : true, credentials: true });
+  app.enableCors({ origin: origins.length ? origins : defaultOrigins, credentials: true });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   const port = Number(process.env.PORT || 3000);

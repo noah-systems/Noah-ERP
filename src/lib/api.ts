@@ -1,4 +1,17 @@
-export const API_BASE = import.meta.env.VITE_API_BASE ?? '/api';
+const resolveApiBase = () => {
+  const viteBase =
+    (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_BASE) ||
+    (typeof process !== 'undefined' && process.env?.VITE_API_BASE) ||
+    '';
+
+  const normalized = viteBase.trim().replace(/\/?$/, '');
+  if (!normalized) {
+    throw new Error('VITE_API_BASE is not configured.');
+  }
+  return normalized;
+};
+
+export const API_BASE = resolveApiBase();
 
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('token');
@@ -8,7 +21,8 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     ...(init.headers || {}),
   } as Record<string, string>;
 
-  const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
+  const endpoint = path.startsWith('/') ? path : `/${path}`;
+  const res = await fetch(`${API_BASE}${endpoint}`, { ...init, headers });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(text || `${res.status} ${res.statusText}`);
