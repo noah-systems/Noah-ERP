@@ -42,7 +42,7 @@ mesmo diretório e são aplicadas automaticamente quando o container da API inic
 | `REDIS_URL`         | `redis://redis:6379`                            | URL do Redis utilizado pelos workers BullMQ. |
 | `JWT_SECRET`        | _obrigatória_                                   | Chave utilizada para assinar os JWTs. Gere um valor forte. |
 | `PORT`              | `3000`                                          | Porta exposta pela API. |
-| `CORS_ORIGIN`       | `https://erp.noahomni.com.br,https://erpapi.noahomni.com.br` | Lista (separada por vírgula) de origens liberadas via CORS. |
+| `CORS_ORIGINS`      | `https://erp.noahomni.com.br,https://erpapi.noahomni.com.br` | Lista (separada por vírgula) de origens liberadas via CORS. |
 | `ADMIN_NAME`        | `Admin Noah`                                    | Nome exibido para o usuário administrador padrão. |
 | `ADMIN_EMAIL`       | `admin@noahomni.com.br`                         | E-mail do administrador padrão criado no seed. |
 | `ADMIN_PASSWORD`    | `D2W3£Qx!0Du#`                                  | Senha do administrador padrão criada/atualizada no seed. |
@@ -62,11 +62,13 @@ VITE_API_BASE=https://erpapi.noahomni.com.br/api
 # Overrides opcionais (sempre caminhos locais). Se omitir, o front usa os fallbacks em /brand/*
 VITE_NOAH_LOGO_LIGHT=/brand/logo-light.png
 VITE_NOAH_LOGO_DARK=/brand/logo-dark.png
-VITE_NOAH_FAVICON=/brand/favicon.png
-VITE_NOAH_APPLE_TOUCH=/brand/apple-touch.png
+VITE_NOAH_FAVICON=/brand/favicon.ico
+VITE_NOAH_APPLE_TOUCH=/brand/apple-touch-icon.png
 VITE_NOAH_THEME_COLOR=#A8E60F
 # Opcional: imagem customizada para o fundo da tela de login
-VITE_LOGIN_BG=/brand/login-bg.jpg
+VITE_LOGIN_BG=/brand/login-eclipse-desktop.png
+VITE_LOGIN_BG_2X=/brand/login-eclipse@2x.png
+VITE_LOGIN_BG_PORTRAIT=/brand/login-eclipse-mobile.png
 ```
 
 O front aplica essas variáveis por meio de `src/branding.ts`, garantindo que qualquer URL
@@ -82,43 +84,69 @@ externa seja ignorada caso não pertença ao mesmo host publicado pelo Nginx.
 
 ## Fluxo de deploy em produção
 
-1. Clone o repositório para `/opt/noah-erp/Noah-ERP` (ou diretório de sua preferência).
-2. Crie/edite `.env` e `.env.production` conforme exemplos acima para o front.
-3. Exporte as variáveis da API antes de subir os contêineres:
+O passo a passo completo (pré-checagens, subida da stack, emissão de certificados, critérios
+de aceite e runbook de upgrade) está documentado em
+[`docs/production-runbook.md`](docs/production-runbook.md). Leia e siga cada item na ordem.
+
+Resumo das variáveis mínimas antes de iniciar o deploy:
 
 ```bash
 export DATABASE_URL="postgres://noah:noah@db:5432/noah"
 export REDIS_URL="redis://redis:6379"
-export JWT_SECRET="$(openssl rand -hex 32)"
+export JWT_SECRET="$(openssl rand -hex 48)"
+export CORS_ORIGINS="https://erp.noahomni.com.br,https://erpapi.noahomni.com.br"
 export ADMIN_NAME="Admin Noah"
 export ADMIN_EMAIL="admin@noahomni.com.br"
-export ADMIN_PASSWORD="D2W3£Qx!0Du#"
+export ADMIN_PASSWORD="D2W3£Qx!0Du#"   # ajuste após o primeiro login
+export PRISMA_MIGRATE_ON_START=1
 ```
 
-4. Build e subida inicial:
+Para automatizar todas as etapas (checar Docker/Compose, validar DNS, construir imagens,
+subir contêineres, emitir certificados via webroot e executar smoke tests), utilize o script
+`scripts/provision_tls.sh`. Execute-o como root/sudo, definindo as variáveis de ambiente
+necessárias (domínios, credenciais e IP esperado quando aplicável):
 
 ```bash
-docker compose -f docker/compose.prod.yml up -d --build db redis api web proxy certbot
+sudo DOMAIN_WEB="erp.noahomni.com.br" \
+DOMAIN_API="erpapi.noahomni.com.br" \
+ADMIN_EMAIL="admin@noahomni.com.br" \
+ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+JWT_SECRET="$JWT_SECRET" \
+./scripts/provision_tls.sh
 ```
 
-O entrypoint da API aguarda o Postgres ficar pronto, gera o cliente Prisma, aplica as
-migrations (`prisma migrate deploy`) e roda o seed idempotente (`prisma db seed`). O usuário
-`admin@noahomni.com.br` sempre terá a senha definida em `ADMIN_PASSWORD`.
+O script interrompe a execução se qualquer pré-requisito falhar e imprime as ações corretivas.
 
-5. Emissão inicial dos certificados Let's Encrypt (webroot compartilhado com o Nginx):
+## Deploy em Rocky Linux (script oficial)
 
-```bash
-docker compose -f docker/compose.prod.yml run --rm certbot \
-  certonly --webroot -w /var/www/certbot \
-  -d erp.noahomni.com.br -d erpapi.noahomni.com.br \
-  --email admin@noahomni.com.br --agree-tos --no-eff-email
+> Requisitos: Rocky Linux 9/10 com acesso root, DNS dos domínios apontando para o servidor e portas 80/443 livres.
 
-docker compose -f docker/compose.prod.yml exec proxy nginx -t
-docker compose -f docker/compose.prod.yml exec proxy nginx -s reload
-```
+1. Faça o download/clonagem do repositório no servidor (ou deixe o script fazer isso na primeira execução).
+2. Edite as variáveis no topo de `scripts/noah-erp_rocky.sh`:
+   - `ERP_WEB_DOMAIN`, `ERP_API_DOMAIN`, `CERTBOT_EMAIL`
+   - `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`
+   - (Opcional) Ajustes de banco/redis/SELinux
+3. Execute com root:
+   - **Primeira instalação:** `sudo bash scripts/noah-erp_rocky.sh setup`
+   - **Atualizar e re-subir:** `sudo bash scripts/noah-erp_rocky.sh upgrade`
+   - **Checar saúde:** `sudo bash scripts/noah-erp_rocky.sh health`
 
-O serviço `certbot` roda a cada 12h `certbot renew --webroot` para manter os certificados
-válidos. Após a renovação, execute `docker compose -f docker/compose.prod.yml exec proxy nginx -s reload`.
+### O que o script faz
+- Instala Docker Engine + plugin `docker compose` (se necessário).
+- Abre portas 80/443 no firewalld e aplica contextos SELinux.
+- Prepara `.env` com variáveis da API/Proxy e `.env` do Front (`VITE_API_BASE`).
+- Builda imagens e sobe `db`, `redis`, `api`, `web`, `proxy`.
+- Emite certificados TLS com Certbot (modo webroot) e aplica reload no Nginx.
+- Executa health checks:
+  - `https://<ERP_API_DOMAIN>/api/worker/health` → sucesso (2xx)
+  - `https://<ERP_WEB_DOMAIN>/` → 200/301/302
+
+### Critérios de aceite (100% operante)
+1. Containers `db`, `redis`, `api`, `web`, `proxy`, `certbot` em execução e saudáveis.
+2. HTTPS ativo nos dois domínios com certificados válidos.
+3. API responde 2xx em `/api/worker/health`.
+4. Banco migrado e usuário admin criado/atualizado (variáveis `ADMIN_*`).
+5. Front apontando para a API correta (`VITE_API_BASE`).
 
 ## Checklist pós-deploy
 

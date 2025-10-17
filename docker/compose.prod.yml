@@ -22,11 +22,12 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: postgres://noah:noah@db:5432/noah
-      PRISMA_MIGRATE_ON_START: 1
-      JWT_SECRET: ${JWT_SECRET:-}
-      REDIS_URL: redis://redis:6379
-      CORS_ORIGIN: https://erp.noahomni.com.br,https://erpapi.noahomni.com.br
+      DATABASE_URL: ${DATABASE_URL:-postgres://noah:noah@db:5432/noah}
+      PRISMA_MIGRATE_ON_START: ${PRISMA_MIGRATE_ON_START:-1}
+      JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET antes de subir a API}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      CORS_ORIGIN: ${CORS_ORIGINS:-https://erp.noahomni.com.br,https://erpapi.noahomni.com.br}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://erp.noahomni.com.br,https://erpapi.noahomni.com.br}
       ADMIN_NAME: ${ADMIN_NAME:-Admin Noah}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@noahomni.com.br}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-D2W3£Qx!0Du#}
@@ -47,7 +48,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - letsencrypt:/etc/letsencrypt:ro
       - certbot-www:/var/www/certbot:ro
     networks: [noah]
