@@ -81,38 +81,44 @@ add("src/pages/login.css exists", ex(P("src","pages","login.css")), "Create/adju
 const prismaEnvPath = P("api", "prisma", ".env");
 add("api/prisma/.env absent", !ex(prismaEnvPath), "Remove duplicate env: rm -f api/prisma/.env");
 
-const runtimeEnvCandidates = ["/etc/noah-erp/api.env", P("api", ".env")];
-let runtimeEnvPath = "";
-let runtimeEnv = "";
-for (const candidate of runtimeEnvCandidates) {
-  if (ex(candidate)) {
-    runtimeEnvPath = candidate;
-    runtimeEnv = r(candidate);
-    break;
-  }
-}
-if (!runtimeEnvPath) {
-  add("Runtime env present", false, "Expected /etc/noah-erp/api.env (run installer) or api/.env symlink");
+const runtimeEnvFile = "/etc/noah-erp/api.env";
+const runtimeEnvExists = ex(runtimeEnvFile);
+const runtimeEnvContent = runtimeEnvExists ? r(runtimeEnvFile) : "";
+
+if (!runtimeEnvExists) {
+  add(
+    "Runtime env present",
+    false,
+    "Execute scripts/install-noah-baremetal.sh (cria /etc/noah-erp/api.env com DATABASE_URL do usuário noah)"
+  );
 } else {
-  const dbMatch = runtimeEnv.match(/^DATABASE_URL\s*=\s*(.+)$/m);
+  const dbMatch = runtimeEnvContent.match(/^DATABASE_URL\s*=\s*(.+)$/m);
   const dbUrl = dbMatch ? dbMatch[1].trim() : "";
-  let dbOk = true;
-  let dbDetails = "";
-  if (!dbMatch) {
-    dbOk = false;
-    dbDetails = `${runtimeEnvPath}: define DATABASE_URL`;
-  } else if (/postgres@/i.test(dbUrl) || /user\s*=\s*postgres/i.test(dbUrl)) {
-    dbOk = false;
-    dbDetails = `${runtimeEnvPath}: DATABASE_URL must use role 'noah'`;
-  } else if (!(/\/\/[^@]*noah[:@]/i.test(dbUrl) || /[?&]user=noah\b/i.test(dbUrl))) {
-    dbOk = false;
-    dbDetails = `${runtimeEnvPath}: DATABASE_URL missing user 'noah'`;
-  }
-  add("DATABASE_URL bound to role 'noah'", dbOk, dbDetails);
+  const hasDb = !!dbUrl;
+  const usesNoahUser = /postgresql:\/\/noah@/i.test(dbUrl);
+  const explicitlyWrongUser = /postgresql:\/\/[^@]*postgres@/i.test(dbUrl);
+
+  add("/etc/noah-erp/api.env has DATABASE_URL", hasDb, `${runtimeEnvFile}: define DATABASE_URL`);
+  add(
+    "DATABASE_URL uses role 'noah'",
+    hasDb && usesNoahUser && !explicitlyWrongUser,
+    `${runtimeEnvFile}: must be postgresql://noah@… (never postgres@)`
+  );
+
+  const hasJwtPlaceholder = /JWT_SECRET=__FILL_ME__/m.test(runtimeEnvContent);
+  add(
+    "JWT_SECRET hardened (não deixe __FILL_ME__)",
+    !hasJwtPlaceholder,
+    `${runtimeEnvFile}: execute o instalador novamente ou rode sed -i "s|JWT_SECRET=__FILL_ME__|JWT_SECRET=$(openssl rand -hex 32)|"`
+  );
 }
 
-const envSymlinkOk = symlinkPointsTo(P("api", ".env"), "/etc/noah-erp/api.env");
-add("api/.env → /etc/noah-erp/api.env symlink", envSymlinkOk, "Recreate: ln -snf /etc/noah-erp/api.env api/.env");
+const envSymlinkOk = symlinkPointsTo(P("api", ".env"), runtimeEnvFile);
+add(
+  "api/.env → /etc/noah-erp/api.env symlink",
+  envSymlinkOk,
+  "Recrie: ln -snf /etc/noah-erp/api.env api/.env (o instalador faz isso automaticamente)"
+);
 
 // ---- Report
 const fails = checks.filter(c=>!c.ok);

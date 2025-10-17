@@ -36,6 +36,30 @@ detect_api_dir(){
   [ -n "$s" ] && dirname "$(dirname "$s")" || echo ""
 }
 
+ensure_noah_db(){
+  sudo -u postgres psql -v ON_ERROR_STOP=1 <<'SQL'
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'noah') THEN
+    CREATE ROLE noah LOGIN PASSWORD 'q@9dlyU0AAJ9';
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT FROM pg_database WHERE datname = 'noah') THEN
+    CREATE DATABASE noah OWNER noah;
+  END IF;
+END $$;
+
+ALTER DATABASE noah OWNER TO noah;
+GRANT ALL PRIVILEGES ON DATABASE noah TO noah;
+
+\connect noah
+GRANT USAGE, CREATE ON SCHEMA public TO noah;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO noah;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO noah;
+SQL
+}
+
 ### ========= PRECHECKS =========
 require_root
 need dnf
@@ -65,32 +89,7 @@ if [ ! -f /var/lib/pgsql/data/PG_VERSION ]; then
 fi
 systemctl enable --now postgresql >/dev/null
 systemctl enable --now redis >/dev/null
-
-# Create DB/role idempotently
-DB_PASS="${DB_PASS_DEFAULT}"
-log "Ensuring DB '${DB_NAME}' and role '${DB_USER}' exist"
-sudo -u postgres psql -v ON_ERROR_STOP=1 <<SQL
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${DB_USER}') THEN
-    CREATE ROLE ${DB_USER} LOGIN PASSWORD '${DB_PASS}';
-  END IF;
-END $$;
-
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT FROM pg_database WHERE datname = '${DB_NAME}') THEN
-    CREATE DATABASE ${DB_NAME} OWNER ${DB_USER};
-  END IF;
-END $$;
-
-ALTER DATABASE ${DB_NAME} OWNER TO ${DB_USER};
-GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};
-
-\connect ${DB_NAME}
-GRANT USAGE, CREATE ON SCHEMA public TO ${DB_USER};
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ${DB_USER};
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO ${DB_USER};
-SQL
-ok "PostgreSQL ready"
+ok "PostgreSQL and Redis running"
 
 ### ========= FETCH/UPDATE REPOSITORY =========
 log "Cloning/updating repository into ${REPO_DIR}"
@@ -134,8 +133,14 @@ ok "Frontend published"
 
 ### ========= API PREP (PRISMA + SERVICE) =========
 log "Locating API directory"
-API_DIR="$(detect_api_dir)"
-[ -n "${API_DIR}" ] || { err "API directory not found (expected api/server/backend)."; exit 1; }
+API_DIR_DISCOVERED="$(detect_api_dir)"
+API_DIR="${API_DIR:-/opt/noah-erp/Noah-ERP/api}"
+if [ ! -d "${API_DIR}" ]; then
+  if [ -n "${API_DIR_DISCOVERED}" ] && [ -d "${API_DIR_DISCOVERED}" ]; then
+    API_DIR="${API_DIR_DISCOVERED}"
+  fi
+fi
+[ -d "${API_DIR}" ] || { err "API directory not found (expected api/server/backend)."; exit 1; }
 ok "API at ${API_DIR}"
 
 log "Preparing API environment"
@@ -143,10 +148,16 @@ cd "${API_DIR}"
 
 log "Creating service user and environment"
 id -u noah >/dev/null 2>&1 || useradd --system --home "${INSTALL_DIR}" --shell /sbin/nologin noah
+
+API_ENV_FILE="/etc/noah-erp/api.env"
+
+# (a) Remove prisma/.env if present (it causes collisions)
 rm -f "${API_DIR}/prisma/.env"
 
+# (b) Ensure runtime env exists and contains DATABASE_URL for user "noah"
 install -d /etc/noah-erp
-[ -f /etc/noah-erp/api.env ] || cat >/etc/noah-erp/api.env <<'ENV'
+if [ ! -s "${API_ENV_FILE}" ]; then
+  cat >"${API_ENV_FILE}" <<'ENV'
 NODE_ENV=production
 PORT=3000
 DATABASE_URL=postgresql://noah:q%409dlyU0AAJ9@127.0.0.1:5432/noah?schema=public
@@ -157,18 +168,40 @@ ADMIN_EMAIL=admin@noahomni.com.br
 ADMIN_PASSWORD=D2W3£Qx!0Du#
 CORS_ORIGINS=http://localhost,http://127.0.0.1
 ENV
-sed -i "s|^JWT_SECRET=__FILL_ME__|JWT_SECRET=$(openssl rand -hex 32)|" /etc/noah-erp/api.env || true
-ln -snf /etc/noah-erp/api.env "${API_DIR}/.env"
-set -a; . /etc/noah-erp/api.env; set +a
+  sed -i "s|^JWT_SECRET=__FILL_ME__|JWT_SECRET=$(openssl rand -hex 32)|" "${API_ENV_FILE}" || true
+fi
+
+# (c) Force correct DATABASE_URL (in case file existed but had wrong user)
+sed -i '/^DATABASE_URL=/d' "${API_ENV_FILE}"
+echo 'DATABASE_URL=postgresql://noah:q%409dlyU0AAJ9@127.0.0.1:5432/noah?schema=public' >>"${API_ENV_FILE}"
+
+# (d) Link api/.env to the runtime env and export vars to current shell
+ln -snf "${API_ENV_FILE}" "${API_DIR}/.env"
+set -a; . "${API_ENV_FILE}"; set +a
+
+# (e) Guardrails: fail fast if DATABASE_URL is missing
+grep -q '^DATABASE_URL=' "${API_ENV_FILE}" || { err '[FATAL] DATABASE_URL missing in /etc/noah-erp/api.env'; exit 1; }
+
+# (f) (Optional) Log which DB URL is being used (mask password)
+echo "DATABASE_URL ativa: $(echo "$DATABASE_URL" | sed 's#://\([^:]*\):[^@]*@#://\1:***@#')"
 
 log "Installing API deps"
 npm ci --no-audit --no-fund --include=dev || npm i --no-audit --no-fund --legacy-peer-deps --include=dev
 
+log "Ensuring Postgres role/database for user 'noah'"
+ensure_noah_db
+
+# (h) Run Prisma strictly in order; abort if any step fails
 log "Running Prisma generate/migrate/seed"
-if ! (npx prisma generate && npx prisma migrate deploy && node prisma/seed.js); then
-  err "Prisma setup failed"
+if ! ( cd "${API_DIR}" && \
+    npx prisma generate && \
+    npx prisma migrate deploy && \
+    node prisma/seed.js ); then
+  err "[FATAL] Prisma pipeline failed"
   exit 1
 fi
+
+ok "Prisma pipeline OK"
 
 npm run build || true
 
