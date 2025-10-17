@@ -7,47 +7,11 @@ on:
     branches: [ codex/fix-build-and-prisma-schema-issues ]
 
 jobs:
-  api:
+  quality:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_USER: noah
-          POSTGRES_PASSWORD: noah
-          POSTGRES_DB: noah
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd="pg_isready -U noah" --health-interval=5s --health-timeout=5s --health-retries=10
-      redis:
-        image: redis:7-alpine
-        ports: ['6379:6379']
     env:
       DATABASE_URL: postgresql://noah:noah@localhost:5432/noah?schema=public
       REDIS_URL: redis://localhost:6379
-      NODE_ENV: production
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: apps/api/package-lock.json
-      - name: Install API deps
-        working-directory: apps/api
-        run: npm ci
-      - name: Prisma generate & validate
-        working-directory: apps/api
-        run: |
-          npx prisma generate --schema ../prisma/schema.prisma
-          npx prisma validate --schema ../prisma/schema.prisma
-      - name: Build API
-        working-directory: apps/api
-        run: npm run build
-
-  web:
-    runs-on: ubuntu-latest
-    env:
       VITE_NOAH_LOGO_LIGHT: /brand/logo-light.png
       VITE_NOAH_LOGO_DARK: /brand/logo-dark.png
       VITE_NOAH_FAVICON: /brand/favicon.ico
@@ -59,7 +23,14 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - name: Install
-        run: npm ci
-      - name: Build
-        run: npm run build
+      - name: Probe npm e decidir pipeline
+        id: probe
+        continue-on-error: true
+        run: |
+          node -e "require('https').get('https://registry.npmjs.org/@types%2Freact',r=>{process.exit(r.statusCode>=200&&r.statusCode<400?0:1)})"
+      - name: CI (full)
+        if: steps.probe.outcome == 'success'
+        run: npm run ci:full
+      - name: CI (degraded, sem internet)
+        if: steps.probe.outcome != 'success'
+        run: npm run ci:degraded

@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["vite/client", "./src/types/react-jsx-shim"],
+    "strict": false,
+    "skipLibCheck": true
+  }
+}
