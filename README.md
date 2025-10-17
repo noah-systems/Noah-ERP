@@ -78,7 +78,7 @@ externa seja ignorada caso não pertença ao mesmo host publicado pelo Nginx.
 
 1. Instale as dependências compartilhadas: `npm install` na raiz do repositório.
 2. (Opcional) Suba Postgres + Redis locais: `docker compose -f docker/compose.dev.yml up -d db redis`.
-3. Aponte o Prisma para o banco local editando `apps/api/prisma/.env` (já contém a URL padrão `postgres://noah:noah@localhost:5432/noah`).
+3. Aponte o Prisma para o banco local editando `apps/api/.env` (a URL padrão `postgres://noah:noah@localhost:5432/noah` já está definida em `DATABASE_URL`).
 4. Execute a API em modo watch: `npm run --prefix apps/api start:dev`.
 5. Rode o front: `npm run dev` (Vite em `http://localhost:5173`).
 
