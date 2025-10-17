@@ -16,6 +16,10 @@ app.use(cors({ origin: corsOrigins.includes('*') ? true : corsOrigins, credentia
 
 app.use(express.json());
 
+app.get('/health', (_req, res) => {
+  res.status(200).json({ ok: true });
+});
+
 app.get('/api/worker/health', async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;

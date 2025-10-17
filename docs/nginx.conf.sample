@@ -1,0 +1,107 @@
+# Example Nginx configuration for Noah ERP on bare-metal (Rocky Linux)
+# Copy to /etc/nginx/conf.d/noah.conf and adjust upstream ports/domains as needed.
+
+upstream noah_web {
+    server 127.0.0.1:4173;  # adjust to the frontend service port (e.g. docker compose proxy)
+}
+
+upstream noah_api {
+    server 127.0.0.1:3000;  # API service port
+}
+
+map $scheme $redirect_https {
+    default 1;
+    https 0;
+}
+
+server {
+    listen 80;
+    server_name erp.noahomni.com.br;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        try_files $uri =404;
+    }
+
+    location / {
+        if ($redirect_https) {
+            return 301 https://$host$request_uri;
+        }
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass http://noah_web;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name erp.noahomni.com.br;
+
+    ssl_certificate     /etc/letsencrypt/live/erp.noahomni.com.br/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/erp.noahomni.com.br/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        try_files $uri =404;
+    }
+
+    location / {
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass http://noah_web;
+    }
+}
+
+server {
+    listen 80;
+    server_name erpapi.noahomni.com.br;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        try_files $uri =404;
+    }
+
+    location / {
+        if ($redirect_https) {
+            return 301 https://$host$request_uri;
+        }
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass http://noah_api;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name erpapi.noahomni.com.br;
+
+    ssl_certificate     /etc/letsencrypt/live/erpapi.noahomni.com.br/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/erpapi.noahomni.com.br/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        try_files $uri =404;
+    }
+
+    location / {
+        proxy_set_header Host              $host;
+        proxy_set_header X-Real-IP         $remote_addr;
+        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass http://noah_api;
+    }
+}
