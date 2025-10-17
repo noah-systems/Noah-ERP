@@ -1,20 +1,33 @@
-FROM node:20-alpine AS build
+# Dockerfile.web — build confiável do Vite/Rollup
+FROM node:20-bookworm-slim AS build
 WORKDIR /app
-COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
+
+# Evita tentativa de binário nativo do Rollup (bug em npm + Alpine/musl)
+ENV NODE_ENV=production \
+    ROLLUP_SKIP_NODEJS_NATIVE=1 \
+    npm_config_audit=false \
+    npm_config_fund=false
+
+# Suporte opcional a proxy/registry (passados via build-args no compose)
 ARG NPM_CONFIG_REGISTRY=https://registry.npmjs.org/
 ARG HTTP_PROXY=""
 ARG HTTPS_PROXY=""
 ARG NO_PROXY="localhost,127.0.0.1"
 
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+# Copia manifests primeiro para cache de dependências
+COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
+
+# Instalação resiliente: tenta `npm ci`, cai para `npm install` se lock estiver quebrado
 RUN set -eux; \
-  npm config set fund false; \
-  npm config set audit false; \
   npm config set registry "$NPM_CONFIG_REGISTRY"; \
   if [ -n "$HTTP_PROXY" ]; then npm config set proxy "$HTTP_PROXY"; fi; \
   if [ -n "$HTTPS_PROXY" ]; then npm config set https-proxy "$HTTPS_PROXY"; fi; \
   if [ -f package-lock.json ]; then \
     (npm ci --no-audit --no-fund) \
-    || (echo "npm ci falhou (lock fora de sincronia) → fallback npm install" \
+    || (echo "npm ci falhou → fallback npm install" \
         && rm -f package-lock.json \
         && npm install --no-audit --no-fund --legacy-peer-deps \
         && npm dedupe \
@@ -26,9 +39,11 @@ RUN set -eux; \
   else \
     npm install --no-audit --no-fund --legacy-peer-deps; \
   fi
+
+# Código e build
 COPY . .
 RUN npm run build
 
+# Runtime leve servindo o bundle estático
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
-HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://localhost/ || exit 1
