@@ -138,9 +138,8 @@ API_DIR="$(detect_api_dir)"
 [ -n "${API_DIR}" ] || { err "API directory not found (expected api/server/backend)."; exit 1; }
 ok "API at ${API_DIR}"
 
-log "Installing API deps and preparing environment"
+log "Preparing API environment"
 cd "${API_DIR}"
-npm ci --no-audit --no-fund --include=dev || npm i --no-audit --no-fund --legacy-peer-deps --include=dev
 
 log "Creating service user and environment"
 id -u noah >/dev/null 2>&1 || useradd --system --home "${INSTALL_DIR}" --shell /sbin/nologin noah
@@ -161,6 +160,9 @@ ENV
 sed -i "s|^JWT_SECRET=__FILL_ME__|JWT_SECRET=$(openssl rand -hex 32)|" /etc/noah-erp/api.env || true
 ln -snf /etc/noah-erp/api.env "${API_DIR}/.env"
 set -a; . /etc/noah-erp/api.env; set +a
+
+log "Installing API deps"
+npm ci --no-audit --no-fund --include=dev || npm i --no-audit --no-fund --legacy-peer-deps --include=dev
 
 log "Running Prisma generate/migrate/seed"
 if ! (npx prisma generate && npx prisma migrate deploy && node prisma/seed.js); then
