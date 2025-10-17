@@ -24,6 +24,10 @@
 - Prisma schema, migrations e seed presentes (`apps/api/prisma/schema.prisma`, `apps/api/prisma/migrations/`, `apps/api/prisma/seed.js`).【F:apps/api/prisma/schema.prisma†L1-L28】【F:apps/api/prisma/migrations/0001_init/migration.sql†L1-L40】【F:apps/api/prisma/seed.js†L1-L106】
 - `apps/api/package.json` registra o seed em `"prisma": { "seed": "node prisma/seed.js" }`.【F:apps/api/package.json†L1-L32】
 - Variáveis obrigatórias documentadas no README (DATABASE_URL, REDIS_URL, JWT_SECRET, CORS_ORIGINS, ADMIN_*, PRISMA_MIGRATE_ON_START).【F:README.md†L35-L100】
+- Checklist de unicidade do ambiente Prisma:
+  - [x] `api/prisma/.env` não existe (falha imediata se reaparecer).
+  - [x] `api/.env` é um symlink para `/etc/noah-erp/api.env`.
+  - [x] `DATABASE_URL` aponta para o usuário `noah` (nunca `postgres`).
 
 ### D) Front (Vite): PASS
 - `.env.example` na raiz indica `VITE_API_BASE=https://erpapi.noahomni.com.br/api`, reforçando o sufixo `/api` e demais assets locais.【F:.env.example†L1-L9】

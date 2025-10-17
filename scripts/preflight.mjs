@@ -5,6 +5,19 @@ import { spawnSync } from "child_process";
 const r = (p) => { try { return fs.readFileSync(p, "utf8"); } catch { return ""; } };
 const ex = (p) => fs.existsSync(p);
 const P = (...xs) => path.join(process.cwd(), ...xs);
+const symlinkPointsTo = (file, expected) => {
+  try {
+    const stat = fs.lstatSync(file);
+    if (!stat.isSymbolicLink()) return false;
+    const target = fs.readlinkSync(file);
+    const resolved = path.isAbsolute(target)
+      ? target
+      : path.resolve(path.dirname(file), target);
+    return path.normalize(resolved) === path.normalize(expected);
+  } catch {
+    return false;
+  }
+};
 const checks = [];
 const add = (name, ok, details) => checks.push({ name, ok, details: details || "" });
 
@@ -63,6 +76,43 @@ add("Brand assets exist in /public/brand", miss.length === 0, miss.length ? `Mis
 // 7) Login screen files
 add("src/pages/Login.tsx exists", ex(P("src","pages","Login.tsx")), "Create/adjust login page");
 add("src/pages/login.css exists", ex(P("src","pages","login.css")), "Create/adjust login CSS");
+
+// 8) Prisma env hygiene (bare-metal resilience)
+const prismaEnvPath = P("api", "prisma", ".env");
+add("api/prisma/.env absent", !ex(prismaEnvPath), "Remove duplicate env: rm -f api/prisma/.env");
+
+const runtimeEnvCandidates = ["/etc/noah-erp/api.env", P("api", ".env")];
+let runtimeEnvPath = "";
+let runtimeEnv = "";
+for (const candidate of runtimeEnvCandidates) {
+  if (ex(candidate)) {
+    runtimeEnvPath = candidate;
+    runtimeEnv = r(candidate);
+    break;
+  }
+}
+if (!runtimeEnvPath) {
+  add("Runtime env present", false, "Expected /etc/noah-erp/api.env (run installer) or api/.env symlink");
+} else {
+  const dbMatch = runtimeEnv.match(/^DATABASE_URL\s*=\s*(.+)$/m);
+  const dbUrl = dbMatch ? dbMatch[1].trim() : "";
+  let dbOk = true;
+  let dbDetails = "";
+  if (!dbMatch) {
+    dbOk = false;
+    dbDetails = `${runtimeEnvPath}: define DATABASE_URL`;
+  } else if (/postgres@/i.test(dbUrl) || /user\s*=\s*postgres/i.test(dbUrl)) {
+    dbOk = false;
+    dbDetails = `${runtimeEnvPath}: DATABASE_URL must use role 'noah'`;
+  } else if (!(/\/\/[^@]*noah[:@]/i.test(dbUrl) || /[?&]user=noah\b/i.test(dbUrl))) {
+    dbOk = false;
+    dbDetails = `${runtimeEnvPath}: DATABASE_URL missing user 'noah'`;
+  }
+  add("DATABASE_URL bound to role 'noah'", dbOk, dbDetails);
+}
+
+const envSymlinkOk = symlinkPointsTo(P("api", ".env"), "/etc/noah-erp/api.env");
+add("api/.env → /etc/noah-erp/api.env symlink", envSymlinkOk, "Recreate: ln -snf /etc/noah-erp/api.env api/.env");
 
 // ---- Report
 const fails = checks.filter(c=>!c.ok);
