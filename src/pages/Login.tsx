@@ -14,7 +14,7 @@ export default function LoginPage() {
   const [err, setErr] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [rememberEmail, setRememberEmail] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPwd, setShowPwd] = useState(false);
   const logo = BRAND.logoLight;
   const backgroundImage = BRAND.loginBg;
   const backgroundImage2x = BRAND.loginBg2x ?? BRAND.loginBg;
@@ -82,9 +82,8 @@ export default function LoginPage() {
       <div className="login-card">
         {logo && <img src={logo} alt="Noah Omni" className="logo" />}
         <h1>Acessar</h1>
-        <p className="login-subtitle">Bem-vindo de volta! Entre com suas credenciais para acessar o Noah ERP.</p>
         <form onSubmit={onSubmit} aria-busy={submitting}>
-          <div className="input-group">
+          <div className="form-group">
             <label htmlFor="login-email">E-mail</label>
             <input
               id="login-email"
@@ -103,12 +102,12 @@ export default function LoginPage() {
               required
             />
           </div>
-          <div className="input-group">
+          <div className="form-group">
             <label htmlFor="login-password">Senha</label>
-            <div className="password-field">
+            <div className="input-group">
               <input
                 id="login-password"
-                type={showPassword ? 'text' : 'password'}
+                type={showPwd ? 'text' : 'password'}
                 placeholder="Informe sua senha"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -121,12 +120,32 @@ export default function LoginPage() {
               />
               <button
                 type="button"
-                className="toggle-password"
-                onClick={() => setShowPassword((value) => !value)}
-                aria-label={showPassword ? 'Esconder senha' : 'Mostrar senha'}
-                disabled={submitting}
+                className="icon-button"
+                aria-label={showPwd ? 'Ocultar senha' : 'Mostrar senha'}
+                onClick={() => setShowPwd((value) => !value)}
               >
-                {showPassword ? 'Esconder' : 'Mostrar'}
+                {showPwd ? (
+                  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                    <path
+                      d="M2 2l20 20M3.5 7.5C6 4.5 9.5 3 12 3c6 0 10 6 10 9 0 1.1-.4 2.1-1 3M6 18.5C3 16.5 2 14 2 12c0-1 .2-2 .6-3M9.5 9.5A4 4 0 0012 16a4 4 0 003.1-1.4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                    <path
+                      d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                    <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="2" />
+                  </svg>
+                )}
               </button>
             </div>
           </div>
@@ -158,7 +177,6 @@ export default function LoginPage() {
           </button>
         </form>
         <footer>
-          <p>Precisa de ajuda? Fale com o time Noah Omni.</p>
           <span>Desenvolvido por <strong>Noah Omni</strong></span>
         </footer>
       </div>

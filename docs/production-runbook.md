@@ -198,6 +198,58 @@ Execute todas as checagens abaixo. Caso alguma falhe, consulte a seção de trou
      -d '{"email":"'$ADMIN_EMAIL'","password":"'$ADMIN_PASSWORD'"}' \
      "https://$DOMAIN_API/api/auth/login"
    ```
+
+## Bare-metal (Rocky) quick start
+
+1. **Atualize o sistema e instale dependências base:**
+   ```bash
+   sudo dnf -y update
+   sudo dnf -y install git docker docker-compose-plugin nginx certbot
+   sudo systemctl enable --now docker nginx
+   ```
+2. **Prepare diretórios e repositório:**
+   ```bash
+   sudo install -d /opt/noah-erp
+   cd /opt/noah-erp
+   sudo git clone https://github.com/noahomni/Noah-ERP.git Noah-ERP
+   cd Noah-ERP
+   sudo git checkout main && sudo git pull --ff-only origin main
+   ```
+3. **Configure variáveis únicas da API:**
+   ```bash
+   sudo install -d /etc/noah-erp
+   sudo cp api/.env.example /etc/noah-erp/api.env
+   sudo ln -snf /etc/noah-erp/api.env api/.env
+   sudo ${EDITOR:-vi} /etc/noah-erp/api.env   # ajuste JWT/SESSION_SECRET e credenciais
+   ```
+4. **Suba a stack Docker de produção:**
+   ```bash
+   sudo docker compose -f docker/compose.prod.yml pull
+   sudo docker compose -f docker/compose.prod.yml up -d db redis
+   sudo docker compose -f docker/compose.prod.yml up -d api web proxy certbot
+   ```
+5. **Aplique migrations/seed manualmente se necessário:**
+   ```bash
+   sudo docker compose -f docker/compose.prod.yml exec -T api npx prisma migrate deploy
+   sudo docker compose -f docker/compose.prod.yml exec -T api node prisma/seed.js
+   ```
+
+## TLS with Certbot (webroot)
+
+1. **Utilize a amostra `docs/nginx.conf.sample` como base:** copie para `/etc/nginx/conf.d/noah.conf` e ajuste os domínios e upstreams.
+2. **Garanta o diretório webroot:**
+   ```bash
+   sudo install -d -m 0755 /var/www/certbot
+   sudo chown nginx:nginx /var/www/certbot
+   ```
+3. **Emita certificados iniciais:**
+   ```bash
+   sudo certbot certonly --webroot -w /var/www/certbot \
+     -d erp.noahomni.com.br -d erpapi.noahomni.com.br \
+     -m admin@noahomni.com.br --agree-tos --no-eff-email --rsa-key-size 4096
+   sudo nginx -t && sudo systemctl reload nginx
+   ```
+4. **Automatize renovações:** adicione uma entrada em `/etc/cron.d/certbot` ou utilize `systemd timer` executando `certbot renew --webroot -w /var/www/certbot` seguido de `nginx -s reload`.
    Receba um JWT válido. Ajuste a senha após o primeiro login.
 6. **Front consumindo API correta:** abra o front no navegador ou utilize `curl` para garantir que `VITE_API_BASE` aponta para `https://$DOMAIN_API/api`.
 7. **Certbot em execução:**

@@ -80,16 +80,49 @@ body {
   gap: 1rem;
 }
 
-.input-group {
+.form-group {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
 }
 
-.input-group label {
+.form-group label {
   font-size: 0.95rem;
   font-weight: 500;
   color: rgba(241, 245, 249, 0.85);
+}
+
+.input-group {
+  position: relative;
+}
+
+.input-group input {
+  width: 100%;
+  padding-right: 40px;
+}
+
+.icon-button {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 6px;
+  line-height: 0;
+  color: #b9ff62;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: color 0.2s ease;
+}
+
+.icon-button:focus {
+  outline: 2px solid #b9ff62;
+  outline-offset: 2px;
+  border-radius: 8px;
 }
 
 .login-card input {
@@ -114,45 +147,6 @@ body {
 }
 
 .login-card input:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.password-field {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.password-field input {
-  padding-right: 6.5rem;
-}
-
-.toggle-password {
-  position: absolute;
-  top: 50%;
-  right: 0.75rem;
-  transform: translateY(-50%);
-  border: none;
-  background: rgba(15, 23, 42, 0.45);
-  color: #e2e8f0;
-  font-size: 0.85rem;
-  font-weight: 600;
-  padding: 0.45rem 0.9rem;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.toggle-password:hover,
-.toggle-password:focus-visible {
-  background: rgba(168, 230, 15, 0.25);
-  color: #0a1400;
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(168, 230, 15, 0.2);
-}
-
-.toggle-password:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
