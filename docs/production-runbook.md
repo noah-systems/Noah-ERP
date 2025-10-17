@@ -45,6 +45,12 @@ Este runbook descreve o fluxo completo para provisionar, validar e atualizar o N
 
 ## 3. Variáveis de ambiente mínimas
 
+### 3.0 Modelo único de runtime (instalador bare-metal)
+
+- O arquivo **`/etc/noah-erp/api.env`** é a única fonte de verdade para a API em instalações bare-metal. O instalador cria esse arquivo (se ainda não existir) com os defaults de produção e reforça que o conteúdo utilize o usuário de banco `noah`.
+- Dentro do repositório, `api/.env` deve ser **apenas um symlink** para `/etc/noah-erp/api.env` (`ln -snf /etc/noah-erp/api.env api/.env`). Não crie cópias locais do arquivo.
+- O Prisma não utiliza `prisma/.env`. Caso o arquivo apareça novamente (`api/prisma/.env`), remova-o imediatamente — a duplicação de variáveis derruba o acesso ao banco.
+
 ### 3.1 API (`apps/api`)
 
 Defina (por export ou arquivo `.env`) antes de subir os contêineres. Exemplos:

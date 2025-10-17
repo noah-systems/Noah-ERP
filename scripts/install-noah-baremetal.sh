@@ -36,11 +36,6 @@ detect_api_dir(){
   [ -n "$s" ] && dirname "$(dirname "$s")" || echo ""
 }
 
-url_encode(){
-  # Minimal URL encoder for passwords: encodes only '@' → %40 (safe enough for given pw)
-  echo -n "$1" | sed 's/@/%40/g'
-}
-
 ### ========= PRECHECKS =========
 require_root
 need dnf
@@ -74,17 +69,26 @@ systemctl enable --now redis >/dev/null
 # Create DB/role idempotently
 DB_PASS="${DB_PASS_DEFAULT}"
 log "Ensuring DB '${DB_NAME}' and role '${DB_USER}' exist"
-sudo -u postgres psql <<SQL >/dev/null 2>&1 || true
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='${DB_USER}') THEN
+sudo -u postgres psql -v ON_ERROR_STOP=1 <<SQL
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${DB_USER}') THEN
     CREATE ROLE ${DB_USER} LOGIN PASSWORD '${DB_PASS}';
   END IF;
-  IF NOT EXISTS (SELECT FROM pg_database WHERE datname='${DB_NAME}') THEN
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT FROM pg_database WHERE datname = '${DB_NAME}') THEN
     CREATE DATABASE ${DB_NAME} OWNER ${DB_USER};
   END IF;
-END
-$$;
+END $$;
+
+ALTER DATABASE ${DB_NAME} OWNER TO ${DB_USER};
+GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};
+
+\connect ${DB_NAME}
+GRANT USAGE, CREATE ON SCHEMA public TO ${DB_USER};
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ${DB_USER};
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO ${DB_USER};
 SQL
 ok "PostgreSQL ready"
 
@@ -140,27 +144,22 @@ npm ci --no-audit --no-fund --include=dev || npm i --no-audit --no-fund --legacy
 
 log "Creating service user and environment"
 id -u noah >/dev/null 2>&1 || useradd --system --home "${INSTALL_DIR}" --shell /sbin/nologin noah
-mkdir -p /etc/noah-erp
+rm -f "${API_DIR}/prisma/.env"
 
-JWT_SECRET="${JWT_SECRET:-$(openssl rand -hex 32)}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD_DEFAULT}"
-DB_PASS_URL="$(url_encode "${DB_PASS}")"
-
-cat >/etc/noah-erp/api.env <<ENV
+install -d /etc/noah-erp
+[ -f /etc/noah-erp/api.env ] || cat >/etc/noah-erp/api.env <<'ENV'
 NODE_ENV=production
-PORT=${API_PORT}
-DATABASE_URL=postgresql://${DB_USER}:${DB_PASS_URL}@127.0.0.1:5432/${DB_NAME}?schema=public
+PORT=3000
+DATABASE_URL=postgresql://noah:q%409dlyU0AAJ9@127.0.0.1:5432/noah?schema=public
 REDIS_URL=redis://127.0.0.1:6379
-JWT_SECRET=${JWT_SECRET}
-ADMIN_NAME=${ADMIN_NAME}
-ADMIN_EMAIL=${ADMIN_EMAIL}
-ADMIN_PASSWORD=${ADMIN_PASSWORD}
-CORS_ORIGINS=https://${DOMAIN_WEB},https://${DOMAIN_API}
+JWT_SECRET=__FILL_ME__
+ADMIN_NAME=Admin Noah
+ADMIN_EMAIL=admin@noahomni.com.br
+ADMIN_PASSWORD=D2W3£Qx!0Du#
+CORS_ORIGINS=http://localhost,http://127.0.0.1
 ENV
-
-# Overwrite repo-local .env (tracked for dev) with the service env
-rm -f "${API_DIR}/.env"
-ln -s /etc/noah-erp/api.env "${API_DIR}/.env"
+sed -i "s|^JWT_SECRET=__FILL_ME__|JWT_SECRET=$(openssl rand -hex 32)|" /etc/noah-erp/api.env || true
+ln -snf /etc/noah-erp/api.env "${API_DIR}/.env"
 set -a; . /etc/noah-erp/api.env; set +a
 
 log "Running Prisma generate/migrate/seed"
