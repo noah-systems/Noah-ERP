@@ -159,9 +159,7 @@ CORS_ORIGINS=https://${DOMAIN_WEB},https://${DOMAIN_API}
 ENV
 
 ln -sf /etc/noah-erp/api.env "${API_DIR}/.env"
-set -a
-. /etc/noah-erp/api.env
-set +a
+set -a; . /etc/noah-erp/api.env; set +a
 
 log "Running Prisma generate/migrate/seed"
 if ! (npx prisma generate && npx prisma migrate deploy && node prisma/seed.js); then
@@ -196,6 +194,24 @@ SERVICE
 systemctl daemon-reload
 systemctl enable --now noah-api
 ok "API started"
+
+log "Running API smoke tests"
+sleep 2
+if curl -fsS "http://127.0.0.1:${API_PORT}/api/worker/health" >/dev/null; then
+  ok "Health check ok"
+else
+  warn "Health check failed (see systemctl status noah-api)"
+fi
+
+log "Testing admin login"
+LOGIN_RESPONSE="$(curl -s -X POST "http://127.0.0.1:${API_PORT}/api/auth/login" \
+  -H 'content-type: application/json' \
+  -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}" || true)"
+if echo "${LOGIN_RESPONSE}" | grep -q 'accessToken'; then
+  ok "Login succeeded"
+else
+  warn "Login failed; response: ${LOGIN_RESPONSE}"
+fi
 
 ### ========= NGINX + TLS =========
 log "Configuring Nginx (web + API reverse proxy)"
