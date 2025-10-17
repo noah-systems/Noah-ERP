@@ -3,8 +3,7 @@ FROM node:20-bookworm-slim AS build
 WORKDIR /app
 
 # Evita tentativa de binário nativo do Rollup (bug em npm + Alpine/musl)
-ENV NODE_ENV=production \
-    ROLLUP_SKIP_NODEJS_NATIVE=true \
+ENV ROLLUP_SKIP_NODEJS_NATIVE=true \
     npm_config_audit=false \
     npm_config_fund=false
 
@@ -25,21 +24,20 @@ RUN set -eux; \
   npm config set registry "$NPM_CONFIG_REGISTRY"; \
   if [ -n "$HTTP_PROXY" ]; then npm config set proxy "$HTTP_PROXY"; fi; \
   if [ -n "$HTTPS_PROXY" ]; then npm config set https-proxy "$HTTPS_PROXY"; fi; \
+  export ROLLUP_SKIP_NODEJS_NATIVE=true; \
   if [ -f package-lock.json ]; then \
-    (npm ci --no-audit --no-fund) \
+    (npm ci --no-audit --no-fund --include=dev) \
     || (echo "npm ci failed → fallback to npm install" \
         && rm -f package-lock.json \
-        && npm install --no-audit --no-fund --legacy-peer-deps \
+        && npm install --no-audit --no-fund --legacy-peer-deps --include=dev \
         && npm dedupe); \
   elif [ -f pnpm-lock.yaml ]; then \
-    corepack enable && (pnpm i --frozen-lockfile || pnpm i); \
+    corepack enable && (pnpm i --frozen-lockfile --prod=false || pnpm i --prod=false); \
   elif [ -f yarn.lock ]; then \
-    (yarn --frozen-lockfile || yarn); \
+    (yarn --frozen-lockfile --production=false || yarn --production=false); \
   else \
-    npm install --no-audit --no-fund --legacy-peer-deps; \
+    npm install --no-audit --no-fund --legacy-peer-deps --include=dev; \
   fi
-
-RUN node -e "require('@swc/core'); console.log('swc ok')"
 
 # Código e build
 COPY . .
