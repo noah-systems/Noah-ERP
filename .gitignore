@@ -5,5 +5,7 @@ dist
 .env
 !apps/api/.env
 !apps/api/prisma/.env
+!api/.env
+!api/prisma/.env
 !.env.example
 !.env.production.example
