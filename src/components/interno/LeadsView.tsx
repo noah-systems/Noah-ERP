@@ -5,10 +5,14 @@ import { LeadsKanban } from './leads/LeadsKanban';
 import { LeadsTable } from './leads/LeadsTable';
 import { CreateLeadModal } from './leads/CreateLeadModal';
 import Can from '@/auth/Can';
+import { USE_MOCK } from '@/lib/api';
+import { MockDataNotice } from '@/components/MockDataNotice';
 
 export function LeadsView() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
+
+  const creationAvailable = USE_MOCK;
 
   return (
     <div className="space-y-6">
@@ -27,7 +31,11 @@ export function LeadsView() {
             Exportar
           </Button>
           <Can roles={['ADMIN_NOAH', 'SELLER']}>
-            <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Button
+              onClick={() => setIsCreateModalOpen(true)}
+              disabled={!creationAvailable}
+              title={!creationAvailable ? 'Em breve' : undefined}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Novo Lead
             </Button>
@@ -35,28 +43,34 @@ export function LeadsView() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button
-          variant={viewMode === 'kanban' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setViewMode('kanban')}
-        >
-          <LayoutGrid className="mr-2 h-4 w-4" />
-          Kanban
-        </Button>
-        <Button
-          variant={viewMode === 'table' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setViewMode('table')}
-        >
-          <Table2 className="mr-2 h-4 w-4" />
-          Tabela
-        </Button>
-      </div>
+      {USE_MOCK ? (
+        <>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={viewMode === 'kanban' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('kanban')}
+            >
+              <LayoutGrid className="mr-2 h-4 w-4" />
+              Kanban
+            </Button>
+            <Button
+              variant={viewMode === 'table' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('table')}
+            >
+              <Table2 className="mr-2 h-4 w-4" />
+              Tabela
+            </Button>
+          </div>
 
-      {viewMode === 'kanban' ? <LeadsKanban /> : <LeadsTable />}
+          {viewMode === 'kanban' ? <LeadsKanban /> : <LeadsTable />}
+        </>
+      ) : (
+        <MockDataNotice description="A listagem de leads será exibida assim que a API estiver conectada." />
+      )}
 
-      <CreateLeadModal open={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
+      <CreateLeadModal open={isCreateModalOpen && creationAvailable} onClose={() => setIsCreateModalOpen(false)} />
     </div>
   );
 }

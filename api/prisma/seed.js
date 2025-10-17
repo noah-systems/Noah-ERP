@@ -16,13 +16,28 @@ async function main() {
         email: ADMIN_EMAIL,
         name: ADMIN_NAME,
         passwordHash,
-        role: "admin"
+        role: "ADMIN_NOAH"
       }
     });
     console.log("Seed: admin user created:", ADMIN_EMAIL);
   } else {
-    console.log("Seed: admin user already exists:", ADMIN_EMAIL);
+    if (existing.role !== "ADMIN_NOAH") {
+      await prisma.user.update({
+        where: { id: existing.id },
+        data: { role: "ADMIN_NOAH" }
+      });
+      console.log("Seed: admin user role aligned for:", ADMIN_EMAIL);
+    } else {
+      console.log("Seed: admin user already exists:", ADMIN_EMAIL);
+    }
   }
+
+  await prisma.dashboardMetrics.upsert({
+    where: { id: 1 },
+    create: { id: 1 },
+    update: {},
+  });
+  console.log("Seed: dashboard metrics baseline ensured (id=1)");
 }
 
 main().catch((e) => {

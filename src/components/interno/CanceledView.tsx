@@ -2,6 +2,8 @@ import { Filter, Download } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
+import { USE_MOCK } from '@/lib/api';
+import { MockDataNotice } from '@/components/MockDataNotice';
 
 const mockCanceled = [
   {
@@ -63,40 +65,44 @@ export function CanceledView() {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Subdomínio</TableHead>
-              <TableHead>Motivo</TableHead>
-              <TableHead>Data Solicitação</TableHead>
-              <TableHead>Data Efetiva</TableHead>
-              <TableHead>Responsável</TableHead>
-              <TableHead>Observações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {mockCanceled.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell>{item.client}</TableCell>
-                <TableCell>
-                  <span className="text-xs text-gray-500">{item.subdomain}.noahomni.com.br</span>
-                </TableCell>
-                <TableCell>
-                  <Badge className={reasonColors[item.reason] || 'bg-gray-100 text-gray-700'}>
-                    {item.reason}
-                  </Badge>
-                </TableCell>
-                <TableCell>{item.requestDate}</TableCell>
-                <TableCell>{item.effectiveDate}</TableCell>
-                <TableCell>{item.responsible}</TableCell>
-                <TableCell className="max-w-xs truncate">{item.notes}</TableCell>
+      {USE_MOCK ? (
+        <div className="bg-white rounded-lg border border-gray-200">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Cliente</TableHead>
+                <TableHead>Subdomínio</TableHead>
+                <TableHead>Motivo</TableHead>
+                <TableHead>Data Solicitação</TableHead>
+                <TableHead>Data Efetiva</TableHead>
+                <TableHead>Responsável</TableHead>
+                <TableHead>Observações</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {mockCanceled.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>{item.client}</TableCell>
+                  <TableCell>
+                    <span className="text-xs text-gray-500">{item.subdomain}.noahomni.com.br</span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={reasonColors[item.reason] || 'bg-gray-100 text-gray-700'}>
+                      {item.reason}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{item.requestDate}</TableCell>
+                  <TableCell>{item.effectiveDate}</TableCell>
+                  <TableCell>{item.responsible}</TableCell>
+                  <TableCell className="max-w-xs truncate">{item.notes}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      ) : (
+        <MockDataNotice description="O histórico de cancelamentos será exibido assim que a API fornecer os dados." />
+      )}
     </div>
   );
 }

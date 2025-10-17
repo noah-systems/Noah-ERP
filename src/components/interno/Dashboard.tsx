@@ -1,102 +1,296 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  ArrowRight,
-  Bot,
-  Building2,
-  DollarSign,
-  Plus,
-  TrendingUp,
-  Users,
-  Wallet,
-  Wrench,
-  XCircle,
-  UserCog,
-} from 'lucide-react';
+import { ArrowRight, DollarSign, Plus, TrendingUp, Users, Wrench, XCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import Can from '@/auth/Can';
 import { useAuth } from '@/auth/AuthContext';
+import { api } from '@/lib/api';
+
+type Stats = {
+  leads: number;
+  opportunities: number;
+  implementacao: number;
+  canceladas: number;
+};
+
+type MetricConfig = {
+  key: keyof Stats;
+  label: string;
+  icon: typeof Users;
+  accent: string;
+  iconColor: string;
+  helper?: string;
+};
+
+type MetricCard = {
+  label: string;
+  icon: typeof Users;
+  accent: string;
+  iconColor: string;
+  value: string;
+  helper?: string;
+};
+
+type ActionMessage = {
+  type: 'success' | 'error';
+  text: string;
+};
+
+const DEFAULT_STATS: Stats = {
+  leads: 0,
+  opportunities: 0,
+  implementacao: 0,
+  canceladas: 0,
+};
+
+const METRIC_BLUEPRINT: MetricConfig[] = [
+  {
+    key: 'leads',
+    label: 'Leads',
+    icon: Users,
+    accent: 'bg-[rgba(91,225,0,0.14)] border border-[rgba(91,225,0,0.3)]',
+    iconColor: 'text-[var(--noah-primary)]',
+    helper: 'Novos leads capturados',
+  },
+  {
+    key: 'opportunities',
+    label: 'Oportunidades',
+    icon: TrendingUp,
+    accent: 'bg-[rgba(72,196,0,0.14)] border border-[rgba(72,196,0,0.32)]',
+    iconColor: 'text-[var(--noah-primary-600)]',
+    helper: 'Avanços no pipeline',
+  },
+  {
+    key: 'implementacao',
+    label: 'Implantação',
+    icon: Wrench,
+    accent: 'bg-[rgba(58,163,0,0.16)] border border-[rgba(58,163,0,0.32)]',
+    iconColor: 'text-[var(--noah-primary-700)]',
+    helper: 'Projetos em curso',
+  },
+  {
+    key: 'canceladas',
+    label: 'Canceladas',
+    icon: XCircle,
+    accent: 'bg-[rgba(255,107,107,0.16)] border border-[rgba(255,107,107,0.32)]',
+    iconColor: 'text-[#ff9898]',
+    helper: 'Contas que saíram',
+  },
+];
+
+const toCount = (value: unknown): number => {
+  const parsed = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return Math.floor(parsed);
+};
+
+const normalizeStats = (payload: Partial<Record<string, unknown>>): Stats => ({
+  leads: toCount(payload.leads),
+  opportunities: toCount(payload.opportunities),
+  implementacao: toCount(payload.implementacao ?? payload.implantacao),
+  canceladas: toCount(payload.canceladas ?? payload.canceled ?? payload.cancelled),
+});
 
 export function Dashboard() {
-  const navigate = useNavigate();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const numberFormatter = useMemo(() => new Intl.NumberFormat('pt-BR'), []);
+  const [stats, setStats] = useState<Stats>(DEFAULT_STATS);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<ActionMessage | null>(null);
+  const [creating, setCreating] = useState({ lead: false, opportunity: false });
 
-  const stats = useMemo(
-    () => [
-      { label: 'Leads', value: 47, icon: Users, color: 'bg-yellow-500', iconColor: 'text-white', trend: '+12%' },
-      {
-        label: 'Oportunidades',
-        value: 23,
-        icon: TrendingUp,
-        color: 'bg-[var(--primary)]',
-        iconColor: 'text-[#0A1400]',
-        trend: '+8%',
-      },
-      { label: 'Implantação', value: 8, icon: Wrench, color: 'bg-purple-500', iconColor: 'text-white', trend: '+3' },
-      { label: 'Canceladas', value: 5, icon: XCircle, color: 'bg-red-500', iconColor: 'text-white', trend: '-2' },
-      { label: 'Bots', value: 152, icon: Bot, color: 'bg-red-400', iconColor: 'text-white', trend: '+18' },
-      { label: 'Operadores', value: 89, icon: UserCog, color: 'bg-yellow-400', iconColor: 'text-white', trend: '+5' },
-      {
-        label: 'Estabelecimentos',
-        value: 34,
-        icon: Building2,
-        color: 'bg-[color:rgba(168,230,15,0.2)]',
-        iconColor: 'text-[var(--primary)]',
-        trend: '+7%',
-      },
-      { label: 'Saldo', value: 'R$ 45.8k', icon: Wallet, color: 'bg-green-500', iconColor: 'text-white', trend: '+15%' },
-    ],
-    []
+  useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+
+    (async () => {
+      setLoadingStats(true);
+      try {
+        const payload = await api<Partial<Record<string, unknown>>>('/dashboard', {
+          signal: controller.signal,
+        });
+        if (!active) {
+          return;
+        }
+        setStats(normalizeStats(payload));
+        setLoadError(null);
+      } catch (error) {
+        if (!active || (error instanceof DOMException && error.name === 'AbortError')) {
+          return;
+        }
+        console.error('Falha ao carregar indicadores do dashboard', error);
+        setStats(DEFAULT_STATS);
+        setLoadError('Não foi possível carregar os indicadores agora.');
+      } finally {
+        if (active) {
+          setLoadingStats(false);
+        }
+      }
+    })();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!actionMessage) return;
+    const timer = window.setTimeout(() => setActionMessage(null), actionMessage.type === 'success' ? 4000 : 6000);
+    return () => window.clearTimeout(timer);
+  }, [actionMessage]);
+
+  const metricCards: MetricCard[] = useMemo(
+    () =>
+      METRIC_BLUEPRINT.map((metric) => ({
+        label: metric.label,
+        icon: metric.icon,
+        accent: metric.accent,
+        iconColor: metric.iconColor,
+        helper: metric.helper,
+        value: loadingStats ? '—' : numberFormatter.format(stats[metric.key]),
+      })),
+    [loadingStats, numberFormatter, stats],
   );
 
-  const funnelData = [
-    { stage: 'Nutrição', count: 47, percentage: 100 },
-    { stage: 'Qualificado', count: 32, percentage: 68 },
-    { stage: 'Negociação', count: 23, percentage: 49 },
-    { stage: 'Proposta', count: 15, percentage: 32 },
-    { stage: 'Trial', count: 8, percentage: 17 },
-    { stage: 'Ganho', count: 5, percentage: 11 },
-  ];
+  const quickActions = useMemo(
+    () => [
+      {
+        label: 'Gerenciar Leads',
+        description: loadingStats ? 'Carregando…' : `${numberFormatter.format(stats.leads)} leads ativos`,
+        icon: Users,
+        accent: 'bg-[rgba(91,225,0,0.14)] text-[var(--noah-primary)]',
+        navigateTo: '/leads',
+      },
+      {
+        label: 'Pipeline de Vendas',
+        description: loadingStats
+          ? 'Carregando…'
+          : `${numberFormatter.format(stats.opportunities)} oportunidades`,
+        icon: TrendingUp,
+        accent: 'bg-[rgba(72,196,0,0.14)] text-[var(--noah-primary-600)]',
+        navigateTo: '/opportunities',
+      },
+      {
+        label: 'Implantação',
+        description: loadingStats
+          ? 'Carregando…'
+          : `${numberFormatter.format(stats.implementacao)} em andamento`,
+        icon: Wrench,
+        accent: 'bg-[rgba(58,163,0,0.16)] text-[var(--noah-primary-700)]',
+        navigateTo: '/implementation',
+      },
+      {
+        label: 'Financeiro',
+        description: 'Painel Noah Omni',
+        icon: DollarSign,
+        accent: 'bg-[rgba(15,24,25,0.9)] text-[var(--noah-text)]',
+        navigateTo: '/pricing',
+      },
+    ],
+    [loadingStats, numberFormatter, stats],
+  );
+
+  const handleCreate = async (kind: 'lead' | 'opportunity') => {
+    if (creating[kind]) return;
+    setActionMessage(null);
+    setCreating((prev) => ({ ...prev, [kind]: true }));
+    const endpoint = kind === 'lead' ? '/leads' : '/opportunities';
+
+    try {
+      const payload = await api<Partial<Record<string, unknown>>>(endpoint, { method: 'POST' });
+      setStats(normalizeStats(payload));
+      setActionMessage({
+        type: 'success',
+        text: kind === 'lead' ? 'Lead registrado com sucesso.' : 'Oportunidade registrada com sucesso.',
+      });
+    } catch (error) {
+      console.error(`Falha ao registrar ${kind}`, error);
+      setActionMessage({
+        type: 'error',
+        text: 'Não foi possível registrar agora. Tente novamente em instantes.',
+      });
+    } finally {
+      setCreating((prev) => ({ ...prev, [kind]: false }));
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500">Visão geral do Noah ERP</p>
+          <h1 className="text-2xl font-semibold text-[var(--noah-text)]">Dashboard</h1>
+          <p className="text-sm text-[rgba(230,247,230,0.68)]">
+            {user?.name ? `Bem-vindo de volta, ${user.name}!` : 'Visão geral do Noah ERP'}
+          </p>
         </div>
         <div className="flex gap-2">
           <Can roles={['ADMIN_NOAH', 'SELLER']}>
-            <Button onClick={() => navigate('/leads')}>
+            <Button
+              onClick={() => void handleCreate('lead')}
+              disabled={creating.lead || loadingStats}
+              aria-live="polite"
+            >
               <Plus className="mr-2 h-4 w-4" />
-              Criar Lead
+              {creating.lead ? 'Registrando…' : 'Criar Lead'}
             </Button>
           </Can>
           <Can roles={['ADMIN_NOAH', 'SELLER']}>
-            <Button variant="outline" onClick={() => navigate('/opportunities')}>
+            <Button
+              variant="outline"
+              onClick={() => void handleCreate('opportunity')}
+              disabled={creating.opportunity || loadingStats}
+              aria-live="polite"
+            >
               <Plus className="mr-2 h-4 w-4" />
-              Criar Oportunidade
+              {creating.opportunity ? 'Registrando…' : 'Criar Oportunidade'}
             </Button>
           </Can>
         </div>
       </div>
 
+      {actionMessage && (
+        <div
+          role="status"
+          aria-live={actionMessage.type === 'error' ? 'assertive' : 'polite'}
+          className={
+            actionMessage.type === 'success'
+              ? 'rounded-lg border border-[rgba(91,225,0,0.35)] bg-[rgba(91,225,0,0.12)] p-4 text-sm text-[var(--noah-primary)]'
+              : 'rounded-lg border border-[rgba(255,107,107,0.4)] bg-[rgba(255,107,107,0.1)] p-4 text-sm text-[#ff9f9f]'
+          }
+        >
+          {actionMessage.text}
+        </div>
+      )}
+
+      {loadError && (
+        <div
+          role="alert"
+          className="rounded-lg border border-[rgba(255,107,107,0.4)] bg-[rgba(255,107,107,0.1)] p-4 text-sm text-[#ff9f9f]"
+        >
+          {loadError}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          const iconColor = stat.iconColor ?? 'text-white';
+        {metricCards.map((metric) => {
+          const Icon = metric.icon;
           return (
-            <Card key={index} className="transition-shadow hover:shadow-lg">
+            <Card key={metric.label} className="bg-[rgba(15,24,25,0.85)] transition-shadow hover:shadow-lg">
               <CardContent className="p-6">
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <p className="text-sm text-gray-600">{stat.label}</p>
-                    <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
-                    <p className="text-xs text-gray-500">{stat.trend} vs. mês passado</p>
+                    <p className="text-sm text-[rgba(230,247,230,0.68)]">{metric.label}</p>
+                    <p className="text-2xl font-semibold text-[rgba(230,247,230,0.95)]">{metric.value}</p>
+                    {metric.helper && (
+                      <p className="text-xs text-[rgba(230,247,230,0.6)]">{metric.helper}</p>
+                    )}
                   </div>
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${stat.color}`}>
-                    <Icon className={`h-6 w-6 ${iconColor}`} />
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${metric.accent}`}>
+                    <Icon className={`h-6 w-6 ${metric.iconColor}`} />
                   </div>
                 </div>
               </CardContent>
@@ -106,113 +300,48 @@ export function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <Card>
+        <Card className="bg-[rgba(15,24,25,0.85)]">
           <CardHeader>
             <CardTitle>Funil de Vendas (Últimos 30 dias)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {funnelData.map((stage, index) => (
-                <div key={index}>
-                  <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="text-gray-700">{stage.stage}</span>
-                    <span className="font-medium text-gray-900">{stage.count}</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-gray-200">
-                    <div
-                      className="h-2 rounded-full bg-[var(--primary)] transition-all"
-                      style={{ width: `${stage.percentage}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <p className="text-sm text-[rgba(230,247,230,0.68)]">
+              Os dados do funil estarão disponíveis assim que a integração com a API estiver concluída.
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-[rgba(15,24,25,0.85)]">
           <CardHeader>
             <CardTitle>Atalhos Rápidos</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <Can roles={['ADMIN_NOAH', 'SELLER']}>
-                <button
-                  onClick={() => navigate('/leads')}
-                  className="flex w-full items-center justify-between rounded-lg border border-gray-200 p-4 text-left transition hover:bg-gray-50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-100">
-                      <Users className="h-5 w-5 text-yellow-600" />
+              {quickActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <button
+                    key={action.label}
+                    onClick={() => navigate(action.navigateTo)}
+                    className="flex w-full items-center justify-between rounded-lg border border-[rgba(255,255,255,0.12)] bg-[rgba(15,24,25,0.92)] p-4 text-left transition hover:bg-[rgba(24,36,37,0.92)]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${action.accent}`}>
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-[rgba(230,247,230,0.95)]">{action.label}</div>
+                        <div className="text-xs text-[rgba(230,247,230,0.68)]">{action.description}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">Gerenciar Leads</div>
-                      <div className="text-xs text-gray-500">47 leads ativos</div>
-                    </div>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-gray-400" />
-                </button>
-              </Can>
-
-              <Can roles={['ADMIN_NOAH', 'SELLER']}>
-                <button
-                  onClick={() => navigate('/opportunities')}
-                  className="flex w-full items-center justify-between rounded-lg border border-gray-200 p-4 text-left transition hover:bg-gray-50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[color:rgba(168,230,15,0.14)]">
-                      <TrendingUp className="h-5 w-5 text-[var(--primary)]" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">Pipeline de Vendas</div>
-                      <div className="text-xs text-gray-500">23 oportunidades</div>
-                    </div>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-gray-400" />
-                </button>
-              </Can>
-
-              <Can roles={['ADMIN_NOAH', 'SUPPORT_NOAH']}>
-                <button
-                  onClick={() => navigate('/implementation')}
-                  className="flex w-full items-center justify-between rounded-lg border border-gray-200 p-4 text-left transition hover:bg-gray-50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
-                      <Wrench className="h-5 w-5 text-purple-600" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">Ir para Implantação</div>
-                      <div className="text-xs text-gray-500">8 em andamento</div>
-                    </div>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-gray-400" />
-                </button>
-              </Can>
-
-              <Can roles={['ADMIN_NOAH']}>
-                <button
-                  onClick={() => navigate('/pricing')}
-                  className="flex w-full items-center justify-between rounded-lg border border-gray-200 p-4 text-left transition hover:bg-gray-50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
-                      <DollarSign className="h-5 w-5 text-green-600" />
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">Catálogo e Regras</div>
-                      <div className="text-xs text-gray-500">Gerenciar preços</div>
-                    </div>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-gray-400" />
-                </button>
-              </Can>
+                    <ArrowRight className="h-4 w-4 text-[rgba(230,247,230,0.55)]" />
+                  </button>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
       </div>
-
-      <p className="text-xs text-gray-400">Último acesso: {user?.updatedAt ? new Date(user.updatedAt).toLocaleString('pt-BR') : '—'}</p>
     </div>
   );
 }
