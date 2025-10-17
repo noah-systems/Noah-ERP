@@ -134,13 +134,9 @@ API_DIR="$(detect_api_dir)"
 [ -n "${API_DIR}" ] || { err "API directory not found (expected api/server/backend)."; exit 1; }
 ok "API at ${API_DIR}"
 
-log "Installing API deps, Prisma generate/migrate/seed"
+log "Installing API deps and preparing environment"
 cd "${API_DIR}"
 npm ci --no-audit --no-fund --include=dev || npm i --no-audit --no-fund --legacy-peer-deps --include=dev
-npx prisma generate
-npx prisma migrate deploy
-npx prisma db seed || true
-npm run build || true
 
 log "Creating service user and environment"
 id -u noah >/dev/null 2>&1 || useradd --system --home "${INSTALL_DIR}" --shell /sbin/nologin noah
@@ -161,6 +157,19 @@ ADMIN_EMAIL=${ADMIN_EMAIL}
 ADMIN_PASSWORD=${ADMIN_PASSWORD}
 CORS_ORIGINS=https://${DOMAIN_WEB},https://${DOMAIN_API}
 ENV
+
+ln -sf /etc/noah-erp/api.env "${API_DIR}/.env"
+set -a
+. /etc/noah-erp/api.env
+set +a
+
+log "Running Prisma generate/migrate/seed"
+if ! (npx prisma generate && npx prisma migrate deploy && node prisma/seed.js); then
+  err "Prisma setup failed"
+  exit 1
+fi
+
+npm run build || true
 
 chown -R noah:noah "${INSTALL_DIR}"
 
