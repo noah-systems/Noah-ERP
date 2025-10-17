@@ -5,7 +5,6 @@ WORKDIR /app
 # Evita tentativa de binário nativo do Rollup (bug em npm + Alpine/musl)
 ENV NODE_ENV=production \
     ROLLUP_SKIP_NODEJS_NATIVE=true \
-    npm_config_optional=false \
     npm_config_audit=false \
     npm_config_fund=false
 
@@ -28,11 +27,10 @@ RUN set -eux; \
   if [ -n "$HTTPS_PROXY" ]; then npm config set https-proxy "$HTTPS_PROXY"; fi; \
   if [ -f package-lock.json ]; then \
     (npm ci --no-audit --no-fund) \
-    || (echo "npm ci failed → falling back to npm install" \
+    || (echo "npm ci failed → fallback to npm install" \
         && rm -f package-lock.json \
         && npm install --no-audit --no-fund --legacy-peer-deps \
-        && npm dedupe \
-        && npm prune --omit=optional); \
+        && npm dedupe); \
   elif [ -f pnpm-lock.yaml ]; then \
     corepack enable && (pnpm i --frozen-lockfile || pnpm i); \
   elif [ -f yarn.lock ]; then \
@@ -40,6 +38,8 @@ RUN set -eux; \
   else \
     npm install --no-audit --no-fund --legacy-peer-deps; \
   fi
+
+RUN node -e "require('@swc/core'); console.log('swc ok')"
 
 # Código e build
 COPY . .
