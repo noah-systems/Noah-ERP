@@ -49,7 +49,58 @@ Este runbook descreve o fluxo completo para provisionar, validar e atualizar o N
 
 - O arquivo **`/etc/noah-erp/api.env`** é a única fonte de verdade para a API em instalações bare-metal. O instalador cria esse arquivo (se ainda não existir) com os defaults de produção e reforça que o conteúdo utilize o usuário de banco `noah`.
 - Dentro do repositório, `api/.env` deve ser **apenas um symlink** para `/etc/noah-erp/api.env` (`ln -snf /etc/noah-erp/api.env api/.env`). Não crie cópias locais do arquivo.
-- O Prisma não utiliza `prisma/.env`. Caso o arquivo apareça novamente (`api/prisma/.env`), remova-o imediatamente — a duplicação de variáveis derruba o acesso ao banco.
+- `api/prisma/.env` é intencionalmente não utilizado. Se o arquivo aparecer novamente, remova-o imediatamente — duplicar variáveis causa colisões no Prisma e resulta em erros de conexão.
+
+Se o Prisma voltar a acusar `P1012` (DATABASE_URL ausente), execute o bloco abaixo no servidor. Ele recria o ambiente único, remove o `prisma/.env`, reforça o usuário `noah` e reroda o pipeline do Prisma com as variáveis corretas:
+
+```bash
+API_DIR="/opt/noah-erp/Noah-ERP/api"
+rm -f "$API_DIR/prisma/.env"
+install -d /etc/noah-erp
+cat >/etc/noah-erp/api.env <<'ENV'
+NODE_ENV=production
+PORT=3000
+DATABASE_URL=postgresql://noah:q%409dlyU0AAJ9@127.0.0.1:5432/noah?schema=public
+REDIS_URL=redis://127.0.0.1:6379
+JWT_SECRET=__FILL_ME__
+ADMIN_NAME=Admin Noah
+ADMIN_EMAIL=admin@noahomni.com.br
+ADMIN_PASSWORD=D2W3£Qx!0Du#
+CORS_ORIGINS=http://localhost,http://127.0.0.1
+ENV
+sed -i "s|^JWT_SECRET=__FILL_ME__|JWT_SECRET=$(openssl rand -hex 32)|" /etc/noah-erp/api.env || true
+sed -i '/^DATABASE_URL=/d' /etc/noah-erp/api.env
+echo 'DATABASE_URL=postgresql://noah:q%409dlyU0AAJ9@127.0.0.1:5432/noah?schema=public' >> /etc/noah-erp/api.env
+ln -snf /etc/noah-erp/api.env "$API_DIR/.env"
+set -a; . /etc/noah-erp/api.env; set +a
+echo "DATABASE_URL ativa: $(echo "$DATABASE_URL" | sed 's#://\([^:]*\):[^@]*@#://\1:***@#')"
+sudo -u postgres psql -v ON_ERROR_STOP=1 <<'SQL'
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'noah') THEN
+    CREATE ROLE noah LOGIN PASSWORD 'q@9dlyU0AAJ9';
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT FROM pg_database WHERE datname = 'noah') THEN
+    CREATE DATABASE noah OWNER noah;
+  END IF;
+END $$;
+
+ALTER DATABASE noah OWNER TO noah;
+GRANT ALL PRIVILEGES ON DATABASE noah TO noah;
+
+\connect noah
+GRANT USAGE, CREATE ON SCHEMA public TO noah;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO noah;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO noah;
+SQL
+
+cd "$API_DIR"
+npx prisma generate
+npx prisma migrate deploy
+node prisma/seed.js
+```
 
 ### 3.1 API (`apps/api`)
 
