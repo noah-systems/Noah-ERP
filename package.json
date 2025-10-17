@@ -2,6 +2,12 @@
   "name": "Noah ERP Mockups",
   "version": "0.1.0",
   "private": true,
+  "overrides": {
+    "rollup": "npm:@rollup/wasm-node",
+    "vite": {
+      "rollup": "npm:@rollup/wasm-node"
+    }
+  },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
@@ -65,6 +71,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "preflight": "node scripts/preflight.mjs",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:degraded": "tsc -p tsconfig.degraded.json --noEmit",
