@@ -4,14 +4,19 @@ apps/api/prisma/.env
 
 # Speed up Docker builds by ignoring dependencies and build outputs
 node_modules
+**/node_modules
 apps/api/node_modules
 apps/api/dist
+dist
+build
 apps/api/.turbo
 apps/api/.next
 
 # Git metadata
 .git
 .gitignore
+.vscode
+coverage
 
 # Local environment files
 .env

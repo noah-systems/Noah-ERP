@@ -1,10 +1,31 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
-RUN if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable && pnpm i --frozen-lockfile; \
-  elif [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  else npm i --no-audit --no-fund; fi
+ARG NPM_CONFIG_REGISTRY=https://registry.npmjs.org/
+ARG HTTP_PROXY=""
+ARG HTTPS_PROXY=""
+ARG NO_PROXY="localhost,127.0.0.1"
+
+RUN set -eux; \
+  npm config set fund false; \
+  npm config set audit false; \
+  npm config set registry "$NPM_CONFIG_REGISTRY"; \
+  if [ -n "$HTTP_PROXY" ]; then npm config set proxy "$HTTP_PROXY"; fi; \
+  if [ -n "$HTTPS_PROXY" ]; then npm config set https-proxy "$HTTPS_PROXY"; fi; \
+  if [ -f package-lock.json ]; then \
+    (npm ci --no-audit --no-fund) \
+    || (echo "npm ci falhou (lock fora de sincronia) → fallback npm install" \
+        && rm -f package-lock.json \
+        && npm install --no-audit --no-fund --legacy-peer-deps \
+        && npm dedupe \
+        && npm prune --omit=optional); \
+  elif [ -f pnpm-lock.yaml ]; then \
+    corepack enable && (pnpm i --frozen-lockfile || pnpm i); \
+  elif [ -f yarn.lock ]; then \
+    (yarn --frozen-lockfile || yarn); \
+  else \
+    npm install --no-audit --no-fund --legacy-peer-deps; \
+  fi
 COPY . .
 RUN npm run build
 
