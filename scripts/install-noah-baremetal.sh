@@ -158,7 +158,9 @@ ADMIN_PASSWORD=${ADMIN_PASSWORD}
 CORS_ORIGINS=https://${DOMAIN_WEB},https://${DOMAIN_API}
 ENV
 
-ln -sf /etc/noah-erp/api.env "${API_DIR}/.env"
+# Overwrite repo-local .env (tracked for dev) with the service env
+rm -f "${API_DIR}/.env"
+ln -s /etc/noah-erp/api.env "${API_DIR}/.env"
 set -a; . /etc/noah-erp/api.env; set +a
 
 log "Running Prisma generate/migrate/seed"
