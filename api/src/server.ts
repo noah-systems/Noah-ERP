@@ -17,6 +17,10 @@ app.use(express.json());
 const PORT = Number(process.env.PORT || 3000);
 const JWT_SECRET = process.env.JWT_SECRET || 'change-me-please-32chars-min';
 
+app.get('/ping', (_req, res) => {
+  return res.status(200).json({ ok: true });
+});
+
 function sanitizeUser(user: User) {
   const { passwordHash, ...rest } = user;
   return rest;
