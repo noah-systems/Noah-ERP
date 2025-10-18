@@ -9,6 +9,7 @@ import prisma from './db';
 import { auth } from './middleware/auth';
 
 const app = express();
+const router = express.Router();
 app.set('trust proxy', true);
 app.use(cors());
 app.use(express.json());
@@ -29,9 +30,9 @@ function handlePrismaError(error: unknown, res: express.Response) {
   return res.status(500).json({ error: 'Internal server error' });
 }
 
-app.get('/health', (_req, res) => res.status(200).json({ ok: true }));
+router.get('/health', (_req, res) => res.status(200).json({ ok: true }));
 
-app.post('/auth/login', async (req, res) => {
+router.post('/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body ?? {};
     if (!email || !password) {
@@ -61,7 +62,7 @@ app.post('/auth/login', async (req, res) => {
   }
 });
 
-app.get('/auth/me', auth, async (req, res) => {
+router.get('/auth/me', auth, async (req, res) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -78,7 +79,7 @@ app.get('/auth/me', auth, async (req, res) => {
   }
 });
 
-app.get('/leads', auth, async (_req, res) => {
+router.get('/leads', auth, async (_req, res) => {
   try {
     const leads = await prisma.lead.findMany({ orderBy: { createdAt: 'desc' } });
     return res.json(leads);
@@ -87,7 +88,7 @@ app.get('/leads', auth, async (_req, res) => {
   }
 });
 
-app.post('/leads', auth, async (req, res) => {
+router.post('/leads', auth, async (req, res) => {
   try {
     const { name, email, phone, stage, source } = req.body ?? {};
     if (!name) {
@@ -110,7 +111,7 @@ app.post('/leads', auth, async (req, res) => {
   }
 });
 
-app.put('/leads/:id', auth, async (req, res) => {
+router.put('/leads/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, email, phone, stage, source, ownerId } = req.body ?? {};
@@ -132,7 +133,7 @@ app.put('/leads/:id', auth, async (req, res) => {
   }
 });
 
-app.delete('/leads/:id', auth, async (req, res) => {
+router.delete('/leads/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
     await prisma.lead.delete({ where: { id } });
@@ -142,7 +143,7 @@ app.delete('/leads/:id', auth, async (req, res) => {
   }
 });
 
-app.put('/leads/:id/move', auth, async (req, res) => {
+router.put('/leads/:id/move', auth, async (req, res) => {
   try {
     const { id } = req.params;
     const { stage } = req.body ?? {};
@@ -157,7 +158,7 @@ app.put('/leads/:id/move', auth, async (req, res) => {
   }
 });
 
-app.get('/opps', auth, async (_req, res) => {
+router.get('/opportunities', auth, async (_req, res) => {
   try {
     const opportunities = await prisma.opportunity.findMany({
       orderBy: { createdAt: 'desc' },
@@ -169,7 +170,7 @@ app.get('/opps', auth, async (_req, res) => {
   }
 });
 
-app.post('/opps', auth, async (req, res) => {
+router.post('/opportunities', auth, async (req, res) => {
   try {
     const { title, value, stage, leadId } = req.body ?? {};
     if (!title) {
@@ -194,7 +195,7 @@ app.post('/opps', auth, async (req, res) => {
   }
 });
 
-app.put('/opps/:id', auth, async (req, res) => {
+router.put('/opportunities/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
     const { title, value, stage, leadId, ownerId } = req.body ?? {};
@@ -221,7 +222,7 @@ app.put('/opps/:id', auth, async (req, res) => {
   }
 });
 
-app.delete('/opps/:id', auth, async (req, res) => {
+router.delete('/opportunities/:id', auth, async (req, res) => {
   try {
     const { id } = req.params;
     await prisma.opportunity.delete({ where: { id } });
@@ -231,7 +232,7 @@ app.delete('/opps/:id', auth, async (req, res) => {
   }
 });
 
-app.put('/opps/:id/move', auth, async (req, res) => {
+router.put('/opportunities/:id/move', auth, async (req, res) => {
   try {
     const { id } = req.params;
     const { stage } = req.body ?? {};
@@ -249,6 +250,8 @@ app.put('/opps/:id/move', auth, async (req, res) => {
     return handlePrismaError(error, res);
   }
 });
+
+app.use('/api', router);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   return handlePrismaError(err, res);
