@@ -8,9 +8,12 @@ body {
 
 
 .login-wrap {
-  --login-background-image: url('/brand/login-eclipse-desktop.png');
-  --login-background-image-2x: url('/brand/login-eclipse@2x.png');
-  --login-background-portrait: url('/brand/login-eclipse-mobile.png');
+  --login-background-default: radial-gradient(circle at 25% 30%, rgba(195, 255, 0, 0.4), rgba(10, 27, 44, 0.15) 45%),
+    radial-gradient(circle at 70% 20%, rgba(195, 255, 0, 0.3), rgba(10, 27, 44, 0.1) 40%),
+    linear-gradient(135deg, rgba(5, 8, 15, 0.92), rgba(10, 27, 44, 0.95));
+  --login-background-image: var(--login-background-default);
+  --login-background-image-2x: var(--login-background-default);
+  --login-background-portrait: var(--login-background-default);
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -19,10 +22,10 @@ body {
   position: relative;
   overflow: hidden;
   background-color: #000;
-  background-image: var(--login-background-image);
+  background-image: var(--login-background-image, var(--login-background-default));
   background-image: image-set(
-    var(--login-background-image) 1x,
-    var(--login-background-image-2x) 2x
+    var(--login-background-image, var(--login-background-default)) 1x,
+    var(--login-background-image-2x, var(--login-background-default)) 2x
   );
   background-size: cover;
   background-position: center;
@@ -32,7 +35,7 @@ body {
 
 @media (max-aspect-ratio: 3/4) {
   .login-wrap {
-    background-image: var(--login-background-portrait);
+    background-image: var(--login-background-portrait, var(--login-background-image, var(--login-background-default)));
   }
 }
 
@@ -57,6 +60,14 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+.login-card header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
 }
 
 .login-card h1 {
@@ -211,6 +222,26 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login-card button .button-loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.spinner {
+  animation: login-spin 0.8s linear infinite;
+}
+
+@keyframes login-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .login-card button[type='submit']:hover {

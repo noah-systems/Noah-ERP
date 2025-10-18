@@ -110,11 +110,11 @@ cd "${REPO_DIR}"
 [ -f ".env" ] || cp -f .env.example .env || true
 set_kv(){ local K="$1" V="$2"; grep -q "^${K}=" .env && sed -i "s|^${K}=.*|${K}=${V}|" .env || echo "${K}=${V}" >> .env; }
 set_kv VITE_API_BASE "https://${DOMAIN_API}/api"
-set_kv VITE_NOAH_FAVICON "/brand/favicon.ico"
-set_kv VITE_NOAH_APPLE_TOUCH "/brand/apple-touch-icon.png"
-set_kv VITE_LOGIN_BG "/brand/login-eclipse-desktop.png"
-set_kv VITE_LOGIN_BG_2X "/brand/login-eclipse@2x.png"
-set_kv VITE_LOGIN_BG_PORTRAIT "/brand/login-eclipse-mobile.png"
+set_kv VITE_NOAH_FAVICON ""
+set_kv VITE_NOAH_APPLE_TOUCH ""
+set_kv VITE_LOGIN_BG ""
+set_kv VITE_LOGIN_BG_2X ""
+set_kv VITE_LOGIN_BG_PORTRAIT ""
 
 log "Installing frontend deps and building (force Rollup WASM; include dev deps)"
 export ROLLUP_SKIP_NODEJS_NATIVE=true
@@ -127,10 +127,7 @@ log "Publishing static site to ${WEB_DEPLOY}"
 rm -rf "${WEB_DEPLOY}"
 mkdir -p "${WEB_DEPLOY}"
 cp -a "${REPO_DIR}/dist/." "${WEB_DEPLOY}/"
-if [ -d "${REPO_DIR}/public/brand" ]; then
-  mkdir -p "${WEB_DEPLOY}/brand"
-  cp -a "${REPO_DIR}/public/brand/." "${WEB_DEPLOY}/brand/"
-fi
+# Branding padrão usa SVG/data URI; assets extras podem ser fornecidos via ENV.
 semanage fcontext -a -t httpd_sys_content_t "${WEB_DEPLOY}(/.*)?" >/dev/null 2>&1 || true
 restorecon -Rv "${WEB_DEPLOY}" >/dev/null 2>&1 || true
 ok "Frontend published"

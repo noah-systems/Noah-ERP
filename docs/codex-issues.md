@@ -115,10 +115,10 @@ Solicitar:
   - `NEXT_PUBLIC_NOAH_APP_NAME=Noah ERP`
   - `NEXT_PUBLIC_LOGO_LIGHT=https://.../noah-logo-light.png`
   - `NEXT_PUBLIC_LOGO_DARK=https://.../noah-logo-dark.png`
-  - `NEXT_PUBLIC_FAVICON=https://.../favicon.png`
-  - `NEXT_PUBLIC_APPLE_TOUCH=https://.../apple-touch.png`
+  - `NEXT_PUBLIC_FAVICON=https://.../favicon.svg`
+  - `NEXT_PUBLIC_APPLE_TOUCH=https://.../apple-touch.svg`
     - `NEXT_PUBLIC_THEME_COLOR=#d4183d`
-- `public/brand/*` com fallbacks para garantir que os assets nunca sumam.
+- Branding padrão com SVG/data URI (nada de PNGs versionados) e suporte a override via ENV.
 - `src/styles/brand.css` com tokens vindos do Figma (variáveis CSS) e `tailwind.config.ts` mapeando `brand.*`.
 - Componente `BrandLogo` lendo as variáveis de ambiente (`light`/`dark`) sem aplicar filtros (ex.: `invert`).
 

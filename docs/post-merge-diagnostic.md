@@ -5,7 +5,7 @@ Este roteiro documenta o estado esperado do ambiente de produção após um merg
 ## Backend / API
 
 - **Processo**: `systemd` mantém a API escutando na porta `3000`, com o Nginx publicando em `https://erpapi.noahomni.com.br/api`.
-- **Health check**: `GET https://erpapi.noahomni.com.br/ping` precisa responder `200 {"ok": true}`.
+- **Health check**: `GET https://erpapi.noahomni.com.br/ping` precisa responder `200` com corpo `pong` em `text/plain`.
 - **CORS / preflight**: requisições `OPTIONS` para `/api/auth/login` (e equivalentes) retornam `204` com os cabeçalhos `Access-Control-Allow-*` completos.
 - **ACL**: rotas protegidas devem devolver `401` sem header `Authorization: Bearer`. O mesmo endpoint precisa responder `200` quando receber um token válido.
 - **Rotas principais** (mínimo obrigatório conforme build atual):
@@ -34,18 +34,14 @@ Este roteiro documenta o estado esperado do ambiente de produção após um merg
 ## Front / branding / UX
 
 - **Build**: a build do Vite fica na raiz do repo. Publique o conteúdo de `dist/` como docroot em `erp.noahomni.com.br`.
-- **Variáveis**: `.env.production` precisa apontar para a API e assets de branding:
+- **Variáveis**: `.env.production` precisa apontar para a API; logos/backdrops podem ser sobrescritos opcionalmente (SVG/data URI):
 
   ```dotenv
   VITE_API_BASE=https://erpapi.noahomni.com.br/api
-  VITE_LOGO_LIGHT=/brand/logo-light.png
-  VITE_LOGO_DARK=/brand/logo-dark.png
-  VITE_LOGIN_BG=/brand/login-eclipse-desktop.png
-  VITE_LOGIN_BG_PORTRAIT=/brand/login-eclipse-mobile.png
-  VITE_THEME_COLOR=#<cor-da-marca>
+  VITE_THEME_COLOR=#0A1B2C
   ```
 
-- **Assets**: garanta que os PNGs em `public/brand/` estejam publicados no mesmo host do front (não depende de S3). O código tem fallback local, então caminhos quebrados resultam em ícones ausentes.
+- **Assets**: por padrão o build incorpora SVG/data URI (sem PNGs). Se quiser substituir por imagens próprias, exponha-as via CDN/local e ajuste `VITE_LOGO_LIGHT`, `VITE_LOGO_DARK`, `VITE_LOGIN_BG*` e `VITE_NOAH_FAVICON`.
 - **UX mínimo**:
   - Placeholder em tema escuro com contraste ≥ 4.5:1.
   - Estado de erro visual nos inputs (borda/label).
@@ -61,5 +57,6 @@ Este roteiro documenta o estado esperado do ambiente de produção após um merg
    - `erpapi` com `location /api/ { proxy_pass http://127.0.0.1:3000/; }` e CORS liberando `https://erp.noahomni.com.br`.
 4. Variáveis de ambiente revisadas tanto na API quanto no front.
 5. Execute `./scripts/noah_e2e_check.sh` (vide README) apontando para os hosts públicos. Com status `OK`, cadastros/movimentações de leads e oportunidades passam nos testes funcionais documentados em [`docs/QA.md`](./QA.md).
+6. Para um smoke test rápido em produção, use `./scripts/smoke.sh` (requer `curl`) e confirme todos os `==>` com `OK`.
 
 > Reavalie este diagnóstico sempre que novas rotas ou assets forem introduzidos para manter o checklist sincronizado com o estado atual da aplicação.

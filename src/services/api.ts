@@ -25,7 +25,7 @@ export class ApiError extends Error {
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE || "/api",
-  withCredentials: false,
+  withCredentials: true,
 });
 
 api.interceptors.request.use((config) => {
