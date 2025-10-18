@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { api } from '@/lib/api';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+
+import { apiClient, getErrorMessage } from '@/services/api';
 
 export type Role = 'ADMIN_NOAH' | 'SUPPORT_NOAH' | 'SELLER' | 'ADMIN_PARTNER';
 type RawRole =
@@ -24,7 +25,7 @@ type AuthContextType = {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   hasRole: (...roles: Role[]) => boolean;
 };
 
@@ -55,11 +56,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function fetchMe() {
     try {
-      const me = await api<RawUser>('/auth/me');
-      setUser({ ...me, role: normalizeRole(me.role) });
+      const { data } = await apiClient.get<RawUser>('/auth/me');
+      setUser({ ...data, role: normalizeRole(data.role) });
     } catch {
       setUser(null);
-      localStorage.removeItem('token');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+      }
     } finally {
       setLoading(false);
     }
@@ -69,19 +72,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     fetchMe();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const { token, user: me } = await api<{ token: string; user: RawUser }>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-    localStorage.setItem('token', token);
-    setUser({ ...me, role: normalizeRole(me.role) });
-  };
+  const login = useCallback(async (email: string, password: string) => {
+    try {
+      const { data } = await apiClient.post<{ token: string; user: RawUser }>('/auth/login', {
+        email,
+        password,
+      });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('token', data.token);
+      }
+      setUser({ ...data.user, role: normalizeRole(data.user.role) });
+    } catch (error) {
+      throw new Error(getErrorMessage(error));
+    }
+  }, []);
 
-  const logout = () => {
-    localStorage.removeItem('token');
+  const logout = useCallback(async () => {
+    try {
+      await apiClient.post('/auth/logout');
+    } catch {
+      // ignore errors to avoid bloquear o fluxo de logout
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+    }
     setUser(null);
-  };
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -95,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return roles.some((role) => ROLE_ALIASES[role]?.includes(rawRole));
       },
     }),
-    [user, loading]
+    [user, loading, login, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

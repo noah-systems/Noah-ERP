@@ -1,99 +1,81 @@
-import { Filter, Download } from 'lucide-react';
+import { Download, Filter } from 'lucide-react';
+
 import { Button } from '../ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
-
-const mockCanceled = [
-  {
-    id: '1',
-    client: 'Empresa Teste A',
-    subdomain: 'empresateste',
-    reason: 'Preço elevado',
-    requestDate: '01/09/2025',
-    effectiveDate: '30/09/2025',
-    responsible: 'João Suporte',
-    notes: 'Cliente informou que encontrou solução mais barata',
-  },
-  {
-    id: '2',
-    client: 'Tech Services Ltda',
-    subdomain: 'techservices',
-    reason: 'Baixo uso da plataforma',
-    requestDate: '15/09/2025',
-    effectiveDate: '15/10/2025',
-    responsible: 'Maria Suporte',
-    notes: 'Cliente não conseguiu engajar equipe',
-  },
-  {
-    id: '3',
-    client: 'Comércio Digital',
-    subdomain: 'comerciodigital',
-    reason: 'Fechamento da empresa',
-    requestDate: '20/09/2025',
-    effectiveDate: '20/09/2025',
-    responsible: 'João Suporte',
-    notes: 'Empresa encerrou atividades',
-  },
-];
+import { useCancellations } from '@/hooks/useCancellations';
 
 const reasonColors: Record<string, string> = {
   'Preço elevado': 'bg-red-100 text-red-700',
-  'Baixo uso da plataforma': 'bg-yellow-100 text-yellow-700',
-  'Fechamento da empresa': 'bg-gray-100 text-gray-700',
-  'Insatisfação com suporte': 'bg-orange-100 text-orange-700',
+  'Baixo uso': 'bg-yellow-100 text-yellow-700',
+  'Fechamento': 'bg-gray-100 text-gray-700',
 };
 
 export function CanceledView() {
+  const { cancellations, isLoading } = useCancellations();
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl text-gray-900">Vendas Canceladas</h1>
-          <p className="text-gray-500">Histórico de cancelamentos e motivos</p>
+          <h1 className="text-2xl font-semibold text-gray-900">Vendas Canceladas</h1>
+          <p className="text-sm text-gray-500">Histórico de cancelamentos registrados</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline">
-            <Filter className="w-4 h-4 mr-2" />
-            Filtros
+            <Filter className="mr-2 h-4 w-4" /> Filtros
           </Button>
           <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Exportar
+            <Download className="mr-2 h-4 w-4" /> Exportar
           </Button>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg border border-gray-200">
+      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Cliente</TableHead>
-              <TableHead>Subdomínio</TableHead>
+              <TableHead>Oportunidade</TableHead>
               <TableHead>Motivo</TableHead>
-              <TableHead>Data Solicitação</TableHead>
-              <TableHead>Data Efetiva</TableHead>
-              <TableHead>Responsável</TableHead>
-              <TableHead>Observações</TableHead>
+              <TableHead>Data solicitação</TableHead>
+              <TableHead>Notas</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {mockCanceled.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell>{item.client}</TableCell>
-                <TableCell>
-                  <span className="text-xs text-gray-500">{item.subdomain}.noahomni.com.br</span>
+            {isLoading && cancellations.length === 0
+              ? Array.from({ length: 4 }).map((_, index) => (
+                  <TableRow key={`skeleton-${index}`} className="animate-pulse">
+                    {Array.from({ length: 5 }).map((__, cell) => (
+                      <TableCell key={cell}>
+                        <div className="h-4 rounded bg-gray-100" />
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              : cancellations.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.lead?.companyName ?? '—'}</TableCell>
+                    <TableCell>{item.opportunity?.name ?? '—'}</TableCell>
+                    <TableCell>
+                      <Badge className={reasonColors[item.reason] || 'bg-slate-100 text-slate-700'}>
+                        {item.reason}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{new Date(item.cancelledAt).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell className="max-w-md truncate text-sm text-gray-600">
+                      {item.details ?? '—'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+
+            {!isLoading && cancellations.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="py-6 text-center text-sm text-gray-500">
+                  Nenhum cancelamento registrado.
                 </TableCell>
-                <TableCell>
-                  <Badge className={reasonColors[item.reason] || 'bg-gray-100 text-gray-700'}>
-                    {item.reason}
-                  </Badge>
-                </TableCell>
-                <TableCell>{item.requestDate}</TableCell>
-                <TableCell>{item.effectiveDate}</TableCell>
-                <TableCell>{item.responsible}</TableCell>
-                <TableCell className="max-w-xs truncate">{item.notes}</TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </div>

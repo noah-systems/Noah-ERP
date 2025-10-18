@@ -7,58 +7,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '../../ui/dropdown-menu';
+import type { Lead } from '@/types/domain';
+import { leadStageLabels } from '@/hooks/useLeads';
 
-const mockLeadsData = [
-  {
-    id: '1',
-    company: 'Empresa A Ltda',
-    segment: 'Varejo',
-    employees: 50,
-    contactName: 'João Silva',
-    phone: '(11) 98765-4321',
-    email: 'joao@empresaa.com',
-    origin: 'Google Ads',
-    owner: 'Maria Santos',
-    status: 'Nutrição',
-    createdAt: '10/10/2025',
-  },
-  {
-    id: '2',
-    company: 'Tech Solutions',
-    segment: 'Tecnologia',
-    employees: 25,
-    contactName: 'Ana Costa',
-    phone: '(21) 99876-5432',
-    email: 'ana@techsolutions.com',
-    origin: 'Meta',
-    owner: 'Carlos Oliveira',
-    status: 'Nutrição',
-    createdAt: '12/10/2025',
-  },
-  {
-    id: '3',
-    company: 'Distribuidora XYZ',
-    segment: 'Distribuição',
-    employees: 100,
-    contactName: 'Pedro Alves',
-    phone: '(11) 97654-3210',
-    email: 'pedro@distribuidoraxyz.com',
-    origin: 'Manual',
-    owner: 'Maria Santos',
-    status: 'Qualificado',
-    createdAt: '08/10/2025',
-  },
-];
+interface LeadsTableProps {
+  leads: Lead[];
+  isLoading?: boolean;
+}
 
-const statusColors: Record<string, string> = {
-  'Nutrição': 'bg-yellow-100 text-yellow-700',
-  'Qualificado': 'bg-green-100 text-green-700',
-  'Não Qualificado': 'bg-gray-100 text-gray-700',
-};
-
-export function LeadsTable() {
+export function LeadsTable({ leads, isLoading }: LeadsTableProps) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200">
+    <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
       <Table>
         <TableHeader>
           <TableRow>
@@ -76,39 +35,53 @@ export function LeadsTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {mockLeadsData.map((lead) => (
-            <TableRow key={lead.id} className="cursor-pointer hover:bg-gray-50">
-              <TableCell>{lead.company}</TableCell>
-              <TableCell>{lead.segment}</TableCell>
-              <TableCell>{lead.employees}</TableCell>
-              <TableCell>{lead.contactName}</TableCell>
-              <TableCell>{lead.phone}</TableCell>
-              <TableCell>{lead.email}</TableCell>
-              <TableCell>
-                <Badge variant="secondary">{lead.origin}</Badge>
-              </TableCell>
-              <TableCell>{lead.owner}</TableCell>
-              <TableCell>
-                <Badge className={statusColors[lead.status]}>{lead.status}</Badge>
-              </TableCell>
-              <TableCell>{lead.createdAt}</TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="p-1 hover:bg-gray-100 rounded">
-                      <MoreVertical className="w-4 h-4 text-gray-400" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
-                    <DropdownMenuItem>Qualificar</DropdownMenuItem>
-                    <DropdownMenuItem>Editar</DropdownMenuItem>
-                    <DropdownMenuItem className="text-red-600">Descartar</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
+          {isLoading && leads.length === 0
+            ? Array.from({ length: 4 }).map((_, index) => (
+                <TableRow key={`skeleton-${index}`} className="animate-pulse">
+                  {Array.from({ length: 10 }).map((__, cellIndex) => (
+                    <TableCell key={cellIndex}>
+                      <div className="h-4 rounded bg-gray-100" />
+                    </TableCell>
+                  ))}
+                  <TableCell>
+                    <div className="h-4 rounded bg-gray-100" />
+                  </TableCell>
+                </TableRow>
+              ))
+            : leads.map((lead) => (
+                <TableRow key={lead.id} className="transition hover:bg-gray-50">
+                  <TableCell>{lead.companyName}</TableCell>
+                  <TableCell>{lead.segment ?? '—'}</TableCell>
+                  <TableCell>{lead.employees ?? '—'}</TableCell>
+                  <TableCell>{lead.contactName ?? '—'}</TableCell>
+                  <TableCell>{lead.contactPhone ?? '—'}</TableCell>
+                  <TableCell>{lead.contactEmail ?? '—'}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{lead.origin ?? 'Não informado'}</Badge>
+                  </TableCell>
+                  <TableCell>{lead.owner?.name ?? 'Sem responsável'}</TableCell>
+                  <TableCell>
+                    <Badge>{leadStageLabels[lead.stage]}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(lead.createdAt).toLocaleDateString('pt-BR')}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="rounded p-1 text-gray-400 transition hover:bg-gray-100">
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
+                        <DropdownMenuItem>Editar</DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600">Excluir</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
         </TableBody>
       </Table>
     </div>

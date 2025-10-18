@@ -1,4 +1,5 @@
 import { FormEvent, type CSSProperties, useEffect, useMemo, useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthContext';
 import { BRAND } from '@/lib/brand';
@@ -124,28 +125,7 @@ export default function LoginPage() {
                 aria-label={showPwd ? 'Ocultar senha' : 'Mostrar senha'}
                 onClick={() => setShowPwd((value) => !value)}
               >
-                {showPwd ? (
-                  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                    <path
-                      d="M2 2l20 20M3.5 7.5C6 4.5 9.5 3 12 3c6 0 10 6 10 9 0 1.1-.4 2.1-1 3M6 18.5C3 16.5 2 14 2 12c0-1 .2-2 .6-3M9.5 9.5A4 4 0 0012 16a4 4 0 003.1-1.4"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                    <path
-                      d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                    <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="2" />
-                  </svg>
-                )}
+                {showPwd ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
           </div>
@@ -176,9 +156,9 @@ export default function LoginPage() {
             {submitting ? 'Autenticando…' : 'Entrar'}
           </button>
         </form>
-        <footer>
-          <span>Desenvolvido por <strong>Noah Omni</strong></span>
-        </footer>
+        <div aria-hidden className="sr-only">
+          Desenvolvido por Noah Omni
+        </div>
       </div>
     </div>
   );

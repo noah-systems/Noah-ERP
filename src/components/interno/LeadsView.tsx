@@ -1,14 +1,32 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Plus, LayoutGrid, Table2, Filter, Download } from 'lucide-react';
 import { Button } from '../ui/button';
 import { LeadsKanban } from './leads/LeadsKanban';
 import { LeadsTable } from './leads/LeadsTable';
 import { CreateLeadModal } from './leads/CreateLeadModal';
 import Can from '@/auth/Can';
+import { useLeads } from '@/hooks/useLeads';
+
+export type LeadsViewMode = 'kanban' | 'table';
 
 export function LeadsView() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
+  const [viewMode, setViewMode] = useState<LeadsViewMode>('kanban');
+  const {
+    leads,
+    isLoading,
+    createLead,
+    creating,
+    moveLead,
+  } = useLeads();
+
+  const handleCreateLead = useCallback(
+    async (payload: Parameters<typeof createLead>[0]) => {
+      await createLead(payload);
+      setIsCreateModalOpen(false);
+    },
+    [createLead]
+  );
 
   return (
     <div className="space-y-6">
@@ -54,9 +72,18 @@ export function LeadsView() {
         </Button>
       </div>
 
-      {viewMode === 'kanban' ? <LeadsKanban /> : <LeadsTable />}
+      {viewMode === 'kanban' ? (
+        <LeadsKanban leads={leads} isLoading={isLoading} onMove={moveLead} />
+      ) : (
+        <LeadsTable leads={leads} isLoading={isLoading} />
+      )}
 
-      <CreateLeadModal open={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
+      <CreateLeadModal
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreateLead}
+        submitting={creating}
+      />
     </div>
   );
 }

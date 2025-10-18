@@ -1,210 +1,240 @@
-import { useState } from 'react';
-import { Calendar, CheckCircle, XCircle, MoreVertical } from 'lucide-react';
+import { format } from 'date-fns';
+import { Calendar, CheckCircle, Clock } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '../ui/dialog';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import type { ImplementationStatus } from '@/types/domain';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../ui/dropdown-menu';
+  ImplementationCreatePayload,
+  useImplantacoes,
+} from '@/hooks/useImplantacoes';
+import { opportunityStageLabels } from '@/hooks/useOpportunities';
 
-interface Implementation {
-  id: string;
-  company: string;
-  url: string;
-  modules: string[];
-  responsible: string;
-  scheduledDate?: string;
-}
+const statusColumns: Array<{
+  id: ImplementationStatus;
+  title: string;
+  description: string;
+  color: string;
+  emptyMessage: string;
+}> = [
+  {
+    id: 'SCHEDULED',
+    title: 'Agendadas',
+    description: 'Implantações com data marcada',
+    color: 'bg-blue-50 border-blue-200',
+    emptyMessage: 'Nenhuma implantação agendada',
+  },
+  {
+    id: 'COMPLETED',
+    title: 'Concluídas',
+    description: 'Implantações finalizadas',
+    color: 'bg-emerald-50 border-emerald-200',
+    emptyMessage: 'Nenhuma implantação concluída',
+  },
+  {
+    id: 'CANCELLED',
+    title: 'Canceladas',
+    description: 'Implantações canceladas',
+    color: 'bg-rose-50 border-rose-200',
+    emptyMessage: 'Nenhum cancelamento registrado',
+  },
+];
+
+interface ScheduleFormValues extends ImplementationCreatePayload {}
 
 export function ImplementationView() {
-  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
-  const [selectedImpl, setSelectedImpl] = useState<Implementation | null>(null);
+  const {
+    implementations,
+    isLoading,
+    createImplementation,
+    creating,
+    updateImplementation,
+  } = useImplantacoes();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
+  const { register, handleSubmit, reset } = useForm<ScheduleFormValues>();
 
-  const implementations: Record<string, Implementation[]> = {
-    pendente: [
-      {
-        id: '1',
-        company: 'Digital Store',
-        url: 'digitalstore',
-        modules: ['CRM', 'WhatsApp', 'VOIP'],
-        responsible: 'João Suporte',
+  const grouped = useMemo(() => {
+    return statusColumns.reduce(
+      (acc, column) => {
+        acc[column.id] = implementations.filter((impl) => impl.status === column.id);
+        return acc;
       },
-      {
-        id: '2',
-        company: 'Commerce Pro',
-        url: 'commercepro',
-        modules: ['CRM', 'WhatsApp', 'Instagram'],
-        responsible: 'Maria Suporte',
-      },
-    ],
-    agendado: [
-      {
-        id: '3',
-        company: 'Varejo Plus',
-        url: 'varejoplus',
-        modules: ['CRM', 'WhatsApp', 'Campanha'],
-        responsible: 'João Suporte',
-        scheduledDate: '2025-10-20',
-      },
-    ],
-    realizado: [],
-    semSucesso: [],
+      {} as Record<ImplementationStatus, typeof implementations>
+    );
+  }, [implementations]);
+
+  const openScheduleModal = (opportunityId?: string) => {
+    setSelectedOpportunityId(opportunityId ?? null);
+    reset({
+      opportunityId: opportunityId ?? '',
+      scheduledFor: '',
+      notes: '',
+    });
+    setIsModalOpen(true);
   };
 
-  const columns = [
-    { id: 'pendente', title: 'Pendente Agendamento', color: 'bg-yellow-100 border-yellow-300' },
-    { id: 'agendado', title: 'Agendado', color: 'bg-blue-100 border-blue-300' },
-    { id: 'realizado', title: 'Implantação Realizada', color: 'bg-green-100 border-green-300' },
-    { id: 'semSucesso', title: 'Sem Sucesso', color: 'bg-red-100 border-red-300' },
-  ];
+  const onSubmit = handleSubmit(async (values) => {
+    await createImplementation({
+      opportunityId: values.opportunityId,
+      scheduledFor: values.scheduledFor,
+      notes: values.notes,
+    });
+    setIsModalOpen(false);
+    reset({ opportunityId: '', scheduledFor: '', notes: '' });
+  });
 
-  const handleSchedule = (impl: Implementation) => {
-    setSelectedImpl(impl);
-    setScheduleModalOpen(true);
+  const markAsCompleted = async (id: string) => {
+    await updateImplementation({
+      id,
+      status: 'COMPLETED',
+      completedAt: new Date().toISOString(),
+    });
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl text-gray-900">Implantação</h1>
-          <p className="text-gray-500">Gerencie as implantações de novos clientes</p>
+          <h1 className="text-2xl font-semibold text-gray-900">Implantação</h1>
+          <p className="text-sm text-gray-500">Acompanhe o agendamento e execução das implantações</p>
         </div>
+        <Button onClick={() => openScheduleModal()}>
+          <Calendar className="mr-2 h-4 w-4" /> Agendar implantação
+        </Button>
       </div>
 
       <div className="flex gap-4 overflow-x-auto pb-4">
-        {columns.map((column) => (
-          <div key={column.id} className="flex-shrink-0 w-80">
-            <div className={`rounded-lg border-2 ${column.color} p-4`}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-gray-900">{column.title}</h3>
-                <Badge variant="secondary">{implementations[column.id]?.length || 0}</Badge>
-              </div>
-              
-              <div className="space-y-3">
-                {implementations[column.id]?.map((impl) => (
-                  <Card key={impl.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h4 className="text-sm text-gray-900 mb-1">{impl.company}</h4>
-                          <p className="text-xs text-gray-500">{impl.url}.noahomni.com.br</p>
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button className="p-1 hover:bg-gray-100 rounded">
-                              <MoreVertical className="w-4 h-4 text-gray-400" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Ver detalhes</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleSchedule(impl)}>
-                              Agendar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>Concluir</DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
-                              Marcar sem sucesso
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+        {statusColumns.map((column) => {
+          const items = grouped[column.id] ?? [];
+          return (
+            <div key={column.id} className="w-96 flex-shrink-0">
+              <div className={`rounded-lg border-2 ${column.color} p-4`}>
+                <div className="mb-2 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-slate-700">{column.title}</h3>
+                    <p className="text-xs text-slate-500">{column.description}</p>
+                  </div>
+                  <Badge variant="secondary">{items.length}</Badge>
+                </div>
 
-                      {impl.scheduledDate && (
-                        <div className="flex items-center gap-2 mb-3 text-xs text-blue-700 bg-blue-50 p-2 rounded">
-                          <Calendar className="w-4 h-4" />
-                          <span>Agendado: {new Date(impl.scheduledDate).toLocaleDateString('pt-BR')}</span>
-                        </div>
-                      )}
+                {isLoading && items.length === 0 ? (
+                  <div className="space-y-3">
+                    {Array.from({ length: 2 }).map((_, index) => (
+                      <div key={index} className="h-24 animate-pulse rounded-md bg-white/60" />
+                    ))}
+                  </div>
+                ) : items.length === 0 ? (
+                  <div className="rounded border border-dashed border-slate-200 p-6 text-center text-xs text-slate-400">
+                    {column.emptyMessage}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {items.map((implementation) => (
+                      <Card key={implementation.id}>
+                        <CardContent className="space-y-3 p-4 text-sm">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <h4 className="font-semibold text-slate-900">
+                                {implementation.opportunity.name}
+                              </h4>
+                              {implementation.opportunity.lead?.companyName && (
+                                <p className="text-xs text-slate-500">
+                                  {implementation.opportunity.lead.companyName}
+                                </p>
+                              )}
+                            </div>
+                            <Badge variant="outline">{opportunityStageLabels[implementation.opportunity.stage]}</Badge>
+                          </div>
 
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {impl.modules.map((module, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {module}
-                          </Badge>
-                        ))}
-                      </div>
+                          <div className="flex items-center gap-2 text-xs text-slate-600">
+                            <Clock className="h-4 w-4" />
+                            <span>
+                              Agendado para {format(new Date(implementation.scheduledFor), 'dd/MM/yyyy HH:mm')}
+                            </span>
+                          </div>
 
-                      <div className="text-xs text-gray-500">
-                        Responsável: {impl.responsible}
-                      </div>
+                          {implementation.notes && (
+                            <div className="rounded-md bg-slate-50 p-2 text-xs text-slate-600">
+                              {implementation.notes}
+                            </div>
+                          )}
 
-                      {column.id === 'pendente' && (
-                        <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
-                          <Button size="sm" variant="outline" className="flex-1" onClick={() => handleSchedule(impl)}>
-                            <Calendar className="w-3 h-3 mr-1" />
-                            Agendar
-                          </Button>
-                        </div>
-                      )}
-
-                      {column.id === 'agendado' && (
-                        <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
-                          <Button size="sm" variant="outline" className="flex-1">
-                            <CheckCircle className="w-3 h-3 mr-1" />
-                            Concluir
-                          </Button>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-
-                {implementations[column.id]?.length === 0 && (
-                  <div className="text-center py-8 text-sm text-gray-400">
-                    Nenhuma implantação
+                          {column.id === 'SCHEDULED' && (
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => openScheduleModal(implementation.opportunity.id)}
+                              >
+                                <Calendar className="mr-2 h-4 w-4" /> Reagendar
+                              </Button>
+                              <Button
+                                size="sm"
+                                className="flex-1"
+                                onClick={() => markAsCompleted(implementation.id)}
+                              >
+                                <CheckCircle className="mr-2 h-4 w-4" /> Marcar como concluída
+                              </Button>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
                 )}
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      <Dialog open={scheduleModalOpen} onOpenChange={setScheduleModalOpen}>
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Agendar Implantação</DialogTitle>
+            <DialogTitle>Agendar implantação</DialogTitle>
           </DialogHeader>
-          
-          {selectedImpl && (
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-600">Cliente</p>
-                <p className="text-gray-900">{selectedImpl.company}</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="scheduleDate">Data e Hora</Label>
-                <Input id="scheduleDate" type="datetime-local" />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="responsible">Responsável</Label>
-                <Input id="responsible" defaultValue={selectedImpl.responsible} />
-              </div>
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="opportunityId">ID da oportunidade</Label>
+              <Input
+                id="opportunityId"
+                placeholder="insira o ID da oportunidade"
+                defaultValue={selectedOpportunityId ?? ''}
+                {...register('opportunityId', { required: true })}
+                disabled={creating}
+              />
             </div>
-          )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setScheduleModalOpen(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={() => setScheduleModalOpen(false)}>
-              Confirmar Agendamento
-            </Button>
-          </DialogFooter>
+            <div className="space-y-2">
+              <Label htmlFor="scheduledFor">Data e hora</Label>
+              <Input id="scheduledFor" type="datetime-local" {...register('scheduledFor', { required: true })} disabled={creating} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Observações</Label>
+              <Input id="notes" {...register('notes')} placeholder="Informações adicionais" disabled={creating} />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={creating}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={creating}>
+                {creating ? 'Agendando...' : 'Agendar'}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

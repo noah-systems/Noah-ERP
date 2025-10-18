@@ -1,12 +1,28 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Plus, Filter, Download } from 'lucide-react';
 import { Button } from '../ui/button';
 import { OpportunitiesKanban } from './opportunities/OpportunitiesKanban';
 import { CreateOpportunityModal } from './opportunities/CreateOpportunityModal';
 import Can from '@/auth/Can';
+import { useOpportunities } from '@/hooks/useOpportunities';
 
 export function OpportunitiesView() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const {
+    opportunities,
+    isLoading,
+    createOpportunity,
+    creating,
+    moveOpportunity,
+  } = useOpportunities();
+
+  const handleCreateOpportunity = useCallback(
+    async (payload: Parameters<typeof createOpportunity>[0]) => {
+      await createOpportunity(payload);
+      setIsCreateModalOpen(false);
+    },
+    [createOpportunity]
+  );
 
   return (
     <div className="space-y-6">
@@ -33,9 +49,18 @@ export function OpportunitiesView() {
         </div>
       </div>
 
-      <OpportunitiesKanban />
+      <OpportunitiesKanban
+        opportunities={opportunities}
+        isLoading={isLoading}
+        onMove={moveOpportunity}
+      />
 
-      <CreateOpportunityModal open={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
+      <CreateOpportunityModal
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreateOpportunity}
+        submitting={creating}
+      />
     </div>
   );
 }

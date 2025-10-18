@@ -1,0 +1,19 @@
+:root {
+  --app-max-width: 1440px;
+  --noah-green: #0f9d76;
+  --noah-green-600: #0c7d5e;
+  --slate-900: #0f172a;
+  --slate-700: #334155;
+  --slate-500: #64748b;
+  --slate-100: #e2e8f0;
+  --slate-50: #f8fafc;
+}
+
+html {
+  font-size: 14px;
+}
+
+body {
+  background-color: var(--slate-50);
+  color: var(--slate-900);
+}
