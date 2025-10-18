@@ -10,6 +10,6 @@ while IFS= read -r -d '' f; do
 done < <(git diff --cached --name-only -z)
 if [ -n "$bad" ]; then
   echo -e "❌ Arquivos binários detectados no commit:\n$bad"
-  echo "👉 Remova do staging ou coloque em public/brand/ (gitignored) ou use SVG."
+  echo "👉 Remova do staging ou converta para SVG/data URI antes de commitar."
   exit 1
 fi

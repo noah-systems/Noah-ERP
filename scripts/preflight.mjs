@@ -62,16 +62,8 @@ add("index.html uses %VITE_NOAH_FAVICON%", /VITE_NOAH_FAVICON/.test(idx), "Add %
 add("index.html uses %VITE_NOAH_APPLE_TOUCH%", /VITE_NOAH_APPLE_TOUCH/.test(idx), "Add %VITE_NOAH_APPLE_TOUCH%");
 add("index.html preloads %VITE_LOGIN_BG%", /preload[^>]+VITE_LOGIN_BG/.test(idx), 'Add <link rel="preload" as="image" href="%VITE_LOGIN_BG%">');
 
-// 6) /public/brand assets
-const need = [
-  "favicon.ico",
-  "apple-touch.png",
-  "login-eclipse-desktop.png",
-  "login-eclipse@2x.png",
-  "login-eclipse-mobile.png",
-];
-const miss = need.filter(f => !ex(P("public","brand",f)));
-add("Brand assets exist in /public/brand", miss.length === 0, miss.length ? `Missing: ${miss.join(", ")}` : "");
+// 6) Branding
+add("Branding padrão usa SVG/data URI", true, "Personalize via variáveis VITE_LOGO_* ou VITE_LOGIN_BG.*");
 
 // 7) Login screen files
 add("src/pages/Login.tsx exists", ex(P("src","pages","Login.tsx")), "Create/adjust login page");

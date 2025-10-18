@@ -7,10 +7,12 @@
     "start:prod": "node dist/main.js",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "prisma:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
+    "prisma:seed": "prisma db seed --schema prisma/schema.prisma",
     "ci:deps": "npm ci",
     "ci:prisma:validate": "prisma validate --schema prisma/schema.ci.prisma",
     "ci:prisma:generate": "prisma generate --schema prisma/schema.ci.prisma",
-    "ci:build": "tsc -p tsconfig.build.json"
+    "ci:build": "tsc -p tsconfig.build.json",
+    "test:acl": "node test/acl.e2e.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

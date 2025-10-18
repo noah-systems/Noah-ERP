@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import type { CorsOptions } from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Prisma, type User } from '@prisma/client';
@@ -11,14 +12,38 @@ import { auth } from './middleware/auth';
 const app = express();
 const router = express.Router();
 app.set('trust proxy', true);
-app.use(cors());
+
+const allowOriginsEnv = process.env.CORS_ALLOW_ORIGINS || process.env.CORS_ORIGINS;
+
+const allowList = (allowOriginsEnv || 'https://erp.noahomni.com.br')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const corsOptions: CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) {
+      return callback(null, true);
+    }
+    if (allowList.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'), false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 const PORT = Number(process.env.PORT || 3000);
 const JWT_SECRET = process.env.JWT_SECRET || 'change-me-please-32chars-min';
 
 app.get('/ping', (_req, res) => {
-  return res.status(200).json({ ok: true });
+  return res.type('text/plain').send('pong');
 });
 
 function sanitizeUser(user: User) {

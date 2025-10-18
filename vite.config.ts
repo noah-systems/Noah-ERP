@@ -2,6 +2,94 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
+const svgDataUri = (width: number, height: number, body: string) =>
+  `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${body}</svg>`
+  )}`;
+
+const fallbackLogo = (theme: 'light' | 'dark') =>
+  svgDataUri(
+    240,
+    80,
+    `
+      <defs>
+        <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="${theme === 'light' ? '#0A1B2C' : '#F8FAFC'}" />
+          <stop offset="100%" stop-color="${theme === 'light' ? '#142A44' : '#E2E8F0'}" />
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" rx="18" fill="url(#bg)" />
+      <text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle" font-family="Inter,Segoe UI,system-ui,sans-serif" font-weight="600" font-size="32" fill="${
+        theme === 'light' ? '#C3FF00' : '#0A1B2C'
+      }">Noah ERP</text>
+    `
+  );
+
+const FALLBACK_LOGO_LIGHT = fallbackLogo('light');
+const FALLBACK_LOGO_DARK = fallbackLogo('dark');
+
+const FALLBACK_FAVICON = svgDataUri(
+  64,
+  64,
+  `
+    <defs>
+      <linearGradient id="fg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#0A1B2C" />
+        <stop offset="100%" stop-color="#142A44" />
+      </linearGradient>
+    </defs>
+    <rect width="64" height="64" rx="18" fill="url(#fg)" />
+    <text x="32" y="38" font-family="Inter,Segoe UI,system-ui,sans-serif" font-size="28" font-weight="600" text-anchor="middle" fill="#C3FF00">N</text>
+  `
+);
+
+const FALLBACK_APPLE_TOUCH = svgDataUri(
+  180,
+  180,
+  `
+    <defs>
+      <linearGradient id="apple-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#0A1B2C" />
+        <stop offset="100%" stop-color="#1F3F60" />
+      </linearGradient>
+    </defs>
+    <rect width="180" height="180" rx="42" fill="url(#apple-bg)" />
+    <text x="50%" y="55%" text-anchor="middle" dominant-baseline="middle" font-family="Inter,Segoe UI,system-ui,sans-serif" font-weight="600" font-size="48" fill="#C3FF00">Noah</text>
+  `
+);
+
+const gradientBackground = (width: number, height: number) => {
+  const circle = (cx: number, cy: number, r: number, opacity = 1) =>
+    `<circle cx="${(width * cx).toFixed(1)}" cy="${(height * cy).toFixed(1)}" r="${(
+      Math.min(width, height) * r
+    ).toFixed(1)}" fill="url(#glow)" opacity="${opacity}" />`;
+
+  return svgDataUri(
+    width,
+    height,
+    `
+      <defs>
+        <linearGradient id="base" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#05080F" />
+          <stop offset="100%" stop-color="#0A1B2C" />
+        </linearGradient>
+        <radialGradient id="glow" cx="50%" cy="50%" r="70%">
+          <stop offset="0%" stop-color="#C3FF00" stop-opacity="0.55" />
+          <stop offset="100%" stop-color="#0A1B2C" stop-opacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#base)" />
+      ${circle(0.25, 0.32, 0.42, 0.75)}
+      ${circle(0.78, 0.28, 0.34, 0.55)}
+      ${circle(0.58, 0.76, 0.48, 0.35)}
+    `
+  );
+};
+
+const FALLBACK_LOGIN_BG = gradientBackground(1440, 960);
+const FALLBACK_LOGIN_BG_2X = gradientBackground(2880, 1920);
+const FALLBACK_LOGIN_BG_PORTRAIT = gradientBackground(1080, 1920);
+
 export default defineConfig(({ mode }) => {
   const rawEnv = loadEnv(mode, process.cwd(), '');
   const fallback = (value: string | undefined, localFallback: string) => {
@@ -12,14 +100,22 @@ export default defineConfig(({ mode }) => {
   };
 
   const brandingEnv = {
-    VITE_NOAH_FAVICON: fallback(rawEnv.VITE_NOAH_FAVICON, '/brand/favicon.ico'),
-    VITE_NOAH_APPLE_TOUCH: fallback(rawEnv.VITE_NOAH_APPLE_TOUCH, '/brand/apple-touch-icon.png'),
-    VITE_LOGIN_BG: fallback(rawEnv.VITE_LOGIN_BG, '/brand/login-eclipse-desktop.png'),
+    VITE_NOAH_FAVICON: fallback(rawEnv.VITE_NOAH_FAVICON, FALLBACK_FAVICON),
+    VITE_NOAH_APPLE_TOUCH: fallback(rawEnv.VITE_NOAH_APPLE_TOUCH, FALLBACK_APPLE_TOUCH),
+    VITE_LOGIN_BG: fallback(rawEnv.VITE_LOGIN_BG, FALLBACK_LOGIN_BG),
+    VITE_LOGIN_BG_2X: fallback(rawEnv.VITE_LOGIN_BG_2X, FALLBACK_LOGIN_BG_2X),
+    VITE_LOGIN_BG_PORTRAIT: fallback(rawEnv.VITE_LOGIN_BG_PORTRAIT, FALLBACK_LOGIN_BG_PORTRAIT),
+    VITE_LOGO_LIGHT: fallback(rawEnv.VITE_LOGO_LIGHT, FALLBACK_LOGO_LIGHT),
+    VITE_LOGO_DARK: fallback(rawEnv.VITE_LOGO_DARK, FALLBACK_LOGO_DARK),
   } as const;
 
   process.env.VITE_NOAH_FAVICON = brandingEnv.VITE_NOAH_FAVICON;
   process.env.VITE_NOAH_APPLE_TOUCH = brandingEnv.VITE_NOAH_APPLE_TOUCH;
   process.env.VITE_LOGIN_BG = brandingEnv.VITE_LOGIN_BG;
+  process.env.VITE_LOGIN_BG_2X = brandingEnv.VITE_LOGIN_BG_2X;
+  process.env.VITE_LOGIN_BG_PORTRAIT = brandingEnv.VITE_LOGIN_BG_PORTRAIT;
+  process.env.VITE_LOGO_LIGHT = brandingEnv.VITE_LOGO_LIGHT;
+  process.env.VITE_LOGO_DARK = brandingEnv.VITE_LOGO_DARK;
 
   return {
     plugins: [react()],
@@ -27,6 +123,10 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.VITE_NOAH_FAVICON': JSON.stringify(brandingEnv.VITE_NOAH_FAVICON),
       'import.meta.env.VITE_NOAH_APPLE_TOUCH': JSON.stringify(brandingEnv.VITE_NOAH_APPLE_TOUCH),
       'import.meta.env.VITE_LOGIN_BG': JSON.stringify(brandingEnv.VITE_LOGIN_BG),
+      'import.meta.env.VITE_LOGIN_BG_2X': JSON.stringify(brandingEnv.VITE_LOGIN_BG_2X),
+      'import.meta.env.VITE_LOGIN_BG_PORTRAIT': JSON.stringify(brandingEnv.VITE_LOGIN_BG_PORTRAIT),
+      'import.meta.env.VITE_LOGO_LIGHT': JSON.stringify(brandingEnv.VITE_LOGO_LIGHT),
+      'import.meta.env.VITE_LOGO_DARK': JSON.stringify(brandingEnv.VITE_LOGO_DARK),
     },
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],

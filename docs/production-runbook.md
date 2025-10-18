@@ -121,10 +121,11 @@ export PRISMA_MIGRATE_ON_START=1
 
 ### 3.2 Frontend (Vite)
 
-Crie/ajuste `.env.production` com o endpoint público da API (sempre terminando em `/api`):
+Crie/ajuste `.env.production` com o endpoint público da API (sempre terminando em `/api`). As variáveis de branding são opcionais e aceitam SVG/data URI:
 
 ```dotenv
 VITE_API_BASE=https://erpapi.noahomni.com.br/api
+VITE_THEME_COLOR=#0A1B2C
 ```
 
 ### 3.3 Certificados TLS

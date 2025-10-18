@@ -1,6 +1,8 @@
 # Noah ERP
 
-Este repositório reúne o front-end (Vite + React) e a API (Express + Prisma) utilizados no ERP da Noah Omni.
+Este repositório reúne o front-end (Vite + React) e a API (NestJS + Prisma) utilizados no ERP da Noah Omni.
+
+➡️ Consulte a seção [Validação automatizada](#validação-automatizada) para o roteiro oficial de smoke tests.
 
 ## Requisitos
 
@@ -11,29 +13,31 @@ Este repositório reúne o front-end (Vite + React) e a API (Express + Prisma) u
 
 1. Copie os exemplos de variáveis:
    ```bash
-   cp api/.env.example api/.env
+   cp apps/api/.env.example apps/api/.env
    cp .env.example .env
    ```
-2. Ajuste `api/.env` com a sua URL de banco e segredos.
+2. Ajuste `apps/api/.env` com a sua URL de banco e segredos (fuja de credenciais reais; lembre-se de escapar `@` como `%40`).
 3. Instale as dependências:
    ```bash
    npm install
-   npm --prefix api install
+   npm --prefix apps/api install
    ```
 4. Gere o cliente do Prisma e aplique o schema no banco local:
    ```bash
-   npm --prefix api run prisma:generate
-   npm --prefix api run prisma:push
+   npm --prefix apps/api run prisma:generate
+   npm --prefix apps/api run prisma:migrate:deploy
    ```
-5. Popule dados básicos (admin). Você pode sobrescrever o e-mail/senha com `SEED_ADMIN_*`:
+5. Popule dados básicos (admin). Utilize variáveis `ADMIN_EMAIL`, `ADMIN_PASSWORD` e `ADMIN_NAME` com valores fictícios:
    ```bash
-   SEED_ADMIN_EMAIL=admin@noahomni.com.br SEED_ADMIN_PASS='troque-esta-senha' npm --prefix api run seed
+   ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD='TroqueEstaSenha123!' npm --prefix apps/api run prisma:seed
    ```
-6. Inicie a API e o front em terminais separados:
+6. Inicie a API e o front em terminais separados (recompile a API quando alterar código backend):
    ```bash
-   npm --prefix api run dev   # Express em http://localhost:3000
+   npm --prefix apps/api run build && npm --prefix apps/api run start:prod   # NestJS em http://localhost:3000/api
    npm run dev                # Vite em http://localhost:5173
    ```
+
+   > Dica: o atalho `./scripts/install_dev.sh` (ou `make dev`) automatiza os passos acima.
 
 O front consome a API através da variável `VITE_API_BASE`. Por padrão, o valor `/api` já está definido em [.env.example](.env.example).
 
@@ -59,26 +63,27 @@ O front consome a API através da variável `VITE_API_BASE`. Por padrão, o valo
 ## Backend (bare metal)
 
 ```bash
-cd api
+cd apps/api
 # mantenha o arquivo real de variáveis em /etc/noah-erp/api.env e faça o symlink abaixo
 sudo mkdir -p /etc/noah-erp
 sudo cp .env.example /etc/noah-erp/api.env  # personalize valores seguros
 ln -sf /etc/noah-erp/api.env .env
 
 npm install
-npx prisma generate
-npx prisma db push
-npm run seed
-npm run start
+npm run prisma:generate
+npm run prisma:migrate:deploy
+npm run prisma:seed
+npm run build
+npm run start:prod
 
 # health-check
-curl -sf http://127.0.0.1:3000/ping
+curl -sf http://127.0.0.1:3000/api/worker/health
 ```
 
 ## Endpoints principais
 
-- `GET /ping` – health check simples (`{"ok": true}`) exposto direto no Express
-- `GET /api/health` – health check legado mantido no router
+- `GET /api/worker/health` – health check do worker usado pelo monitoramento
+- `GET /api/health` – endpoint agregado (DB/Redis) exposto pelo NestJS
 - `POST /api/auth/login` – autenticação por e-mail/senha; retorna JWT e dados do usuário
 - `GET /api/auth/me` – dados do usuário autenticado
 - `GET /api/leads` / `POST /api/leads`

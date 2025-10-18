@@ -100,12 +100,15 @@ async function main() {
     db.discountPolicy.upsert({ where: { role: Role.ADMIN_NOAH }, update: {}, create: { role: Role.ADMIN_NOAH, maxPercent: 100 } }),
   ])
 
-  const name = process.env.ADMIN_NAME || process.env.MASTER_NAME || 'Admin Noah'
-  const email = process.env.ADMIN_EMAIL || process.env.MASTER_EMAIL || 'admin@noahomni.com.br'
-  const password = process.env.ADMIN_PASSWORD || process.env.MASTER_PASSWORD || 'D2W3£Qx!0Du#'
+  const name = (process.env.ADMIN_NAME || 'Administrator').trim()
+  const email = (process.env.ADMIN_EMAIL || 'admin@example.com').trim().toLowerCase()
+  const password = process.env.ADMIN_PASSWORD || 'ChangeMe123!'
 
-  if (!email || !password) {
-    throw new Error('ADMIN_EMAIL and ADMIN_PASSWORD must be provided for the seed.');
+  if (!email) {
+    throw new Error('ADMIN_EMAIL must be provided for the seed.')
+  }
+  if (!password) {
+    throw new Error('ADMIN_PASSWORD must be provided for the seed.')
   }
 
   const hash = await bcrypt.hash(password, 10)

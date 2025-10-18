@@ -30,35 +30,45 @@ require_command docker
 require_command curl
 require_command node
 
-info "1/9 Build da API"
+info "1/10 Build da API"
 npm run --prefix apps/api build
 success "API compilada."
 
-info "2/9 Build do front"
+info "2/10 Teste de ACL da API"
+npm run --prefix apps/api test:acl
+success "ACL básica validada."
+
+info "3/10 Build do front"
 VITE_API_BASE="$API_BASE" npm run build
 success "Front compilado."
 
-info "3/9 Subindo stack Docker"
+info "4/10 Subindo stack Docker"
 docker compose -f docker/compose.prod.yml up -d --build
 success "Containers em execução."
 
-info "4/9 Validando configuração do Nginx"
+info "5/10 Validando configuração do Nginx"
 docker compose -f docker/compose.prod.yml exec proxy nginx -t
 docker compose -f docker/compose.prod.yml exec proxy nginx -s reload || true
 success "Nginx validado."
 
-info "5/9 Healthcheck da API"
+info "6/10 Healthcheck da API"
 for i in {1..30}; do
   if curl -fsS "$API_BASE/worker/health" | grep -q '"ok":true'; then
     success "Healthcheck OK."; break
   fi
   sleep 2
-  if [ "$i" -eq 30 ]; then
+if [ "$i" -eq 30 ]; then
     error "Healthcheck da API falhou."; exit 1
   fi
 done
 
-info "6/9 Login admin e verificação do token"
+if ! curl -fsS "$API_BASE/health" | grep -q '"ok":true'; then
+  error "Health agregado /api/health não retornou ok=true."
+  exit 1
+fi
+success "Health agregado respondendo."
+
+info "7/10 Login admin e verificação do token"
 ADMIN_RESPONSE=$(curl -fsS -X POST "$API_BASE/auth/login" \
   -H 'Content-Type: application/json' \
   -d "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$ADMIN_PASSWORD\"}")
@@ -93,7 +103,7 @@ const bcrypt = require('bcryptjs');
 });
 NODE
 
-info "7/9 Login SELLER e checagem de ACL"
+info "8/10 Login SELLER e checagem de ACL"
 SELLER_RESPONSE=$(curl -fsS -X POST "$API_BASE/auth/login" \
   -H 'Content-Type: application/json' \
   -d "{\"email\":\"$SELLER_EMAIL\",\"password\":\"$SELLER_PASSWORD\"}")
@@ -105,11 +115,11 @@ if [ "$SELLER_STATUS" != "403" ]; then
 fi
 success "ACL validada para SELLER (403 em /api/users)."
 
-info "8/9 Smoke tests HTTPS"
+info "9/10 Smoke tests HTTPS"
 curl -fsSI "$FRONT_DOMAIN" | head -n 1
 FRONT_HTML=$(curl -fsS "$FRONT_DOMAIN")
-printf '%s' "$FRONT_HTML" | grep -q "/brand/favicon" || {
-  error "HTML do front não referencia os assets locais em /brand."; exit 1;
+printf '%s' "$FRONT_HTML" | grep -qi "data:image/svg+xml" || {
+  error "HTML do front não inclui o favicon inline (data URI)."; exit 1;
 }
 if printf '%s' "$FRONT_HTML" | grep -qi "s3\.bragi"; then
   error "Encontrada referência a S3 no HTML do front."; exit 1;
@@ -125,6 +135,6 @@ printf '%s' "$CORS_HEADERS" | grep -qi 'access-control-allow-origin: https://erp
 }
 success "CORS respondendo para https://erp.noahomni.com.br."
 
-info "9/9 Limpeza opcional"
+info "10/10 Limpeza opcional"
 echo "Containers ativos:" && docker compose -f docker/compose.prod.yml ps
 success "Validação concluída."

@@ -1,39 +1,36 @@
+/* eslint-disable */
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
-const prisma = new PrismaClient();
+(async () => {
+  const prisma = new PrismaClient();
+  try {
+    const email = process.env.ADMIN_EMAIL || 'admin@noahomni.com.br';
+    const rawPassword = process.env.ADMIN_PASS || process.env.ADMIN_PASSWORD || 'D2W3£Qx!0Du#';
+    const name = process.env.ADMIN_NAME || 'Administrador Noah';
 
-async function main() {
-  const email = process.env.SEED_ADMIN_EMAIL || 'admin@noahomni.com.br';
-  const rawPassword = process.env.SEED_ADMIN_PASS || 'troque-esta-senha';
-  const name = process.env.SEED_ADMIN_NAME || 'Administrador';
-  const role = process.env.SEED_ADMIN_ROLE || 'ADMIN';
+    const passwordHash = await bcrypt.hash(rawPassword, 10);
 
-  const passwordHash = await bcrypt.hash(rawPassword, 10);
+    const admin = await prisma.user.upsert({
+      where: { email },
+      update: {
+        passwordHash,
+        role: 'ADMIN',
+        name,
+      },
+      create: {
+        email,
+        passwordHash,
+        role: 'ADMIN',
+        name,
+      },
+    });
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    console.log(`[seed] admin já existe: ${email}`);
-    return;
-  }
-
-  await prisma.user.create({
-    data: {
-      email,
-      passwordHash,
-      name,
-      role,
-    },
-  });
-
-  console.log(`[seed] admin criado: ${email}`);
-}
-
-main()
-  .catch((error) => {
-    console.error('[seed] erro ao criar admin:', error);
+    console.log('[seed] admin ok:', admin.email);
+  } catch (error) {
+    console.error('[seed] erro', error);
     process.exit(1);
-  })
-  .finally(async () => {
+  } finally {
     await prisma.$disconnect();
-  });
+  }
+})();

@@ -15,6 +15,7 @@ coverage/
 .env
 .env.*
 !.env.example
+!.env.production
 !.env.production.example
 
 # Logs/OS/Editor
@@ -33,7 +34,7 @@ acme.json
 # Prisma
 prisma/*-journal
 
-# Assets binários: NÃO versionar
+# Assets binários: mantenha fora do repo (use SVG ou data URI)
 public/brand/*
 !public/brand/.keep
 
