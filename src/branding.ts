@@ -83,7 +83,7 @@ const raw = {
 };
 
 const theme =
-  env('VITE_NOAH_THEME_COLOR') || env('VITE_THEME_COLOR') || env('NEXT_PUBLIC_THEME_COLOR') || '#A8E60F';
+  env('VITE_NOAH_THEME_COLOR') || env('VITE_THEME_COLOR') || env('NEXT_PUBLIC_THEME_COLOR') || '#d4183d';
 
 const faviconPrimary = raw.FAVICON.endsWith('.ico') ? raw.FAVICON : '/brand/favicon.ico';
 const faviconFallback = raw.FAVICON.endsWith('.png') ? raw.FAVICON : '/brand/favicon.png';

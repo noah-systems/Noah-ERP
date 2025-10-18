@@ -9,9 +9,10 @@ import {
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { Role } from '../auth/roles.enum';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN_NOAH', 'SELLER')
+@Roles(Role.ADMIN_NOAH, Role.SELLER)
 @Controller('opps')
 export class OppsController {
   constructor(private readonly opps: OppsService) {}
@@ -32,7 +33,7 @@ export class OppsController {
   }
 
   @Post(':id/pricing')
-  @Roles('ADMIN_NOAH')
+  @Roles(Role.ADMIN_NOAH)
   applyPricing(@Param('id') id: string, @Body() dto: ApplyPricingDto) {
     return this.opps.applyPricing(id, dto);
   }

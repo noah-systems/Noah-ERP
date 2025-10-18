@@ -117,7 +117,7 @@ Solicitar:
   - `NEXT_PUBLIC_LOGO_DARK=https://.../noah-logo-dark.png`
   - `NEXT_PUBLIC_FAVICON=https://.../favicon.png`
   - `NEXT_PUBLIC_APPLE_TOUCH=https://.../apple-touch.png`
-    - `NEXT_PUBLIC_THEME_COLOR=#A8E60F`
+    - `NEXT_PUBLIC_THEME_COLOR=#d4183d`
 - `public/brand/*` com fallbacks para garantir que os assets nunca sumam.
 - `src/styles/brand.css` com tokens vindos do Figma (variáveis CSS) e `tailwind.config.ts` mapeando `brand.*`.
 - Componente `BrandLogo` lendo as variáveis de ambiente (`light`/`dark`) sem aplicar filtros (ex.: `invert`).
