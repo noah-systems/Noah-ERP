@@ -29,7 +29,7 @@ export function useOpportunities() {
   const fetchOpportunities = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.get<Opportunity[]>('/opps');
+      const { data } = await api.get<Opportunity[]>('/opportunities');
       setOpportunities(sortOpportunities(data));
       setError(null);
     } catch (err) {
@@ -46,32 +46,32 @@ export function useOpportunities() {
 
   const createOpportunity = useCallback(
     async (payload: OpportunityPayload) => {
-      const created = await api.post<Opportunity>('/opps', payload);
-      setOpportunities((prev) => sortOpportunities([...prev, created]));
-      return created;
+      const { data } = await api.post<Opportunity>('/opportunities', payload);
+      setOpportunities((prev) => sortOpportunities([...prev, data]));
+      return data;
     },
     []
   );
 
   const updateOpportunity = useCallback(
     async (id: string, payload: Partial<OpportunityPayload>) => {
-      const updated = await api.put<Opportunity>(`/opps/${id}`, payload);
-      setOpportunities((prev) => sortOpportunities(prev.map((item) => (item.id === id ? updated : item))));
-      return updated;
+      const { data } = await api.put<Opportunity>(`/opportunities/${id}`, payload);
+      setOpportunities((prev) => sortOpportunities(prev.map((item) => (item.id === id ? data : item))));
+      return data;
     },
     []
   );
 
   const deleteOpportunity = useCallback(async (id: string) => {
-    await api.delete(`/opps/${id}`);
+    await api.delete(`/opportunities/${id}`);
     setOpportunities((prev) => prev.filter((item) => item.id !== id));
   }, []);
 
   const moveOpportunity = useCallback(
     async (id: string, stage: OpportunityStage, position = 0) => {
-      const updated = await api.put<Opportunity>(`/opps/${id}/move`, { stage, position });
-      setOpportunities((prev) => sortOpportunities([...prev.filter((item) => item.id !== id), updated]));
-      return updated;
+      const { data } = await api.put<Opportunity>(`/opportunities/${id}/move`, { stage, position });
+      setOpportunities((prev) => sortOpportunities([...prev.filter((item) => item.id !== id), data]));
+      return data;
     },
     []
   );

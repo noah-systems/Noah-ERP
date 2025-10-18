@@ -22,7 +22,7 @@ export function useLeads() {
   const fetchLeads = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.get<Lead[]>('/leads');
+      const { data } = await api.get<Lead[]>('/leads');
       setLeads(sortLeads(data));
       setError(null);
     } catch (err) {
@@ -39,18 +39,18 @@ export function useLeads() {
 
   const createLead = useCallback(
     async (payload: LeadPayload) => {
-      const created = await api.post<Lead>('/leads', payload);
-      setLeads((prev) => sortLeads([...prev, created]));
-      return created;
+      const { data } = await api.post<Lead>('/leads', payload);
+      setLeads((prev) => sortLeads([...prev, data]));
+      return data;
     },
     []
   );
 
   const updateLead = useCallback(
     async (id: string, payload: Partial<LeadPayload>) => {
-      const updated = await api.put<Lead>(`/leads/${id}`, payload);
-      setLeads((prev) => sortLeads(prev.map((lead) => (lead.id === id ? updated : lead))));
-      return updated;
+      const { data } = await api.put<Lead>(`/leads/${id}`, payload);
+      setLeads((prev) => sortLeads(prev.map((lead) => (lead.id === id ? data : lead))));
+      return data;
     },
     []
   );
@@ -62,9 +62,9 @@ export function useLeads() {
 
   const moveLead = useCallback(
     async (id: string, stage: LeadStage, position = 0) => {
-      const updated = await api.put<Lead>(`/leads/${id}/move`, { stage, position });
-      setLeads((prev) => sortLeads([...prev.filter((lead) => lead.id !== id), updated]));
-      return updated;
+      const { data } = await api.put<Lead>(`/leads/${id}/move`, { stage, position });
+      setLeads((prev) => sortLeads([...prev.filter((lead) => lead.id !== id), data]));
+      return data;
     },
     []
   );

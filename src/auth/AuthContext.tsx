@@ -1,14 +1,9 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { login as apiLogin, me as apiMe } from "@/services/api";
+import { login as apiLogin, me as apiMe, type AuthUser, type Role } from "@/services/api";
 
-export type Role = "ADMIN" | "USER";
+export type { Role } from "@/services/api";
 
-type RawUser = {
-  id?: string;
-  name?: string;
-  email?: string;
-  role?: Role;
-};
+type RawUser = AuthUser;
 
 type User = {
   id: string;
@@ -30,11 +25,12 @@ const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 export const useAuth = () => useContext(AuthContext);
 
 function toUser(raw: RawUser): User {
-  const email = raw.email ?? "";
+  const email = typeof raw.email === "string" ? raw.email : "";
   const fallbackName = email.split("@")[0] || "Usuário";
+  const normalizedName = typeof raw.name === "string" ? raw.name.trim() : "";
   return {
     id: raw.id ?? "",
-    name: raw.name && raw.name.trim() ? raw.name : fallbackName,
+    name: normalizedName.length > 0 ? normalizedName : fallbackName,
     email,
     role: raw.role ?? "USER",
   };
@@ -48,7 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       const data = await apiMe();
-      if (data && data.email) {
+      if (data) {
         setUser(toUser(data));
       } else {
         setUser(null);
@@ -57,7 +53,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error instanceof Error) {
         console.warn("/auth/me failed", error.message);
       }
-      localStorage.removeItem("noah_token");
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("noah_token");
+      }
       setUser(null);
     } finally {
       setLoading(false);
@@ -84,7 +82,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    localStorage.removeItem("noah_token");
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("noah_token");
+    }
     setUser(null);
     setLoading(false);
   };

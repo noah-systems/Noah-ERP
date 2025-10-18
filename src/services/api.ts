@@ -1,5 +1,14 @@
 import axios, { AxiosError } from "axios";
 
+export type Role = "ADMIN" | "USER";
+
+export type AuthUser = {
+  id?: string;
+  name?: string | null;
+  email?: string | null;
+  role?: Role;
+};
+
 const TOKEN_KEY = "noah_token";
 
 export class ApiError extends Error {
@@ -51,7 +60,7 @@ api.interceptors.response.use(
 );
 
 export async function login(email: string, password: string) {
-  const { data } = await api.post("/auth/login", { email, password });
+  const { data } = await api.post<{ token: string; user: AuthUser }>("/auth/login", { email, password });
   if (typeof window !== "undefined") {
     window.localStorage.setItem(TOKEN_KEY, data.token);
   }
@@ -59,8 +68,8 @@ export async function login(email: string, password: string) {
 }
 
 export async function me() {
-  const { data } = await api.get("/auth/me");
-  return data;
+  const { data } = await api.get<{ user?: AuthUser }>("/auth/me");
+  return data.user ?? null;
 }
 
 export const Leads = {
