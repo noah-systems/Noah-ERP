@@ -1,5 +1,6 @@
 import { FormEvent, type CSSProperties, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/auth/AuthContext';
 import { BRAND } from '@/lib/brand';
 import './login.css';
@@ -104,10 +105,11 @@ export default function LoginPage() {
           </div>
           <div className="form-group">
             <label htmlFor="login-password">Senha</label>
-            <div className="input-group">
+            <div className="password-field">
               <input
                 id="login-password"
                 type={showPwd ? 'text' : 'password'}
+                className="input"
                 placeholder="Informe sua senha"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -120,32 +122,13 @@ export default function LoginPage() {
               />
               <button
                 type="button"
-                className="icon-button"
+                className="icon-toggle"
                 aria-label={showPwd ? 'Ocultar senha' : 'Mostrar senha'}
+                aria-pressed={showPwd}
+                disabled={submitting}
                 onClick={() => setShowPwd((value) => !value)}
               >
-                {showPwd ? (
-                  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                    <path
-                      d="M2 2l20 20M3.5 7.5C6 4.5 9.5 3 12 3c6 0 10 6 10 9 0 1.1-.4 2.1-1 3M6 18.5C3 16.5 2 14 2 12c0-1 .2-2 .6-3M9.5 9.5A4 4 0 0012 16a4 4 0 003.1-1.4"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                    <path
-                      d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    />
-                    <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" strokeWidth="2" />
-                  </svg>
-                )}
+                {showPwd ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
               </button>
             </div>
           </div>

@@ -4,9 +4,13 @@ import { Button } from '../ui/button';
 import { OpportunitiesKanban } from './opportunities/OpportunitiesKanban';
 import { CreateOpportunityModal } from './opportunities/CreateOpportunityModal';
 import Can from '@/auth/Can';
+import { USE_MOCK } from '@/lib/api';
+import { MockDataNotice } from '@/components/MockDataNotice';
 
 export function OpportunitiesView() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const creationAvailable = USE_MOCK;
 
   return (
     <div className="space-y-6">
@@ -25,7 +29,11 @@ export function OpportunitiesView() {
             Exportar
           </Button>
           <Can roles={['ADMIN_NOAH', 'SELLER']}>
-            <Button onClick={() => setIsCreateModalOpen(true)}>
+            <Button
+              onClick={() => setIsCreateModalOpen(true)}
+              disabled={!creationAvailable}
+              title={!creationAvailable ? 'Em breve' : undefined}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Nova Oportunidade
             </Button>
@@ -33,9 +41,13 @@ export function OpportunitiesView() {
         </div>
       </div>
 
-      <OpportunitiesKanban />
+      {USE_MOCK ? (
+        <OpportunitiesKanban />
+      ) : (
+        <MockDataNotice description="O pipeline será carregado automaticamente quando os dados reais estiverem disponíveis." />
+      )}
 
-      <CreateOpportunityModal open={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
+      <CreateOpportunityModal open={isCreateModalOpen && creationAvailable} onClose={() => setIsCreateModalOpen(false)} />
     </div>
   );
 }

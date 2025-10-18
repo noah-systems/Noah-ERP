@@ -10,15 +10,20 @@ type RawRole =
   | 'PARTNER_OPS';
 
 type RawUser = {
-  id: string;
-  name: string;
+  id?: string;
+  name?: string;
   email: string;
-  role: RawRole;
-  createdAt: string;
-  updatedAt: string;
+  role?: RawRole;
 };
 
-type User = Omit<RawUser, 'role'> & { role: Role };
+type AuthMeResponse = { authenticated: false } | { authenticated: true; user: RawUser };
+
+type User = {
+  id?: string;
+  name?: string;
+  email: string;
+  role: Role;
+};
 
 type AuthContextType = {
   user: User | null;
@@ -37,7 +42,8 @@ const ROLE_ALIASES: Record<Role, RawRole[]> = {
   ADMIN_PARTNER: ['ADMIN_PARTNER', 'PARTNER_MASTER', 'PARTNER_FINANCE', 'PARTNER_OPS'],
 };
 
-function normalizeRole(role: RawRole): Role {
+function normalizeRole(role?: RawRole): Role {
+  if (!role) return 'ADMIN_NOAH';
   const normalized = (Object.entries(ROLE_ALIASES) as Array<[Role, RawRole[]]>).find(([, aliases]) =>
     aliases.includes(role)
   );
@@ -49,17 +55,32 @@ function normalizeRole(role: RawRole): Role {
 
 export const useAuth = () => useContext(AuthContext);
 
+function toUser(raw: RawUser): User {
+  const fallbackName = raw.email?.split('@')[0] ?? 'Usuário';
+  return {
+    id: raw.id,
+    name: raw.name ?? fallbackName,
+    email: raw.email,
+    role: normalizeRole(raw.role),
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function fetchMe() {
+    setLoading(true);
     try {
-      const me = await api<RawUser>('/auth/me');
-      setUser({ ...me, role: normalizeRole(me.role) });
+      const response = await api<AuthMeResponse>('/auth/me');
+      if (!response.authenticated) {
+        setUser(null);
+        return;
+      }
+      const me = response.user;
+      setUser(toUser(me));
     } catch {
       setUser(null);
-      localStorage.removeItem('token');
     } finally {
       setLoading(false);
     }
@@ -70,17 +91,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const { token, user: me } = await api<{ token: string; user: RawUser }>('/auth/login', {
+    const result = await api<{ authenticated: true; user: RawUser }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    localStorage.setItem('token', token);
-    setUser({ ...me, role: normalizeRole(me.role) });
+    if (!result?.authenticated) {
+      throw new Error('Autenticação falhou');
+    }
+    setUser(toUser(result.user));
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
     setUser(null);
+    void api('/auth/logout', { method: 'POST' }).catch(() => undefined);
   };
 
   const value = useMemo(

@@ -1,0 +1,93 @@
+:root {
+  --noah-primary: #5be100;
+  --noah-primary-600: #48c400;
+  --noah-primary-700: #3aa300;
+  --noah-bg: #0b1011;
+  --noah-card: #11181a;
+  --noah-text: #e6f7e6;
+  color-scheme: dark;
+}
+
+:root {
+  --background: var(--noah-bg);
+  --foreground: var(--noah-text);
+  --card: var(--noah-card);
+  --card-foreground: var(--noah-text);
+  --popover: var(--noah-card);
+  --popover-foreground: var(--noah-text);
+  --primary: var(--noah-primary);
+  --primary-foreground: #0b1011;
+  --secondary: #182022;
+  --secondary-foreground: var(--noah-text);
+  --muted: #131b1c;
+  --muted-foreground: rgba(230, 247, 230, 0.72);
+  --accent: rgba(91, 225, 0, 0.16);
+  --accent-foreground: color-mix(in srgb, var(--noah-primary) 65%, #0b1011);
+  --destructive: #ff6b6b;
+  --destructive-foreground: #0b1011;
+  --border: rgba(91, 225, 0, 0.22);
+  --input: rgba(255, 255, 255, 0.08);
+  --input-background: #131b1c;
+  --switch-background: #1f2b2d;
+  --ring: var(--noah-primary-600);
+  --chart-1: rgba(91, 225, 0, 0.4);
+  --chart-2: rgba(91, 225, 0, 0.6);
+  --chart-3: rgba(91, 225, 0, 0.24);
+  --chart-4: rgba(91, 225, 0, 0.5);
+  --chart-5: rgba(91, 225, 0, 0.32);
+  --sidebar: #0f1416;
+  --sidebar-foreground: var(--noah-text);
+  --sidebar-primary: var(--noah-primary);
+  --sidebar-primary-foreground: #0b1011;
+  --sidebar-accent: rgba(91, 225, 0, 0.12);
+  --sidebar-accent-foreground: var(--noah-text);
+  --sidebar-border: rgba(91, 225, 0, 0.18);
+  --sidebar-ring: var(--noah-primary-600);
+  --color-gray-50: #11181a;
+  --color-gray-100: #131d1f;
+  --color-gray-200: #172325;
+  --color-gray-300: #1c2a2d;
+  --color-gray-400: #2a3a3d;
+  --color-gray-500: #415356;
+  --color-gray-600: #5a6d70;
+  --color-gray-700: #77898b;
+  --color-gray-800: #9bacad;
+  --color-gray-900: #e6f7e6;
+  --color-blue-50: rgba(91, 225, 0, 0.08);
+  --color-blue-100: rgba(91, 225, 0, 0.16);
+  --color-blue-200: rgba(91, 225, 0, 0.24);
+  --color-blue-300: rgba(91, 225, 0, 0.32);
+  --color-blue-400: rgba(91, 225, 0, 0.4);
+  --color-blue-500: var(--noah-primary);
+  --color-blue-600: var(--noah-primary-600);
+  --color-blue-700: var(--noah-primary-700);
+  --color-blue-900: #1f340c;
+  --color-white: var(--noah-card);
+  --color-black: #03070a;
+}
+
+body {
+  background-color: var(--noah-bg);
+  color: var(--noah-text);
+}
+
+a {
+  color: var(--noah-primary);
+}
+
+a:hover,
+a:focus-visible {
+  color: var(--noah-primary-600);
+}
+
+button,
+input,
+select,
+textarea {
+  color: inherit;
+}
+
+::selection {
+  background-color: rgba(91, 225, 0, 0.3);
+  color: var(--noah-text);
+}

@@ -10,6 +10,8 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import { useAuth } from '@/auth/AuthContext';
+import { USE_MOCK } from '@/lib/api';
+import { MockDataNotice } from '@/components/MockDataNotice';
 
 const activeAccounts = [
   { id: '1', url: 'empresaativa1', company: 'Empresa Ativa 1 Ltda', users: 15, connections: 3, createdAt: '01/08/2025' },
@@ -49,19 +51,20 @@ export function PartnerDashboard() {
         </div>
         <div className="flex gap-2">
           {canCreate && (
-            <Button>
+            <Button disabled={!USE_MOCK} title={!USE_MOCK ? 'Em breve' : undefined}>
               <Plus className="mr-2 h-4 w-4" />
               Cadastrar Nova Conta
             </Button>
           )}
-          <Button variant="outline">
+          <Button variant="outline" disabled={!USE_MOCK} title={!USE_MOCK ? 'Em breve' : undefined}>
             <Download className="mr-2 h-4 w-4" />
             Exportar
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
+      {USE_MOCK ? (
+        <div className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Ativos</CardTitle>
@@ -215,7 +218,10 @@ export function PartnerDashboard() {
             </div>
           </CardContent>
         </Card>
-      </div>
+        </div>
+      ) : (
+        <MockDataNotice description="As contas de parceiros serão exibidas assim que a integração com a API for concluída." />
+      )}
     </div>
   );
 }
