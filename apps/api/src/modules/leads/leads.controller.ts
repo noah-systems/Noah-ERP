@@ -7,9 +7,10 @@ import {
 import { JwtAuthGuard } from '../auth/jwt.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { Role } from '../auth/roles.enum';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('ADMIN_NOAH', 'SUPPORT_NOAH', 'SELLER')
+@Roles(Role.ADMIN_NOAH, Role.SUPPORT_NOAH, Role.SELLER)
 @Controller('leads')
 export class LeadsController {
   constructor(private readonly leads: LeadsService) {}

@@ -16,7 +16,7 @@ jobs:
       VITE_NOAH_LOGO_DARK: /brand/logo-dark.png
       VITE_NOAH_FAVICON: /brand/favicon.ico
       VITE_NOAH_APPLE_TOUCH: /brand/apple-touch-icon.png
-      VITE_NOAH_THEME_COLOR: "#A8E60F"
+      VITE_NOAH_THEME_COLOR: "#d4183d"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

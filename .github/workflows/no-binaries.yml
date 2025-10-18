@@ -1,0 +1,22 @@
+name: no-binaries
+on: pull_request
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Fail if PR contains binaries
+        run: |
+          set -e
+          BASE=${{ github.event.pull_request.base.sha }}
+          HEAD=${{ github.event.pull_request.head.sha }}
+          git diff --name-only -z "$BASE" "$HEAD" \
+          | xargs -0 -I{} bash -lc 'printf "%s %s\n" "{}" "$(file --mime-type -b "{}" || echo unknown)"' \
+          | awk '!($2 ~ /^text\/|application\/(json|javascript|xml|x-yaml)$/ || $1 ~ /\.svg$/ || $1 ~ /\.md$|\.yml$|\.yaml$|\.toml$|\.env$|\.gitignore$|\.gitattributes$|Dockerfile$/)' \
+          > .binaries.txt || true
+          if [ -s .binaries.txt ]; then
+            echo "Arquivos não-texto detectados no PR:"
+            cat .binaries.txt
+            exit 1
+          fi

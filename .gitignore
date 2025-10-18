@@ -1,11 +1,61 @@
-node_modules
-.DS_Store
-dist
-.vite
+# Node/Build
+node_modules/
+dist/
+build/
+.vite/
+.next/
+out/
+.eslintcache
+coverage/
+.pnpm-store/
+.tmp/
+.cache/
+
+# Env/Segredos
 .env
+.env.*
+!.env.example
+!.env.production.example
+
+# Logs/OS/Editor
+logs/
+*.log
+.DS_Store
+.idea/
+.vscode/
+Thumbs.db
+
+# Docker/Certbot
+docker/letsencrypt/
+docker/certbot/
+acme.json
+
+# Prisma
+prisma/*-journal
+
+# Assets binários: NÃO versionar
+public/brand/*
+!public/brand/.keep
+
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.pdf
+*.zip
+*.tar
+*.gz
+*.webp
+*.mp4
+*.woff
+*.woff2
+
+# Permitidos (texto)
+!*.svg
+
+# Legado/compat
 api/.env
 !apps/api/.env
 api/prisma/.env
 prisma/.env
-!.env.example
-!.env.production.example

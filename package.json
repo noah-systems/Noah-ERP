@@ -67,7 +67,8 @@
     "eslint-plugin-react-hooks": "^5.1.0",
     "prisma": "^5.21.1",
     "typescript": "^5.6.3",
-    "vite": "6.3.5"
+    "vite": "6.3.5",
+    "husky": "^9.1.6"
   },
   "scripts": {
     "dev": "vite",
@@ -81,7 +82,8 @@
     "ci:probe-npm": "node -e \"require('https').get('https://registry.npmjs.org/@types%2Freact',r=>{process.exit(r.statusCode>=200&&r.statusCode<400?0:1)})\"",
     "ci:full": "npm ci && npm run typecheck && npm run build:api && npm run build:web",
     "ci:degraded": "npm run typecheck:degraded && npm run build:web",
-    "api:prisma": "prisma generate --schema api/prisma/schema.prisma"
+    "api:prisma": "prisma generate --schema api/prisma/schema.prisma",
+    "prepare": "husky || bash scripts/setup-git-hooks.sh"
   },
   "prisma": {
     "seed": "node api/prisma/seed.js"
