@@ -37,6 +37,15 @@ Este repositório reúne o front-end (Vite + React) e a API (Express + Prisma) u
 
 O front consome a API através da variável `VITE_API_BASE`. Por padrão, o valor `/api` já está definido em [.env.example](.env.example).
 
+## Validação automatizada
+
+- Para reproduzir os testes de fumaça utilizados na esteira, execute:
+  ```bash
+  ./scripts/ci_validate.sh
+  ```
+  O script compila API e web, sobe `docker/compose.prod.yml`, roda health checks (`/api/worker/health`), valida ACLs (403 para `SELLER` em `/api/users`), testa CORS e derruba os contêineres ao final.
+- Consultar [docs/QA.md](docs/QA.md) para a lista completa de comandos manuais (cURLs obrigatórios, prints e checklist por papel).
+
 ## Backend (bare metal)
 
 ```bash
@@ -82,5 +91,6 @@ O seed [`api/prisma/seed.js`](api/prisma/seed.js) cria/atualiza o usuário admin
 ## Boas práticas
 
 - Nunca comite arquivos `.env` reais.
-- Gere um novo `JWT_SECRET` para cada ambiente.
-- Altere a senha padrão do admin após o primeiro login em produção.
+- Gere um novo `JWT_SECRET` para cada ambiente (evite utilizar valores do README em produção).
+- Altere a senha padrão do admin após o primeiro login em produção e guarde as credenciais em cofre seguro.
+- Mantenha `POSTGRES_PASSWORD`/`DATABASE_URL` sincronizados entre Docker Compose, scripts bare-metal e variáveis de ambiente exportadas.

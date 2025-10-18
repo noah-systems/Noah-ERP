@@ -18,7 +18,57 @@ die() {
   exit 1
 }
 
-PRISMA_SCHEMA="/app/apps/api/prisma/schema.prisma"
+PRISMA_SCHEMA_DEFAULT="/app/apps/api/prisma/schema.prisma"
+DIRECT_MODE=0
+SKIP_SEED=${PRISMA_SKIP_SEED:-0}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --direct)
+      DIRECT_MODE=1
+      shift
+      ;;
+    --skip-seed)
+      SKIP_SEED=1
+      shift
+      ;;
+    --schema)
+      [ "${2:-}" ] || die "Parâmetro --schema requer um valor"
+      PRISMA_SCHEMA_DEFAULT="$2"
+      shift 2
+      ;;
+    *)
+      die "Parâmetro desconhecido: $1"
+      ;;
+  esac
+done
+
+PRISMA_SCHEMA="${PRISMA_SCHEMA:-$PRISMA_SCHEMA_DEFAULT}"
+API_DIR="${API_DIR:-$(cd "$(dirname "$PRISMA_SCHEMA")/.." && pwd)}"
+
+run_direct() {
+  local schema="$1"
+  local api_dir="$2"
+
+  info "Executando Prisma (modo direto, sem Docker Compose)."
+  (
+    cd "$api_dir"
+    npx prisma validate --schema "$schema"
+    npx prisma generate --schema "$schema"
+    npx prisma migrate deploy --schema "$schema"
+    if [ "$SKIP_SEED" != "1" ]; then
+      info "Executando Prisma seed (modo direto)."
+      npx prisma db seed --schema "$schema"
+    else
+      warn "PRISMA_SKIP_SEED=1 — seed ignorado."
+    fi
+  )
+}
+
+if [ "$DIRECT_MODE" = "1" ]; then
+  run_direct "$PRISMA_SCHEMA" "$API_DIR"
+  exit 0
+fi
 
 run_with_docker() {
   info "Starting database dependencies (db, redis)."
@@ -44,9 +94,8 @@ run_with_docker() {
   info "Running Prisma validate/generate/migrate inside the API service."
   "${DOCKER_COMPOSE[@]}" -f "$COMPOSE_FILE" run --rm api sh -lc "\
     set -euo pipefail \
-    && npx prisma validate --schema $PRISMA_SCHEMA \
-    && npx prisma generate --schema $PRISMA_SCHEMA \
-    && npx prisma migrate deploy --schema $PRISMA_SCHEMA"
+    && PRISMA_SKIP_SEED=$SKIP_SEED \
+    && /app/scripts/prisma_migrate_deploy.sh --direct"
 }
 
 if ! command -v docker >/dev/null 2>&1; then
