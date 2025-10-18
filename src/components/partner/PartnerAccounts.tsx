@@ -11,8 +11,8 @@ import { MockDataNotice } from '@/components/MockDataNotice';
 export function PartnerAccounts() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const { hasRole } = useAuth();
-  const allowed = hasRole('ADMIN_NOAH', 'ADMIN_PARTNER');
-  const canCreate = hasRole('ADMIN_NOAH', 'ADMIN_PARTNER');
+  const allowed = hasRole('ADMIN');
+  const canCreate = hasRole('ADMIN');
 
   if (!allowed) {
     return (

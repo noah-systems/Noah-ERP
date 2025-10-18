@@ -31,8 +31,8 @@ const upgradeDowngrade = [
 
 export function PartnerDashboard() {
   const { hasRole } = useAuth();
-  const allowed = hasRole('ADMIN_NOAH', 'ADMIN_PARTNER');
-  const canCreate = hasRole('ADMIN_NOAH', 'ADMIN_PARTNER');
+  const allowed = hasRole('ADMIN');
+  const canCreate = hasRole('ADMIN');
 
   if (!allowed) {
     return (

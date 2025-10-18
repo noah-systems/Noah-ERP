@@ -42,9 +42,9 @@ const catalogItems = [
 
 export function OpportunityDetailModal({ opportunity, open, onClose }: OpportunityDetailModalProps) {
   const { hasRole } = useAuth();
-  const canViewHosting = hasRole('ADMIN_NOAH', 'SUPPORT_NOAH');
-  const canViewFinancial = hasRole('ADMIN_NOAH');
-  const canEditCatalog = hasRole('ADMIN_NOAH', 'SELLER');
+  const canViewHosting = hasRole('ADMIN');
+  const canViewFinancial = hasRole('ADMIN');
+  const canEditCatalog = hasRole('ADMIN', 'USER');
 
   if (!opportunity) return null;
 
@@ -277,7 +277,7 @@ export function OpportunityDetailModal({ opportunity, open, onClose }: Opportuni
               </div>
             </div>
 
-            <Can roles={['ADMIN_NOAH', 'SELLER']}>
+            <Can roles={['ADMIN', 'USER']}>
               <div className="flex gap-2">
                 <Button variant="outline">Gerar Proposta (PDF)</Button>
                 <Button>Enviar Proposta</Button>

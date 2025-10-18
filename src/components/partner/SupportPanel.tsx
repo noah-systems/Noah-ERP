@@ -22,7 +22,7 @@ const pendingCancelation = [
 
 export function SupportPanel() {
   const { hasRole } = useAuth();
-  const allowed = hasRole('ADMIN_NOAH', 'SUPPORT_NOAH');
+  const allowed = hasRole('ADMIN');
 
   if (!allowed) {
     return (

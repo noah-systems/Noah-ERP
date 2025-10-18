@@ -1,24 +1,18 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { api, ApiError, loadStoredToken, setAuthToken } from '@/services/api';
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { login as apiLogin, me as apiMe } from "@/services/api";
 
-export type Role = 'ADMIN_NOAH' | 'SUPPORT_NOAH' | 'SELLER' | 'ADMIN_PARTNER';
-type RawRole =
-  | Role
-  | 'FINANCE_NOAH'
-  | 'PARTNER_MASTER'
-  | 'PARTNER_FINANCE'
-  | 'PARTNER_OPS';
+export type Role = "ADMIN" | "USER";
 
 type RawUser = {
   id?: string;
   name?: string;
-  email: string;
-  role?: RawRole;
+  email?: string;
+  role?: Role;
 };
 
 type User = {
-  id?: string;
-  name?: string;
+  id: string;
+  name: string;
   email: string;
   role: Role;
 };
@@ -33,100 +27,66 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
-const ROLE_ALIASES: Record<Role, RawRole[]> = {
-  ADMIN_NOAH: ['ADMIN_NOAH', 'FINANCE_NOAH'],
-  SUPPORT_NOAH: ['SUPPORT_NOAH'],
-  SELLER: ['SELLER'],
-  ADMIN_PARTNER: ['ADMIN_PARTNER', 'PARTNER_MASTER', 'PARTNER_FINANCE', 'PARTNER_OPS'],
-};
-
-function normalizeRole(role?: RawRole): Role {
-  if (!role) return 'ADMIN_NOAH';
-  const normalized = (Object.entries(ROLE_ALIASES) as Array<[Role, RawRole[]]>).find(([, aliases]) =>
-    aliases.includes(role)
-  );
-  if (normalized) {
-    return normalized[0];
-  }
-  return 'SELLER';
-}
-
 export const useAuth = () => useContext(AuthContext);
 
 function toUser(raw: RawUser): User {
-  const fallbackName = raw.email?.split('@')[0] ?? 'Usuário';
+  const email = raw.email ?? "";
+  const fallbackName = email.split("@")[0] || "Usuário";
   return {
-    id: raw.id,
-    name: raw.name ?? fallbackName,
-    email: raw.email,
-    role: normalizeRole(raw.role),
+    id: raw.id ?? "",
+    name: raw.name && raw.name.trim() ? raw.name : fallbackName,
+    email,
+    role: raw.role ?? "USER",
   };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState<string | null>(null);
 
-  async function fetchMe() {
-    if (!token) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
-
+  const fetchMe = async () => {
     setLoading(true);
     try {
-      const response = await api.get<{ user: RawUser }>('/auth/me');
-      setUser(toUser(response.user));
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 401) {
-        setAuthToken(null);
-        setToken(null);
+      const data = await apiMe();
+      if (data && data.email) {
+        setUser(toUser(data));
+      } else {
+        setUser(null);
       }
+    } catch (error) {
+      if (error instanceof Error) {
+        console.warn("/auth/me failed", error.message);
+      }
+      localStorage.removeItem("noah_token");
       setUser(null);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    const stored = loadStoredToken();
-    if (stored) {
-      setToken(stored);
-    } else {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (token === null) {
-      setUser(null);
+    const stored = typeof window !== "undefined" ? localStorage.getItem("noah_token") : null;
+    if (!stored) {
       setLoading(false);
       return;
     }
     void fetchMe();
-  }, [token]);
+  }, []);
 
   const login = async (email: string, password: string) => {
-    const result = await api.post<{ token: string; user: RawUser }>('/auth/login', { email, password });
-    setAuthToken(result.token);
-    setToken(result.token);
-    setUser(toUser(result.user));
+    setLoading(true);
+    try {
+      const result = await apiLogin(email, password);
+      setUser(toUser(result));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = async () => {
-    try {
-      await api.post('/auth/logout');
-    } catch (error) {
-      if (!(error instanceof ApiError)) {
-        throw error;
-      }
-    } finally {
-      setAuthToken(null);
-      setToken(null);
-      setUser(null);
-    }
+    localStorage.removeItem("noah_token");
+    setUser(null);
+    setLoading(false);
   };
 
   const value = useMemo(
@@ -137,8 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout,
       hasRole: (...roles: Role[]) => {
         if (!user) return false;
-        const rawRole = user.role;
-        return roles.some((role) => ROLE_ALIASES[role]?.includes(rawRole));
+        return roles.includes(user.role);
       },
     }),
     [user, loading]

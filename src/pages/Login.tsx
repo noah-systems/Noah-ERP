@@ -1,168 +1,78 @@
-import { FormEvent, type CSSProperties, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
-import { useAuth } from '@/auth/AuthContext';
-import { BRAND } from '@/lib/brand';
-import './login.css';
+import { FormEvent, useState } from "react";
+import { login } from "@/services/api";
+import { Eye, EyeOff } from "lucide-react";
 
-const STORAGE_EMAIL_KEY = 'noah-erp:login-email';
-
-export default function LoginPage() {
-  const { login, user } = useAuth();
-  const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [pwd, setPwd] = useState("");
+  const [show, setShow] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [rememberEmail, setRememberEmail] = useState(false);
-  const [showPwd, setShowPwd] = useState(false);
-  const logo = BRAND.logoLight;
-  const backgroundImage = BRAND.loginBg;
-  const backgroundImage2x = BRAND.loginBg2x ?? BRAND.loginBg;
-  const backgroundImagePortrait = BRAND.loginBgPortrait ?? BRAND.loginBg;
 
-  const backgroundStyle = useMemo(
-    () =>
-      ({
-        ['--login-background-image' as const]: `url(${backgroundImage})`,
-        ['--login-background-image-2x' as const]: `url(${backgroundImage2x})`,
-        ['--login-background-portrait' as const]: `url(${backgroundImagePortrait})`,
-      }) as CSSProperties,
-    [backgroundImage, backgroundImage2x, backgroundImagePortrait]
-  );
-
-  useEffect(() => {
-    if (user) {
-      navigate('/', { replace: true });
-    }
-  }, [user, navigate]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const storedEmail = localStorage.getItem(STORAGE_EMAIL_KEY);
-      if (storedEmail) {
-        setEmail(storedEmail);
-        setRememberEmail(true);
-      }
-    } catch (error) {
-      console.warn('Não foi possível ler e-mail salvo.', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      if (rememberEmail && email) {
-        localStorage.setItem(STORAGE_EMAIL_KEY, email);
-      } else if (!rememberEmail) {
-        localStorage.removeItem(STORAGE_EMAIL_KEY);
-      }
-    } catch (error) {
-      console.warn('Não foi possível persistir e-mail.', error);
-    }
-  }, [email, rememberEmail]);
-
-  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setErr(null);
-    setSubmitting(true);
     try {
-      await login(email, password);
-      navigate('/', { replace: true });
-    } catch (error) {
-      console.error(error);
-      setErr('Usuário ou senha inválidos.');
-    } finally {
-      setSubmitting(false);
+      await login(email, pwd);
+      window.location.href = "/";
+    } catch {
+      setErr("Credenciais inválidas");
     }
   };
 
   return (
-    <div className="login-wrap" style={backgroundStyle}>
-      <div className="login-card">
-        {logo && <img src={logo} alt="Noah Omni" className="logo" />}
-        <h1>Acessar</h1>
-        <form onSubmit={onSubmit} aria-busy={submitting}>
-          <div className="form-group">
-            <label htmlFor="login-email">E-mail</label>
+    <div className="min-h-screen flex items-center justify-center bg-[url('/brand/login-eclipse-desktop.png')] bg-cover">
+      <form
+        onSubmit={submit}
+        className="w-[360px] rounded-2xl p-6 bg-black/70 backdrop-blur text-white space-y-4"
+      >
+        <div className="text-center">
+          <img src="/brand/noah-logo.svg" alt="NOAH" className="mx-auto h-10" />
+          <h1 className="mt-4 text-2xl font-semibold">Acessar</h1>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm">E-mail</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            className="w-full h-11 rounded-xl bg-neutral-900 px-3 outline-none focus:ring-2 focus:ring-[#C3FF00]"
+            placeholder="email@empresa.com"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm">Senha</label>
+          <div className="relative">
             <input
-              id="login-email"
-              type="email"
-              placeholder="Digite seu e-mail corporativo"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="email"
-              inputMode="email"
-              autoCapitalize="off"
-              autoCorrect="off"
-              aria-label="E-mail"
-              aria-invalid={Boolean(err)}
-              aria-describedby={err ? 'login-error' : undefined}
-              disabled={submitting}
+              type={show ? "text" : "password"}
+              value={pwd}
+              onChange={(event) => setPwd(event.target.value)}
+              className="w-full h-11 rounded-xl bg-neutral-900 px-3 pr-10 outline-none focus:ring-2 focus:ring-[#C3FF00]"
+              placeholder="••••••••"
               required
             />
-          </div>
-          <div className="form-group">
-            <label htmlFor="login-password">Senha</label>
-            <div className="password-field">
-              <input
-                id="login-password"
-                type={showPwd ? 'text' : 'password'}
-                className="input"
-                placeholder="Informe sua senha"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                autoComplete="current-password"
-                aria-label="Senha"
-                aria-invalid={Boolean(err)}
-                aria-describedby={err ? 'login-error' : undefined}
-                disabled={submitting}
-                required
-              />
-              <button
-                type="button"
-                className="icon-toggle"
-                aria-label={showPwd ? 'Ocultar senha' : 'Mostrar senha'}
-                aria-pressed={showPwd}
-                disabled={submitting}
-                onClick={() => setShowPwd((value) => !value)}
-              >
-                {showPwd ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
-              </button>
-            </div>
-          </div>
-          <div className="login-actions">
-            <label className="remember">
-              <input
-                type="checkbox"
-                checked={rememberEmail}
-                onChange={(event) => setRememberEmail(event.target.checked)}
-                disabled={submitting}
-              />
-              Lembrar e-mail neste dispositivo
-            </label>
-            <a
-              href="#"
-              className="forgot-password"
-              onClick={(event) => event.preventDefault()}
+            <button
+              type="button"
+              onClick={() => setShow((state) => !state)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-neutral-800"
+              aria-label={show ? "Ocultar senha" : "Mostrar senha"}
             >
-              Esqueci minha senha
-            </a>
+              {show ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
-          {err && (
-            <div className="error" id="login-error" role="alert">
-              {err}
-            </div>
-          )}
-          <button type="submit" disabled={submitting} aria-live="assertive">
-            {submitting ? 'Autenticando…' : 'Entrar'}
-          </button>
-        </form>
-        <footer>
-          <span>Desenvolvido por <strong>Noah Omni</strong></span>
-        </footer>
-      </div>
+        </div>
+
+        {err && <div className="text-red-400 text-sm">{err}</div>}
+
+        <button
+          type="submit"
+          className="w-full h-11 rounded-xl bg-[#C3FF00] hover:opacity-90 text-black font-medium"
+        >
+          Entrar
+        </button>
+      </form>
     </div>
   );
 }

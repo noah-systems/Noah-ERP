@@ -49,7 +49,7 @@ export function LeadsView() {
           <Button variant="outline" size="sm" onClick={() => refetch()} disabled={loading}>
             <RotateCw className="mr-2 h-4 w-4" /> Atualizar
           </Button>
-          <Can roles={['ADMIN_NOAH', 'SELLER']}>
+          <Can roles={['ADMIN', 'USER']}>
             <Button onClick={() => setIsCreateModalOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Novo Lead

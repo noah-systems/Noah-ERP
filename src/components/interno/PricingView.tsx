@@ -28,7 +28,7 @@ const discountPolicies = [
 
 export function PricingView() {
   const { hasRole } = useAuth();
-  const canEdit = hasRole('ADMIN_NOAH');
+  const canEdit = hasRole('ADMIN');
 
   return (
     <div className="space-y-6">
@@ -37,7 +37,7 @@ export function PricingView() {
           <h1 className="text-2xl font-semibold text-gray-900">Valores & Preços</h1>
           <p className="text-sm text-gray-500">Catálogo de itens e regras de precificação</p>
         </div>
-        <Can roles={['ADMIN_NOAH']}>
+        <Can roles={['ADMIN']}>
           <Button>
             <Plus className="mr-2 h-4 w-4" />
             Novo Item
@@ -110,7 +110,7 @@ export function PricingView() {
                   </div>
                 ))}
 
-                <Can roles={['ADMIN_NOAH']}>
+                <Can roles={['ADMIN']}>
                   <Button variant="outline" className="w-full">
                     <Plus className="mr-2 h-4 w-4" />
                     Adicionar Perfil
@@ -129,7 +129,7 @@ export function PricingView() {
             <CardContent>
               <div className="py-12 text-center text-gray-500">
                 <p className="mb-4">Configuração de impostos e taxas</p>
-                <Can roles={['ADMIN_NOAH']}>
+                <Can roles={['ADMIN']}>
                   <Button variant="outline">
                     <Plus className="mr-2 h-4 w-4" />
                     Adicionar Taxa

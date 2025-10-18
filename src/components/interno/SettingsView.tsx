@@ -38,7 +38,7 @@ const integrations = [
 
 export function SettingsView() {
   const { hasRole } = useAuth();
-  const canEdit = hasRole('ADMIN_NOAH');
+  const canEdit = hasRole('ADMIN');
 
   return (
     <div className="space-y-6">
@@ -62,7 +62,7 @@ export function SettingsView() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Status de Lead</CardTitle>
-              <Can roles={['ADMIN_NOAH']}>
+              <Can roles={['ADMIN']}>
                 <Button size="sm">
                   <Plus className="mr-2 h-4 w-4" />
                   Novo Status
@@ -114,7 +114,7 @@ export function SettingsView() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Etapas do Pipeline de Vendas</CardTitle>
-              <Can roles={['ADMIN_NOAH']}>
+              <Can roles={['ADMIN']}>
                 <Button size="sm">
                   <Plus className="mr-2 h-4 w-4" />
                   Nova Etapa
@@ -159,7 +159,7 @@ export function SettingsView() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Fornecedores de Hospedagem</CardTitle>
-              <Can roles={['ADMIN_NOAH']}>
+              <Can roles={['ADMIN']}>
                 <Button size="sm">
                   <Plus className="mr-2 h-4 w-4" />
                   Novo Fornecedor
@@ -208,7 +208,7 @@ export function SettingsView() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Usuários e Perfis</CardTitle>
-              <Can roles={['ADMIN_NOAH']}>
+              <Can roles={['ADMIN']}>
                 <Button size="sm">
                   <Plus className="mr-2 h-4 w-4" />
                   Novo Usuário
@@ -247,7 +247,7 @@ export function SettingsView() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Integrações</CardTitle>
-              <Can roles={['ADMIN_NOAH']}>
+              <Can roles={['ADMIN']}>
                 <Button size="sm">
                   <Plus className="mr-2 h-4 w-4" />
                   Nova Integração
