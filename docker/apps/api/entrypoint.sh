@@ -84,11 +84,12 @@ run_with_retry() {
 cd /app/apps/api
 
 if [ "${PRISMA_MIGRATE_ON_START:-0}" = "1" ]; then
-  npx prisma generate --schema ./prisma/schema.prisma
   run_with_retry "Prisma migrate deploy" "$MAX_ATTEMPTS" "$SLEEP_SECONDS" \
-    npx prisma migrate deploy --schema ./prisma/schema.prisma
-  echo "Running Prisma seed..."
-  npx prisma db seed --schema ./prisma/schema.prisma
+    env \
+      API_DIR=/app/apps/api \
+      PRISMA_SCHEMA=/app/apps/api/prisma/schema.prisma \
+      /app/scripts/prisma_migrate_deploy.sh \
+      --direct
 else
   echo "Skipping Prisma migrate deploy; PRISMA_MIGRATE_ON_START=${PRISMA_MIGRATE_ON_START:-0}."
 fi

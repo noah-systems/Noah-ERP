@@ -60,7 +60,7 @@ install -d /etc/noah-erp
 cat >/etc/noah-erp/api.env <<'ENV'
 NODE_ENV=production
 PORT=3000
-DATABASE_URL=postgresql://noah:q%409dlyU0AAJ9@127.0.0.1:5432/noah?schema=public
+DATABASE_URL=postgresql://noah:noah@127.0.0.1:5432/noah?schema=public
 REDIS_URL=redis://127.0.0.1:6379
 JWT_SECRET=__FILL_ME__
 ADMIN_NAME=Admin Noah
@@ -70,14 +70,14 @@ CORS_ORIGINS=http://localhost,http://127.0.0.1
 ENV
 sed -i "s|^JWT_SECRET=__FILL_ME__|JWT_SECRET=$(openssl rand -hex 32)|" /etc/noah-erp/api.env || true
 sed -i '/^DATABASE_URL=/d' /etc/noah-erp/api.env
-echo 'DATABASE_URL=postgresql://noah:q%409dlyU0AAJ9@127.0.0.1:5432/noah?schema=public' >> /etc/noah-erp/api.env
+echo 'DATABASE_URL=postgresql://noah:noah@127.0.0.1:5432/noah?schema=public' >> /etc/noah-erp/api.env
 ln -snf /etc/noah-erp/api.env "$API_DIR/.env"
 set -a; . /etc/noah-erp/api.env; set +a
 echo "DATABASE_URL ativa: $(echo "$DATABASE_URL" | sed 's#://\([^:]*\):[^@]*@#://\1:***@#')"
 sudo -u postgres psql -v ON_ERROR_STOP=1 <<'SQL'
 DO $$ BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'noah') THEN
-    CREATE ROLE noah LOGIN PASSWORD 'q@9dlyU0AAJ9';
+    CREATE ROLE noah LOGIN PASSWORD 'noah';
   END IF;
 END $$;
 

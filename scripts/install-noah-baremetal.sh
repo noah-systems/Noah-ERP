@@ -13,7 +13,8 @@ ADMIN_PASSWORD_DEFAULT="D2W3£Qx!0Du#"
 
 DB_USER="noah"
 DB_NAME="noah"
-DB_PASS_DEFAULT="q@9dlyU0AAJ9"       # contains '@' → will be URL-encoded
+DB_PASS_DEFAULT="noah"
+DB_PASS="${DB_PASS:-$DB_PASS_DEFAULT}"
 API_PORT="3000"
 INSTALL_DIR="/opt/noah-erp"
 REPO_URL="https://github.com/noah-systems/Noah-ERP.git"
@@ -37,10 +38,13 @@ detect_api_dir(){
 }
 
 ensure_noah_db(){
-  sudo -u postgres psql -v ON_ERROR_STOP=1 <<'SQL'
+  local password_sql
+  password_sql=$(printf "%s" "$DB_PASS" | sed "s/'/''/g")
+
+  sudo -u postgres psql -v ON_ERROR_STOP=1 <<SQL
 DO $$ BEGIN
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'noah') THEN
-    CREATE ROLE noah LOGIN PASSWORD 'q@9dlyU0AAJ9';
+    CREATE ROLE noah LOGIN PASSWORD '${password_sql}';
   END IF;
 END $$;
 
@@ -157,10 +161,10 @@ rm -f "${API_DIR}/prisma/.env"
 # (b) Ensure runtime env exists and contains DATABASE_URL for user "noah"
 install -d /etc/noah-erp
 if [ ! -s "${API_ENV_FILE}" ]; then
-  cat >"${API_ENV_FILE}" <<'ENV'
+  cat >"${API_ENV_FILE}" <<ENV
 NODE_ENV=production
 PORT=3000
-DATABASE_URL=postgresql://noah:q%409dlyU0AAJ9@127.0.0.1:5432/noah?schema=public
+DATABASE_URL=postgresql://noah:${DB_PASS}@127.0.0.1:5432/noah?schema=public
 REDIS_URL=redis://127.0.0.1:6379
 JWT_SECRET=__FILL_ME__
 ADMIN_NAME=Admin Noah
@@ -173,7 +177,7 @@ fi
 
 # (c) Force correct DATABASE_URL (in case file existed but had wrong user)
 sed -i '/^DATABASE_URL=/d' "${API_ENV_FILE}"
-echo 'DATABASE_URL=postgresql://noah:q%409dlyU0AAJ9@127.0.0.1:5432/noah?schema=public' >>"${API_ENV_FILE}"
+echo "DATABASE_URL=postgresql://noah:${DB_PASS}@127.0.0.1:5432/noah?schema=public" >>"${API_ENV_FILE}"
 
 # (d) Link api/.env to the runtime env and export vars to current shell
 ln -snf "${API_ENV_FILE}" "${API_DIR}/.env"
