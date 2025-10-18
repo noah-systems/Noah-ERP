@@ -1,0 +1,14 @@
+[Unit]
+Description=Noah ERP API
+After=network.target postgresql.service valkey.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/noah-erp/Noah-ERP/api
+EnvironmentFile=/opt/noah-erp/Noah-ERP/api/.env
+ExecStart=/usr/bin/node dist/server.js
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

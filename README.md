@@ -25,9 +25,9 @@ Este repositório reúne o front-end (Vite + React) e a API (Express + Prisma) u
    npm --prefix api run prisma:generate
    npm --prefix api run prisma:push
    ```
-5. Popule dados básicos (admin + registros de exemplo):
+5. Popule dados básicos (admin). Você pode sobrescrever o e-mail/senha com `SEED_ADMIN_*`:
    ```bash
-   npm --prefix api run seed
+   SEED_ADMIN_EMAIL=admin@noahomni.com.br SEED_ADMIN_PASS='troque-esta-senha' npm --prefix api run seed
    ```
 6. Inicie a API e o front em terminais separados:
    ```bash
@@ -44,7 +44,17 @@ O front consome a API através da variável `VITE_API_BASE`. Por padrão, o valo
   ./scripts/ci_validate.sh
   ```
   O script compila API e web, sobe `docker/compose.prod.yml`, roda health checks (`/api/worker/health`), valida ACLs (403 para `SELLER` em `/api/users`), testa CORS e derruba os contêineres ao final.
+- Para validar rapidamente o ambiente publicado (API + front) utilize o script de fumaça oficial:
+  ```bash
+  ./scripts/noah_e2e_check.sh \
+    --front erp.noahomni.com.br \
+    --api erpapi.noahomni.com.br \
+    --admin-email admin@noahomni.com.br \
+    --admin-pass 'D2W3£Qx!0Du#'
+  ```
+  Ele confere o health-check (`/ping`), realiza login e percorre o fluxo "criar → mover → listar → excluir" de leads.
 - Consultar [docs/QA.md](docs/QA.md) para a lista completa de comandos manuais (cURLs obrigatórios, prints e checklist por papel).
+- Para um diagnóstico rápido do ambiente após merges na `main`, confira [docs/post-merge-diagnostic.md](docs/post-merge-diagnostic.md).
 
 ## Backend (bare metal)
 
@@ -62,12 +72,13 @@ npm run seed
 npm run start
 
 # health-check
-curl -sf http://127.0.0.1:3000/api/health
+curl -sf http://127.0.0.1:3000/ping
 ```
 
 ## Endpoints principais
 
-- `GET /api/health` – health check simples (`{"ok": true}`)
+- `GET /ping` – health check simples (`{"ok": true}`) exposto direto no Express
+- `GET /api/health` – health check legado mantido no router
 - `POST /api/auth/login` – autenticação por e-mail/senha; retorna JWT e dados do usuário
 - `GET /api/auth/me` – dados do usuário autenticado
 - `GET /api/leads` / `POST /api/leads`
@@ -81,7 +92,7 @@ O schema mínimo está em [`api/prisma/schema.prisma`](api/prisma/schema.prisma)
 - Leads (`Lead`) com estágios (`LeadStage`) e origens (`Source`)
 - Oportunidades (`Opportunity`) com estágios (`OpportunityStage`)
 
-O seed [`api/prisma/seed.js`](api/prisma/seed.js) cria/atualiza o usuário admin definido nas variáveis `ADMIN_EMAIL`/`ADMIN_PASSWORD` e insere registros seguros para testes.
+O seed [`api/prisma/seed.js`](api/prisma/seed.js) cria o usuário admin definido nas variáveis `SEED_ADMIN_*` (e registra no log caso já exista).
 
 ## Front-end
 
