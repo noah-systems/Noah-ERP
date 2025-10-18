@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 
 type CanProps = {
-  roles: Array<'ADMIN_NOAH' | 'SUPPORT_NOAH' | 'SELLER' | 'ADMIN_PARTNER'>;
+  roles: Array<'ADMIN' | 'USER'>;
   children: ReactNode;
 };
 

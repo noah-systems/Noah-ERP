@@ -52,7 +52,8 @@
     "recharts": "^2.15.2",
     "sonner": "^2.0.3",
     "tailwind-merge": "*",
-    "vaul": "^1.1.2"
+    "vaul": "^1.1.2",
+    "axios": "^1.7.9"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
@@ -76,13 +77,13 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:degraded": "tsc -p tsconfig.degraded.json --noEmit",
     "build:web": "vite build",
-    "build:api": "tsc -p apps/api/tsconfig.json",
+    "build:api": "npm --prefix api run prisma:gen",
     "ci:probe-npm": "node -e \"require('https').get('https://registry.npmjs.org/@types%2Freact',r=>{process.exit(r.statusCode>=200&&r.statusCode<400?0:1)})\"",
     "ci:full": "npm ci && npm run typecheck && npm run build:api && npm run build:web",
     "ci:degraded": "npm run typecheck:degraded && npm run build:web",
-    "api:prisma": "prisma generate --schema apps/api/prisma/schema.prisma"
+    "api:prisma": "prisma generate --schema api/prisma/schema.prisma"
   },
   "prisma": {
-    "seed": "node apps/api/prisma/seed.js"
+    "seed": "node api/prisma/seed.js"
   }
 }

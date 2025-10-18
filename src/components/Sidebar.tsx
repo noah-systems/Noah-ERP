@@ -35,25 +35,25 @@ type SidebarProps = {
 
 const INTERNAL_MENU: MenuItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, to: '/', exact: true },
-  { id: 'leads', label: 'Leads', icon: Users, to: '/leads', roles: ['ADMIN_NOAH', 'SELLER', 'SUPPORT_NOAH'] },
-  { id: 'opportunities', label: 'Oportunidades', icon: TrendingUp, to: '/opportunities', roles: ['ADMIN_NOAH', 'SELLER'] },
-  { id: 'implementation', label: 'Implantação', icon: Wrench, to: '/implementation', roles: ['ADMIN_NOAH', 'SUPPORT_NOAH'] },
-  { id: 'canceled', label: 'Canceladas', icon: XCircle, to: '/canceled', roles: ['ADMIN_NOAH', 'SUPPORT_NOAH'] },
-  { id: 'pricing', label: 'Valores & Preços', icon: DollarSign, to: '/pricing', roles: ['ADMIN_NOAH'] },
-  { id: 'settings', label: 'Configurações', icon: Settings, to: '/settings', roles: ['ADMIN_NOAH'] },
+  { id: 'leads', label: 'Leads', icon: Users, to: '/leads', roles: ['ADMIN', 'USER'] },
+  { id: 'opportunities', label: 'Oportunidades', icon: TrendingUp, to: '/opportunities', roles: ['ADMIN', 'USER'] },
+  { id: 'implementation', label: 'Implantação', icon: Wrench, to: '/implementation', roles: ['ADMIN'] },
+  { id: 'canceled', label: 'Canceladas', icon: XCircle, to: '/canceled', roles: ['ADMIN'] },
+  { id: 'pricing', label: 'Valores & Preços', icon: DollarSign, to: '/pricing', roles: ['ADMIN'] },
+  { id: 'settings', label: 'Configurações', icon: Settings, to: '/settings', roles: ['ADMIN'] },
 ];
 
 const PARTNER_MENU: MenuItem[] = [
-  { id: 'partner-dashboard', label: 'Dashboard', icon: LayoutDashboard, to: '/partner', exact: true, roles: ['ADMIN_NOAH', 'ADMIN_PARTNER'] },
-  { id: 'partner-accounts', label: 'Contas', icon: Briefcase, to: '/partner/accounts', roles: ['ADMIN_NOAH', 'ADMIN_PARTNER'] },
-  { id: 'create-partner', label: 'Criar Parceiro', icon: UserPlus, to: '/partner/create', roles: ['ADMIN_NOAH', 'ADMIN_PARTNER'] },
-  { id: 'support-panel', label: 'Painel Suporte', icon: LifeBuoy, to: '/partner/support', roles: ['ADMIN_NOAH', 'SUPPORT_NOAH'] },
+  { id: 'partner-dashboard', label: 'Dashboard', icon: LayoutDashboard, to: '/partner', exact: true, roles: ['ADMIN'] },
+  { id: 'partner-accounts', label: 'Contas', icon: Briefcase, to: '/partner/accounts', roles: ['ADMIN'] },
+  { id: 'create-partner', label: 'Criar Parceiro', icon: UserPlus, to: '/partner/create', roles: ['ADMIN'] },
+  { id: 'support-panel', label: 'Painel Suporte', icon: LifeBuoy, to: '/partner/support', roles: ['ADMIN'] },
 ];
 
 export function Sidebar({ module, onModuleChange }: SidebarProps) {
   const { hasRole } = useAuth();
   const logo = BRAND.logoDark;
-  const canAccessPartner = hasRole('ADMIN_PARTNER', 'ADMIN_NOAH');
+  const canAccessPartner = hasRole('ADMIN');
 
   const items = (module === 'partner' ? PARTNER_MENU : INTERNAL_MENU).filter((item) =>
     item.roles ? hasRole(...item.roles) : true

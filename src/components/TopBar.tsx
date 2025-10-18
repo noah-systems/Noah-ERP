@@ -3,10 +3,8 @@ import { useMemo } from 'react';
 import { useAuth, type Role } from '@/auth/AuthContext';
 
 const ROLE_LABELS: Record<Role, string> = {
-  ADMIN_NOAH: 'Admin Noah',
-  SUPPORT_NOAH: 'Suporte Noah',
-  SELLER: 'Time Comercial',
-  ADMIN_PARTNER: 'Admin Parceiro',
+  ADMIN: 'Admin Noah',
+  USER: 'Time Comercial',
 };
 
 export function TopBar() {
