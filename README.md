@@ -1,19 +1,19 @@
 # Noah ERP
 
-Este monorepo reúne o front-end (Vite/React) e a API (NestJS + Prisma) do Noah ERP, com
+Este monorepo reúne o front-end (Vite/React) e a API (Express + Prisma) do Noah ERP, com
 empacotamento oficial para produção via Docker Compose, Nginx como reverse proxy e Certbot
 para os certificados TLS dos domínios:
 
 - **Frontend:** https://erp.noahomni.com.br
 - **API:** https://erpapi.noahomni.com.br (todas as rotas expostas com prefixo `/api`)
 
-A stack contempla Postgres, Redis, aplicação da API com migrations/seed automáticos e o
-build estático do front hospedado no serviço `web` (Nginx).
+A stack contempla Postgres, aplicação da API com migrations/seed automáticos e o build
+estático do front hospedado no serviço `web` (Nginx).
 
 ## Estrutura do repositório
 
 ```
-apps/api             # API NestJS + Prisma
+apps/api             # API Express + Prisma
 apps/api/prisma      # schema, migrations e seed idempotente
 src/                 # Front-end Vite/React
 Dockerfile.web       # Build do front (Vite -> Nginx)
@@ -36,20 +36,19 @@ mesmo diretório e são aplicadas automaticamente quando o container da API inic
 
 ### API (`apps/api`)
 
-| Variável            | Exemplo / padrão                               | Descrição |
-| ------------------- | ---------------------------------------------- | --------- |
-| `DATABASE_URL`      | `postgres://noah:noah@db:5432/noah`             | Conexão do Postgres consumida pelo Prisma. |
-| `REDIS_URL`         | `redis://redis:6379`                            | URL do Redis utilizado pelos workers BullMQ. |
-| `JWT_SECRET`        | _obrigatória_                                   | Chave utilizada para assinar os JWTs. Gere um valor forte. |
-| `PORT`              | `3000`                                          | Porta exposta pela API. |
-| `CORS_ORIGINS`      | `https://erp.noahomni.com.br,https://erpapi.noahomni.com.br` | Lista (separada por vírgula) de origens liberadas via CORS. |
-| `ADMIN_NAME`        | `Admin Noah`                                    | Nome exibido para o usuário administrador padrão. |
-| `ADMIN_EMAIL`       | `admin@noahomni.com.br`                         | E-mail do administrador padrão criado no seed. |
-| `ADMIN_PASSWORD`    | `D2W3£Qx!0Du#`                                  | Senha do administrador padrão criada/atualizada no seed. |
-| `PRISMA_MIGRATE_ON_START` | `1`                                       | Quando `1`, aplica `prisma migrate deploy` e executa o seed idempotente no boot. |
+| Variável | Exemplo / padrão | Descrição |
+| -------- | ---------------- | --------- |
+| `DATABASE_URL` | `postgres://noah:noah@db:5432/noah` | Conexão do Postgres consumida pelo Prisma. |
+| `JWT_SECRET` | _obrigatória_ | Chave utilizada para assinar os JWTs. Gere um valor forte. |
+| `PORT` | `3000` | Porta exposta pela API. |
+| `CORS_ORIGINS` | `https://erp.noahomni.com.br,https://erpapi.noahomni.com.br` | Lista (separada por vírgula) de origens liberadas via CORS. |
+| `SESSION_TTL_HOURS` | `12` | Validade (em horas) dos tokens emitidos pelo login. |
+| `PRISMA_MIGRATE_ON_START` | `1` | Quando `1`, aplica `prisma migrate deploy` e executa o seed idempotente no boot. |
 
-> **Importante:** Sem `JWT_SECRET` a aplicação não inicia (`AppModule` lança erro). Gere um
-> valor seguro antes de subir os contêineres.
+> **Importante:** Sem `JWT_SECRET` a aplicação não inicia. Gere um valor seguro antes de subir os contêineres.
+
+O seed padrão cria o administrador `admin@noahomni.com.br` com a senha `D2W3£Qx!0Du#`, além
+de alguns cadastros base para leads, oportunidades, implantação e cancelamentos.
 
 ### Front-end (Vite)
 
@@ -79,7 +78,7 @@ externa seja ignorada caso não pertença ao mesmo host publicado pelo Nginx.
 1. Instale as dependências compartilhadas: `npm install` na raiz do repositório.
 2. (Opcional) Suba Postgres + Redis locais: `docker compose -f docker/compose.dev.yml up -d db redis`.
 3. Aponte o Prisma para o banco local editando `apps/api/.env` (a URL padrão `postgres://noah:noah@localhost:5432/noah` já está definida em `DATABASE_URL`).
-4. Execute a API em modo watch: `npm run --prefix apps/api start:dev`.
+4. Execute a API em modo watch: `npm run --prefix apps/api dev`.
 5. Rode o front: `npm run dev` (Vite em `http://localhost:5173`).
 
 ## Fluxo de deploy em produção
@@ -92,12 +91,9 @@ Resumo das variáveis mínimas antes de iniciar o deploy:
 
 ```bash
 export DATABASE_URL="postgres://noah:noah@db:5432/noah"
-export REDIS_URL="redis://redis:6379"
 export JWT_SECRET="$(openssl rand -hex 48)"
 export CORS_ORIGINS="https://erp.noahomni.com.br,https://erpapi.noahomni.com.br"
-export ADMIN_NAME="Admin Noah"
-export ADMIN_EMAIL="admin@noahomni.com.br"
-export ADMIN_PASSWORD="D2W3£Qx!0Du#"   # ajuste após o primeiro login
+export SESSION_TTL_HOURS=12
 export PRISMA_MIGRATE_ON_START=1
 ```
 

@@ -78,13 +78,13 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:degraded": "tsc -p tsconfig.degraded.json --noEmit",
     "build:web": "vite build",
-    "build:api": "npm --prefix api run build",
+    "build:api": "npm --prefix apps/api run build",
     "ci:probe-npm": "node -e \"require('https').get('https://registry.npmjs.org/@types%2Freact',r=>{process.exit(r.statusCode>=200&&r.statusCode<400?0:1)})\"",
     "ci:full": "npm ci && npm run typecheck && npm run build:api && npm run build:web",
     "ci:degraded": "npm run typecheck:degraded && npm run build:web",
     "api:prisma": "prisma generate --schema apps/api/prisma/schema.prisma"
   },
   "prisma": {
-    "seed": "npm --prefix api run seed"
+    "seed": "npm --prefix apps/api run seed"
   }
 }

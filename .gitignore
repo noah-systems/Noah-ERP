@@ -4,6 +4,6 @@ dist
 .vite
 .env
 !apps/api/.env
-api/prisma/.env
+apps/api/prisma/.env
 !.env.example
 !.env.production.example

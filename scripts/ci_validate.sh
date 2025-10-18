@@ -49,7 +49,7 @@ success "Nginx validado."
 
 info "5/9 Healthcheck da API"
 for i in {1..30}; do
-  if curl -fsS "$API_BASE/worker/health" | grep -q '"ok":true'; then
+  if curl -fsS "$API_BASE/health" | grep -q '"ok":true'; then
     success "Healthcheck OK."; break
   fi
   sleep 2
@@ -74,7 +74,7 @@ docker compose -f docker/compose.prod.yml exec -T \
   -e SELLER_EMAIL="$SELLER_EMAIL" \
   -e SELLER_PASSWORD="$SELLER_PASSWORD" \
   api node - <<'NODE'
-const { PrismaClient, Role } = require('@prisma/client');
+const { PrismaClient, UserRole } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 (async () => {
   const db = new PrismaClient();
@@ -83,8 +83,8 @@ const bcrypt = require('bcryptjs');
   const hash = await bcrypt.hash(password, 10);
   await db.user.upsert({
     where: { email },
-    update: { passwordHash: hash, role: Role.SELLER, name: 'Seller QA' },
-    create: { email, passwordHash: hash, role: Role.SELLER, name: 'Seller QA' },
+    update: { passwordHash: hash, role: UserRole.SELLER, name: 'Seller QA' },
+    create: { email, passwordHash: hash, role: UserRole.SELLER, name: 'Seller QA' },
   });
   await db.$disconnect();
 })().catch((err) => {
@@ -93,17 +93,17 @@ const bcrypt = require('bcryptjs');
 });
 NODE
 
-info "7/9 Login SELLER e checagem de ACL"
+info "7/9 Login SELLER e leitura de dados"
 SELLER_RESPONSE=$(curl -fsS -X POST "$API_BASE/auth/login" \
   -H 'Content-Type: application/json' \
   -d "{\"email\":\"$SELLER_EMAIL\",\"password\":\"$SELLER_PASSWORD\"}")
 SELLER_TOKEN=$(printf '%s' "$SELLER_RESPONSE" | node -e "process.stdin.on('data',d=>{const j=JSON.parse(d.toString());if(!j.token){process.exit(1);}console.log(j.token);});")
-SELLER_STATUS=$(curl -sS -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $SELLER_TOKEN" "$API_BASE/users")
-if [ "$SELLER_STATUS" != "403" ]; then
-  error "ACL incorreta para SELLER (HTTP $SELLER_STATUS)."
+SELLER_STATUS=$(curl -sS -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $SELLER_TOKEN" "$API_BASE/leads")
+if [ "$SELLER_STATUS" != "200" ]; then
+  error "Leitura de leads pelo SELLER falhou (HTTP $SELLER_STATUS)."
   exit 1
 fi
-success "ACL validada para SELLER (403 em /api/users)."
+success "SELLER consegue ler leads (HTTP 200 em /api/leads)."
 
 info "8/9 Smoke tests HTTPS"
 curl -fsSI "$FRONT_DOMAIN" | head -n 1

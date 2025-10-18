@@ -1,250 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
-enum Role {
+enum UserRole {
   ADMIN_NOAH
   SUPPORT_NOAH
-  FINANCE_NOAH
   SELLER
-  PARTNER_MASTER
-  PARTNER_FINANCE
-  PARTNER_OPS
+  ADMIN_PARTNER
 }
 
-enum LeadSource {
-  GOOGLE
-  META
-  MANUAL
+enum LeadStage {
+  NUTRICAO
+  QUALIFICADO
+  NAO_QUALIFICADO
 }
 
-enum ImplStatus {
-  PENDING_SCHED
+enum OpportunityStage {
+  NEGOCIACAO
+  APRESENTACAO
+  PROPOSTA
+  TRIAL
+  VENC_TRIAL
+  VENDAS
+}
+
+enum ImplementationStatus {
   SCHEDULED
-  DONE
-  NO_SHOW
-}
-
-enum Channel {
-  INTERNAL
-  WHITE_LABEL
-}
-
-enum ItemKind {
-  PLAN
-  ADDON
-  MODULE
-}
-
-enum PartnerAccountStatus {
-  PENDING_CREATE
-  ACTIVE
-  PENDING_CHANGE
-  CANCELED
+  COMPLETED
+  CANCELLED
 }
 
 model User {
-  id           String   @id @default(cuid())
+  id           String         @id @default(cuid())
   name         String
-  email        String   @unique
+  email        String         @unique
   passwordHash String
-  role         Role     @default(SELLER)
-  partnerId    String?
-  partner      Partner? @relation(fields: [partnerId], references: [id])
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  leads         Lead[]        @relation("LeadOwner")
-  opportunities Opportunity[] @relation("OppOwner")
-  histories     OppHistory[]  @relation("UserActorHistory")
+  role         UserRole       @default(SELLER)
+  sessions     Session[]
+  leads        Lead[]         @relation("LeadOwner")
+  opportunities Opportunity[] @relation("OpportunityOwner")
+  notes        Note[]
+  attachments  Attachment[]   @relation("AttachmentUploader")
+  activities   ActivityLog[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 }
 
-model LeadStatus {
+model Session {
   id        String   @id @default(cuid())
-  name      String   @unique
-  color     String
-  tmkReasonRequired Boolean @default(false)
+  userId    String
+  tokenId   String   @unique
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  leads     Lead[]
 }
 
 model Lead {
-  id        String     @id @default(cuid())
-  company   String
-  segment   String?
-  headcount Int?       @default(0)
-  contact   String?
-  phone     String?
-  email     String?
-  notes     String?
-  source    LeadSource @default(MANUAL)
-  statusId  String
-  status    LeadStatus @relation(fields: [statusId], references: [id])
-  ownerId   String
-  owner     User       @relation("LeadOwner", fields: [ownerId], references: [id])
-  opportunities Opportunity[] @relation("LeadOpps")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model OpportunityStage {
-  id        String @id @default(cuid())
-  name      String @unique
-  order     Int    @default(0)
-  lostReasonRequired Boolean @default(false)
+  id            String           @id @default(cuid())
+  companyName   String
+  contactName   String?
+  contactEmail  String?
+  contactPhone  String?
+  segment       String?
+  employees     Int?
+  origin        String?
+  notes         String?
+  stage         LeadStage        @default(NUTRICAO)
+  order         Int              @default(0)
+  ownerId       String?
+  owner         User?            @relation("LeadOwner", fields: [ownerId], references: [id])
   opportunities Opportunity[]
-  historyFrom OppHistory[] @relation("OppHistoryFromStage")
-  historyTo   OppHistory[] @relation("OppHistoryToStage")
-}
+  cancellations Cancellation[]
+  notesList     Note[]           @relation("LeadNotes")
+  attachments   Attachment[]     @relation("LeadAttachments")
+  activityLogs  ActivityLog[]    @relation("LeadActivity")
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
-model HostingProvider {
-  id   String @id @default(cuid())
-  name String
-  opportunities Opportunity[]
-  accounts     PartnerAccount[]
+  @@index([stage, order])
 }
 
 model Opportunity {
-  id         String   @id @default(cuid())
-  ownerId    String
-  owner      User     @relation("OppOwner", fields: [ownerId], references: [id])
-  leadId     String?
-  lead       Lead?    @relation("LeadOpps", fields: [leadId], references: [id])
-  stageId    String
-  stage      OpportunityStage @relation(fields: [stageId], references: [id])
-  hostingId  String?
-  hosting    HostingProvider? @relation(fields: [hostingId], references: [id])
-  legalName  String?
-  cnpj       String?
-  address    String?
-  subdomain  String?
-  users      Int      @default(0)
-  whatsapp   Int      @default(0)
-  instagram  Int      @default(0)
-  facebook   Int      @default(0)
-  waba       Int      @default(0)
-  serverIp   String?
-  trialStart DateTime?
-  activation DateTime?
-  billingBaseDay Int?
-  priceTotal   Decimal? @db.Decimal(10,2)
-  priceMonthly Decimal? @db.Decimal(10,2)
-  history   OppHistory[]
-  implTasks ImplementationTask[]
-  canceled  CanceledSale?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String             @id @default(cuid())
+  name           String
+  value          Decimal?           @db.Decimal(12, 2)
+  contactName    String?
+  ownerId        String?
+  owner          User?              @relation("OpportunityOwner", fields: [ownerId], references: [id])
+  leadId         String?
+  lead           Lead?              @relation(fields: [leadId], references: [id])
+  stage          OpportunityStage   @default(NEGOCIACAO)
+  order          Int                @default(0)
+  modules        String[]           @default([])
+  trialEndsAt    DateTime?
+  workspaceSlug  String?
+  implementation Implementation?
+  cancellations  Cancellation[]
+  notesList      Note[]             @relation("OpportunityNotes")
+  attachments    Attachment[]       @relation("OpportunityAttachments")
+  activityLogs   ActivityLog[]      @relation("OpportunityActivity")
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([stage, order])
 }
 
-model OppHistory {
-  id      String   @id @default(cuid())
-  oppId   String
-  opp     Opportunity @relation(fields: [oppId], references: [id])
-  actorId String
-  actor   User      @relation("UserActorHistory", fields: [actorId], references: [id])
-  fromStageId String?
-  fromStage   OpportunityStage? @relation("OppHistoryFromStage", fields: [fromStageId], references: [id])
-  toStageId   String?
-  toStage     OpportunityStage? @relation("OppHistoryToStage", fields: [toStageId], references: [id])
-  note    String?
-  createdAt DateTime @default(now())
+model Implementation {
+  id             String               @id @default(cuid())
+  opportunityId  String               @unique
+  opportunity    Opportunity          @relation(fields: [opportunityId], references: [id])
+  scheduledFor   DateTime
+  status         ImplementationStatus @default(SCHEDULED)
+  notes          String?
+  completedAt    DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 }
 
-model ImplementationTask {
-  id       String   @id @default(cuid())
-  oppId    String
-  opp      Opportunity @relation(fields: [oppId], references: [id])
-  status   ImplStatus  @default(PENDING_SCHED)
-  schedule DateTime?
-  note     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Cancellation {
+  id            String        @id @default(cuid())
+  leadId        String?
+  opportunityId String?
+  reason        String
+  details       String?
+  cancelledAt   DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  lead          Lead?         @relation(fields: [leadId], references: [id])
+  opportunity   Opportunity?  @relation(fields: [opportunityId], references: [id])
 }
 
-model CanceledSale {
-  id    String @id @default(cuid())
-  oppId String @unique
-  opp   Opportunity @relation(fields: [oppId], references: [id])
-  reason  String?
-  summary String?
-  createdAt DateTime @default(now())
+model Note {
+  id            String        @id @default(cuid())
+  content       String
+  leadId        String?
+  opportunityId String?
+  userId        String?
+  lead          Lead?         @relation("LeadNotes", fields: [leadId], references: [id])
+  opportunity   Opportunity?  @relation("OpportunityNotes", fields: [opportunityId], references: [id])
+  user          User?         @relation(fields: [userId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
 
-model Partner {
-  id          String   @id @default(cuid())
-  nickname    String
-  legalName   String
-  cnpj        String
-  address     String?
-  domain      String?
-  contact     String?
-  whatsapp    String?
-  financeEmail String?
-  priceTable  Json?
-  accounts PartnerAccount[]
-  users    User[]
+model Attachment {
+  id            String        @id @default(cuid())
+  fileName      String
+  fileUrl       String
+  leadId        String?
+  opportunityId String?
+  uploadedById  String?
+  lead          Lead?         @relation("LeadAttachments", fields: [leadId], references: [id])
+  opportunity   Opportunity?  @relation("OpportunityAttachments", fields: [opportunityId], references: [id])
+  uploadedBy    User?         @relation("AttachmentUploader", fields: [uploadedById], references: [id])
+  createdAt     DateTime      @default(now())
 }
 
-model PartnerAccount {
-  id            String @id @default(cuid())
-  partnerId     String
-  partner       Partner @relation(fields: [partnerId], references: [id])
-  legalName     String
-  cnpj          String
-  email         String
-  phone         String?
-  subdomain     String?
-  users         Int?
-  hostingId     String?
-  hosting       HostingProvider? @relation(fields: [hostingId], references: [id])
-  serverIp      String?
-  billingBaseDay Int?
-  connections   Json?
-  modules       Json?
-  status        PartnerAccountStatus @default(PENDING_CREATE)
-  note          String?
-  activatedAt   DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  changeRequests PartnerChangeRequest[]
-}
-
-model PartnerChangeRequest {
-  id        String   @id @default(cuid())
-  accountId String
-  account   PartnerAccount @relation(fields: [accountId], references: [id])
-  type      String
-  payload   Json?
-  createdAt DateTime @default(now())
-}
-
-model PriceItem {
-  id     String  @id @default(cuid())
-  sku    String  @unique
-  name   String
-  price  Decimal @db.Decimal(10,2)
-  channel Channel
-  kind   ItemKind
-  active Boolean @default(true)
-}
-
-model PriceTier {
-  id           String  @id @default(cuid())
-  channel      Channel
-  minUsers     Int
-  maxUsers     Int?
-  pricePerUser Decimal @db.Decimal(10,2)
-
-  @@unique([channel, minUsers])
-}
-
-model DiscountPolicy {
-  id         String @id @default(cuid())
-  role       Role   @unique
-  maxPercent Decimal @db.Decimal(5,2)
+model ActivityLog {
+  id            String       @id @default(cuid())
+  userId        String?
+  leadId        String?
+  opportunityId String?
+  entityType    String
+  entityId      String
+  action        String
+  description   String?
+  metadata      Json?
+  user          User?        @relation(fields: [userId], references: [id])
+  lead          Lead?        @relation("LeadActivity", fields: [leadId], references: [id])
+  opportunity   Opportunity? @relation("OpportunityActivity", fields: [opportunityId], references: [id])
+  createdAt     DateTime     @default(now())
 }

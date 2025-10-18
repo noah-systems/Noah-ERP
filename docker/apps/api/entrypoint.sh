@@ -93,4 +93,4 @@ else
   echo "Skipping Prisma migrate deploy; PRISMA_MIGRATE_ON_START=${PRISMA_MIGRATE_ON_START:-0}."
 fi
 
-exec node dist/main.js
+exec node dist/server.js
