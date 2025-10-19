@@ -13,7 +13,7 @@ jobs:
           POSTGRES_PASSWORD: noah
           POSTGRES_USER: noah
           POSTGRES_DB: noah
-        ports: ["5432:5432"]
+        ports: [ "5432:5432" ]
         options: >-
           --health-cmd="pg_isready -U noah"
           --health-interval=10s
@@ -21,7 +21,7 @@ jobs:
           --health-retries=10
       redis:
         image: redis:7
-        ports: ["6379:6379"]
+        ports: [ "6379:6379" ]
         options: >-
           --health-cmd="redis-cli ping || exit 1"
           --health-interval=10s

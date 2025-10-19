@@ -14,9 +14,7 @@ async function main() {
     update: { name, password: hash, role: 'ADMIN_NOAH' },
     create: { name, email, password: hash, role: 'ADMIN_NOAH' },
   });
-
-  // TODO: se necessário, acrescente upserts idempotentes de enums/estágios do domínio.
 }
 
-main().catch(e => { console.error(e); process.exit(1); })
+main().catch((e) => { console.error(e); process.exit(1); })
   .finally(async () => { await prisma.$disconnect(); });

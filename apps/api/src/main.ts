@@ -26,7 +26,7 @@ function applySecurityHeaders(_req: unknown, res: BasicResponse, next: NextFunct
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create(AppModule);
   const logger = new Logger('NoahERP');
   app.useLogger(logger);
   if (typeof app.flushLogs === 'function') {
@@ -49,14 +49,11 @@ async function bootstrap() {
 
   app.use(applySecurityHeaders);
 
-  app.enableCors({
-    origin: origins,
-    credentials: true,
-  });
+  app.enableCors({ origin: origins, credentials: true });
 
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
   app.setGlobalPrefix('api');
   app.useGlobalInterceptors(new LoggingInterceptor(new Logger('HTTP')));
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
   await app.enableShutdownHooks();
 
   const port = Number(process.env.PORT || 3000);
