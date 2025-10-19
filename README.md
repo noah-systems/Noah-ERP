@@ -52,6 +52,12 @@ O front consome a API através da variável `VITE_API_BASE`. Por padrão, o valo
 - Consultar [docs/QA.md](docs/QA.md) para a lista completa de comandos manuais (cURLs obrigatórios, prints e checklist por papel).
 - Para um diagnóstico rápido do ambiente após merges na `main`, confira [docs/post-merge-diagnostic.md](docs/post-merge-diagnostic.md).
 
+## Produção (Docker)
+1. Crie `.env` conforme exemplo acima (ATENÇÃO ao `%40` na senha).
+2. `docker compose -f docker/compose.prod.yml up -d --build`
+3. Valide:
+   - `./scripts/ci_validate.sh`  # checa health da API, login admin, CORS e front
+
 ## Backend (bare metal)
 
 ```bash
