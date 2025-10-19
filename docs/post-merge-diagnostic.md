@@ -14,12 +14,12 @@ Este roteiro documenta o estado esperado do ambiente de produção após um merg
   - `GET`/`POST /api/opps`, `POST /api/opps/:id/move`, `DELETE /api/opps/:id`.
 - **Prisma**: client já gerado; não há migrações pendentes e o Postgres (`127.0.0.1:5432`) responde.
 - **Redis/Valkey**: porta `6379` ativa para sessões e rate limiting (quando habilitado).
-- **Seed obrigatório**: sem o usuário administrador seedado, o login falha com `401`. Garanta que `npm --prefix api run seed` foi executado (sobrescreva credenciais com `SEED_ADMIN_*` se necessário), ou insira o admin diretamente no banco.
+- **Seed obrigatório**: sem o usuário administrador seedado, o login falha com `401`. Garanta que `npm --prefix apps/api run seed` foi executado (sobrescreva credenciais com `SEED_ADMIN_*` se necessário), ou insira o admin diretamente no banco.
 
 ## Banco de dados
 
 - **Conexão**: `DATABASE_URL=postgresql://noah...@127.0.0.1:5432/noah?schema=public` está funcional.
-- **Prisma seed formal**: mantenha o bloco a seguir em `api/package.json` para que `npm --prefix api run seed` execute `prisma/seed.js`.
+- **Prisma seed formal**: mantenha o bloco a seguir em `apps/api/package.json` para que `npm --prefix apps/api run seed` execute `prisma/seed.js`.
 
   ```json
   {
@@ -52,9 +52,9 @@ Este roteiro documenta o estado esperado do ambiente de produção após um merg
 
 1. Seed de administrador criado (manual ou via `prisma/seed.js`).
 2. Front build publicado em `dist/` na raiz.
-3. Nginx configurado com:
-   - `erp` servindo `root /var/www/erp/dist;`
-   - `erpapi` com `location /api/ { proxy_pass http://127.0.0.1:3000/; }` e CORS liberando `https://erp.noahomni.com.br`.
+3. Nginx configurado com proxy reverso único (HTTPS) apontando para:
+   - `location / { proxy_pass http://web:80; }`
+   - `location /api { proxy_pass http://api:3000; }`
 4. Variáveis de ambiente revisadas tanto na API quanto no front.
 5. Execute `./scripts/noah_e2e_check.sh` (vide README) apontando para os hosts públicos. Com status `OK`, cadastros/movimentações de leads e oportunidades passam nos testes funcionais documentados em [`docs/QA.md`](./QA.md).
 6. Para um smoke test rápido em produção, use `./scripts/smoke.sh` (requer `curl`) e confirme todos os `==>` com `OK`.

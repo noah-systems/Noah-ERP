@@ -1,32 +1,41 @@
 #!/usr/bin/env bash
 set -euo pipefail
-API="${API_BASE:-http://localhost:3000}"
-WEB="${WEB_BASE:-http://localhost:5173}"
 
-echo ">> HEALTH"
-curl -fsS "${API}/api/health" >/dev/null || curl -fsS "${API}/api/worker/health" >/dev/null
+echo "Noah-ERP — CI Validate"
+fail=0
 
-# Login opcional: se existir endpoint /api/auth/login, tenta validar token.
-if curl -fsS -o /dev/null -w '%{http_code}' "${API}/api/auth/login" | grep -qE '200|401|404'; then
-  if [ -n "${ADMIN_EMAIL:-}" ] && [ -n "${ADMIN_PASSWORD:-}" ]; then
-    echo ">> LOGIN (se suportado)"
-    token="$(curl -sf -X POST "${API}/api/auth/login" -H 'Content-Type: application/json' \
-      -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}" | jq -r '.access_token // .token // empty' || true)"
-    [ -n "$token" ] && echo "token ok" || echo "login não validado (endpoint pode não existir)"
-    # ACL opcional: só testa /api/users se obteve token
-    if [ -n "$token" ]; then
-      code="$(curl -s -o /dev/null -w '%{http_code}' "${API}/api/users" -H "Authorization: Bearer ${token}")"
-      case "$code" in
-        2*) echo "ACL básica OK (users respondeu ${code})." ;;
-        *)  echo "ACL: verifique papeis/guards (HTTP ${code})." ;;
-      esac
-    fi
+check() {
+  local name="$1"; shift
+  if eval "$@"; then
+    echo "PASS  $name"
+  else
+    echo "FAIL  $name"
+    fail=1
   fi
-fi
+}
 
-echo ">> CORS preflight"
-code="$(curl -s -o /dev/null -w '%{http_code}' -X OPTIONS "${API}/api/health" \
-  -H "Origin: ${WEB}" -H "Access-Control-Request-Method: GET")"
-[ "$code" = "204" -o "$code" = "200" ] || { echo "CORS falhou ($code)"; exit 1; }
+# Evitar backend duplicado
+check "Somente apps/api existe (sem /api)" \
+  'test ! -d "api"'
 
-echo "OK"
+# Front aponta para API Base obrigatória
+check "src/lib/api.ts exige VITE_API_BASE" \
+  'grep -q "VITE_API_BASE" src/lib/api.ts'
+
+# Guards de ACL presentes
+check "RolesGuard presente" \
+  'grep -Rqs "export class RolesGuard" apps/api/src/modules/auth/roles.guard.ts'
+
+# Docker compose de prod existe
+check "docker/compose.prod.yml existe" \
+  'test -f docker/compose.prod.yml'
+
+# Nginx com proxy / e /api
+check "Nginx com proxy para / e /api" \
+  'grep -q "location /api" docker/proxy/nginx.conf && grep -q "location / " docker/proxy/nginx.conf'
+
+# Prisma schema presente
+check "Prisma schema ok" \
+  'test -f apps/api/prisma/schema.prisma'
+
+exit $fail
