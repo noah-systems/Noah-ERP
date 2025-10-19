@@ -4,9 +4,9 @@ After=network.target postgresql.service valkey.service
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/noah-erp/Noah-ERP/api
-EnvironmentFile=/opt/noah-erp/Noah-ERP/api/.env
-ExecStart=/usr/bin/node dist/server.js
+WorkingDirectory=/opt/noah-erp/Noah-ERP/apps/api
+EnvironmentFile=/opt/noah-erp/Noah-ERP/apps/api/.env
+ExecStart=/usr/bin/node dist/main.js
 Restart=always
 RestartSec=3
 

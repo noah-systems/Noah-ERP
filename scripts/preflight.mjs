@@ -70,8 +70,8 @@ add("src/pages/Login.tsx exists", ex(P("src","pages","Login.tsx")), "Create/adju
 add("src/pages/login.css exists", ex(P("src","pages","login.css")), "Create/adjust login CSS");
 
 // 8) Prisma env hygiene (bare-metal resilience)
-const prismaEnvPath = P("api", "prisma", ".env");
-add("api/prisma/.env absent", !ex(prismaEnvPath), "Remove duplicate env: rm -f api/prisma/.env");
+const prismaEnvPath = P("apps", "api", "prisma", ".env");
+add("apps/api/prisma/.env absent", !ex(prismaEnvPath), "Remove duplicate env: rm -f apps/api/prisma/.env");
 
 const runtimeEnvFile = "/etc/noah-erp/api.env";
 const runtimeEnvExists = ex(runtimeEnvFile);
@@ -105,11 +105,11 @@ if (!runtimeEnvExists) {
   );
 }
 
-const envSymlinkOk = symlinkPointsTo(P("api", ".env"), runtimeEnvFile);
+const envSymlinkOk = symlinkPointsTo(P("apps", "api", ".env"), runtimeEnvFile);
 add(
-  "api/.env → /etc/noah-erp/api.env symlink",
+  "apps/api/.env → /etc/noah-erp/api.env symlink",
   envSymlinkOk,
-  "Recrie: ln -snf /etc/noah-erp/api.env api/.env (o instalador faz isso automaticamente)"
+  "Recrie: ln -snf /etc/noah-erp/api.env apps/api/.env (o instalador faz isso automaticamente)"
 );
 
 // ---- Report

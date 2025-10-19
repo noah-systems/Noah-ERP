@@ -5,15 +5,15 @@
 set -euo pipefail
 
 ### ========= USER-PROVIDED DEFAULTS (EDIT LATER IF NEEDED) =========
-DOMAIN_WEB="erp.noahomni.com.br"
-DOMAIN_API="erpapi.noahomni.com.br"
-ADMIN_NAME="Admin Noah"
-ADMIN_EMAIL="admin@noahomni.com.br"
-ADMIN_PASSWORD_DEFAULT="D2W3£Qx!0Du#"
+DOMAIN_WEB="${DOMAIN_WEB:-erp.noahomni.com.br}"
+DOMAIN_API="${DOMAIN_API:-erpapi.noahomni.com.br}"
+ADMIN_NAME="${ADMIN_NAME:-Admin Noah}"
+ADMIN_EMAIL="${ADMIN_EMAIL:-}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
 
 DB_USER="noah"
 DB_NAME="noah"
-DB_PASS_DEFAULT="noah"
+DB_PASS_DEFAULT="${DB_PASS_DEFAULT:-noah}"
 DB_PASS="${DB_PASS:-$DB_PASS_DEFAULT}"
 API_PORT="3000"
 INSTALL_DIR="/opt/noah-erp"
@@ -30,10 +30,11 @@ need(){ command -v "$1" >/dev/null 2>&1 || { err "Missing '$1'"; exit 1; } }
 require_root(){ [ "$(id -u)" -eq 0 ] || { err "Run as root"; exit 1; } }
 
 detect_api_dir(){
-  for d in api server backend; do
-    if [ -d "${REPO_DIR}/${d}" ] && [ -f "${REPO_DIR}/${d}/package.json" ]; then echo "${REPO_DIR}/${d}"; return; fi
-  done
-  local s; s="$(find "${REPO_DIR}" -maxdepth 2 -type f -path '*/prisma/schema.prisma' 2>/dev/null | head -n1 || true)"
+  if [ -d "${REPO_DIR}/apps/api" ] && [ -f "${REPO_DIR}/apps/api/package.json" ]; then
+    echo "${REPO_DIR}/apps/api"
+    return
+  fi
+  local s; s="$(find "${REPO_DIR}" -maxdepth 3 -type f -path '*/prisma/schema.prisma' 2>/dev/null | head -n1 || true)"
   [ -n "$s" ] && dirname "$(dirname "$s")" || echo ""
 }
 
@@ -135,13 +136,13 @@ ok "Frontend published"
 ### ========= API PREP (PRISMA + SERVICE) =========
 log "Locating API directory"
 API_DIR_DISCOVERED="$(detect_api_dir)"
-API_DIR="${API_DIR:-/opt/noah-erp/Noah-ERP/api}"
+API_DIR="${API_DIR:-/opt/noah-erp/Noah-ERP/apps/api}"
 if [ ! -d "${API_DIR}" ]; then
   if [ -n "${API_DIR_DISCOVERED}" ] && [ -d "${API_DIR_DISCOVERED}" ]; then
     API_DIR="${API_DIR_DISCOVERED}"
   fi
 fi
-[ -d "${API_DIR}" ] || { err "API directory not found (expected api/server/backend)."; exit 1; }
+[ -d "${API_DIR}" ] || { err "API directory not found (expected apps/api)."; exit 1; }
 ok "API at ${API_DIR}"
 
 log "Preparing API environment"
@@ -158,15 +159,17 @@ rm -f "${API_DIR}/prisma/.env"
 # (b) Ensure runtime env exists and contains DATABASE_URL for user "noah"
 install -d /etc/noah-erp
 if [ ! -s "${API_ENV_FILE}" ]; then
+  [ -n "${ADMIN_EMAIL}" ] || { err "ADMIN_EMAIL must be set (export ADMIN_EMAIL=admin@example.com)"; exit 1; }
+  [ -n "${ADMIN_PASSWORD}" ] || { err "ADMIN_PASSWORD must be set (export ADMIN_PASSWORD=StrongPass)"; exit 1; }
   cat >"${API_ENV_FILE}" <<ENV
 NODE_ENV=production
 PORT=3000
 DATABASE_URL=postgresql://noah:${DB_PASS}@127.0.0.1:5432/noah?schema=public
 REDIS_URL=redis://127.0.0.1:6379
 JWT_SECRET=__FILL_ME__
-ADMIN_NAME=Admin Noah
-ADMIN_EMAIL=admin@noahomni.com.br
-ADMIN_PASSWORD=D2W3£Qx!0Du#
+ADMIN_NAME=${ADMIN_NAME}
+ADMIN_EMAIL=${ADMIN_EMAIL}
+ADMIN_PASSWORD=${ADMIN_PASSWORD}
 CORS_ORIGINS=http://localhost,http://127.0.0.1
 ENV
   sed -i "s|^JWT_SECRET=__FILL_ME__|JWT_SECRET=$(openssl rand -hex 32)|" "${API_ENV_FILE}" || true
@@ -176,7 +179,7 @@ fi
 sed -i '/^DATABASE_URL=/d' "${API_ENV_FILE}"
 echo "DATABASE_URL=postgresql://noah:${DB_PASS}@127.0.0.1:5432/noah?schema=public" >>"${API_ENV_FILE}"
 
-# (d) Link api/.env to the runtime env and export vars to current shell
+# (d) Link apps/api/.env to the runtime env and export vars to current shell
 ln -snf "${API_ENV_FILE}" "${API_DIR}/.env"
 set -a; . "${API_ENV_FILE}"; set +a
 
@@ -306,4 +309,4 @@ echo
 ok "Installation finished."
 echo "Open WEB:  https://${DOMAIN_WEB}"
 echo "API proxied: https://${DOMAIN_API}"
-echo "Admin: ${ADMIN_EMAIL} / ${ADMIN_PASSWORD_DEFAULT}  (change later in /etc/noah-erp/api.env and: systemctl restart noah-api)"
+echo "Admin: ${ADMIN_EMAIL} / (hidden)  — altere /etc/noah-erp/api.env e execute: systemctl restart noah-api"

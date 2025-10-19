@@ -37,7 +37,7 @@ Este repositório reúne o front-end (Vite + React) e a API (NestJS + Prisma) ut
    npm run dev                # Vite em http://localhost:5173
    ```
 
-   > Dica: o atalho `./scripts/install_dev.sh` (ou `make dev`) automatiza os passos acima.
+   > Dica: o atalho `./scripts/install_dev.sh` (ou `make dev`) automatiza os passos acima. Para subir o ambiente completo via Docker Compose utilize `./scripts/dev-up.sh`.
 
 O front consome a API através da variável `VITE_API_BASE`. Por padrão, o valor `/api` já está definido em [.env.example](.env.example).
 
@@ -48,15 +48,7 @@ O front consome a API através da variável `VITE_API_BASE`. Por padrão, o valo
   ./scripts/ci_validate.sh
   ```
   O script compila API e web, sobe `docker/compose.prod.yml`, roda health checks (`/api/worker/health`), valida ACLs (403 para `SELLER` em `/api/users`), testa CORS e derruba os contêineres ao final.
-- Para validar rapidamente o ambiente publicado (API + front) utilize o script de fumaça oficial:
-  ```bash
-  ./scripts/noah_e2e_check.sh \
-    --front erp.noahomni.com.br \
-    --api erpapi.noahomni.com.br \
-    --admin-email admin@noahomni.com.br \
-    --admin-pass 'D2W3£Qx!0Du#'
-  ```
-  Ele confere o health-check (`/ping`), realiza login e percorre o fluxo "criar → mover → listar → excluir" de leads.
+- Para validar rapidamente o ambiente publicado (API + front) utilize o script de fumaça oficial `./scripts/noah_e2e_check.sh`, informando as credenciais reais via `--admin-email`/`--admin-pass`.
 - Consultar [docs/QA.md](docs/QA.md) para a lista completa de comandos manuais (cURLs obrigatórios, prints e checklist por papel).
 - Para um diagnóstico rápido do ambiente após merges na `main`, confira [docs/post-merge-diagnostic.md](docs/post-merge-diagnostic.md).
 
@@ -91,13 +83,13 @@ curl -sf http://127.0.0.1:3000/api/worker/health
 
 ## Estrutura do Prisma
 
-O schema mínimo está em [`api/prisma/schema.prisma`](api/prisma/schema.prisma) e contempla:
+O schema mínimo está em [`apps/api/prisma/schema.prisma`](apps/api/prisma/schema.prisma) e contempla:
 
 - Usuários (`User`) com papéis `ADMIN` ou `USER`
 - Leads (`Lead`) com estágios (`LeadStage`) e origens (`Source`)
 - Oportunidades (`Opportunity`) com estágios (`OpportunityStage`)
 
-O seed [`api/prisma/seed.js`](api/prisma/seed.js) cria o usuário admin definido nas variáveis `SEED_ADMIN_*` (e registra no log caso já exista).
+O seed [`apps/api/prisma/seed.js`](apps/api/prisma/seed.js) cria o usuário admin definido nas variáveis `ADMIN_EMAIL`/`ADMIN_PASSWORD` (sem valores padrão em produção; defina via `.env`).
 
 ## Front-end
 
