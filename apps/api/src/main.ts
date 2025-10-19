@@ -45,8 +45,8 @@ async function bootstrap() {
 
   const corsEnv = process.env.CORS_ORIGINS || '';
   const origins = corsEnv
-    ? corsEnv.split(',').map(s => s.trim()).filter(Boolean)
-    : ['http://localhost:5173', 'http://127.0.0.1:5173', 'https://erp.noahomni.com.br'];
+    ? corsEnv.split(',').map((s) => s.trim()).filter(Boolean)
+    : ['http://localhost:5173', 'https://erp.noahomni.com.br'];
   app.enableCors({ origin: origins, credentials: true });
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
