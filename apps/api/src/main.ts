@@ -56,7 +56,7 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
   app.useGlobalInterceptors(new LoggingInterceptor(new Logger('HTTP')));
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
   await app.enableShutdownHooks();
 
   const port = Number(process.env.PORT || 3000);

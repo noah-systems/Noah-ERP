@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { InjectRedis } from '@liaoliaots/nestjs-redis';
 import { Redis } from 'ioredis';
 
@@ -14,7 +14,6 @@ export class HealthController {
   async ok() {
     await this.prisma.$queryRaw`SELECT 1`;
     await this.redis.ping();
-
     return { ok: true, ts: new Date().toISOString() };
   }
 }

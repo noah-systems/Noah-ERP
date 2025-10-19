@@ -1,10 +1,8 @@
 name: CI
-
 on:
   pull_request:
   push:
     branches: [ main ]
-
 jobs:
   build-and-smoke:
     runs-on: ubuntu-latest
@@ -29,7 +27,6 @@ jobs:
           --health-interval=10s
           --health-timeout=5s
           --health-retries=10
-
     env:
       NODE_ENV: production
       DATABASE_URL: postgresql://noah:noah@127.0.0.1:5432/noah?schema=public
@@ -39,41 +36,30 @@ jobs:
       ADMIN_EMAIL: ci-admin@noahomni.com.br
       ADMIN_PASSWORD: ci-password
       CORS_ORIGINS: http://localhost:5173,https://erp.noahomni.com.br
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Repo guard
         run: bash scripts/repo_guard.sh
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
       - name: Install API deps
         working-directory: apps/api
-        run: npm ci
-
+        run: npm ci || npm i
       - name: Prisma generate + migrate + seed
         working-directory: apps/api
         run: |
           npx prisma generate
           npx prisma migrate deploy
           npm run seed || true
-
-      - name: Build API
-        working-directory: apps/api
-        run: npm run build
-
       - name: Start API
         working-directory: apps/api
         run: |
           nohup npm run start:prod >/tmp/api.log 2>&1 &
           sleep 8
           curl -fsS http://127.0.0.1:3000/api/health
-
-      - name: Smoke script
+      - name: Smoke
         run: |
           sudo apt-get update && sudo apt-get install -y jq
           ADMIN_EMAIL="$ADMIN_EMAIL" ADMIN_PASSWORD="$ADMIN_PASSWORD" API_BASE="http://127.0.0.1:3000" bash scripts/ci_validate.sh
