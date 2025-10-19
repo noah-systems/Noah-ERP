@@ -1,35 +1,79 @@
 name: CI
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
+  push:
     branches: [ main ]
 
 jobs:
-  api:
+  build-and-smoke:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: api
+    services:
+      db:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: noah
+          POSTGRES_USER: noah
+          POSTGRES_DB: noah
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U noah"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd="redis-cli ping || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://noah:noah@127.0.0.1:5432/noah?schema=public
+      REDIS_URL: redis://127.0.0.1:6379
+      JWT_SECRET: test-secret-please-change
+      ADMIN_NAME: CI Admin
+      ADMIN_EMAIL: ci-admin@noahomni.com.br
+      ADMIN_PASSWORD: ci-password
+      CORS_ORIGINS: http://localhost:5173,https://erp.noahomni.com.br
+
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - name: Repo guard
+        run: bash scripts/repo_guard.sh
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: npm
-          cache-dependency-path: api/package-lock.json
-      - run: npm ci
-      - run: npm run build
-      - run: npx prisma generate
-  web:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: npm
-          cache-dependency-path: package-lock.json
-      - run: npm ci
-      - run: npm run build
+
+      - name: Install API deps
+        working-directory: apps/api
+        run: npm ci
+
+      - name: Prisma generate + migrate + seed
+        working-directory: apps/api
+        run: |
+          npx prisma generate
+          npx prisma migrate deploy
+          npm run seed || true
+
+      - name: Build API
+        working-directory: apps/api
+        run: npm run build
+
+      - name: Start API
+        working-directory: apps/api
+        run: |
+          nohup npm run start:prod >/tmp/api.log 2>&1 &
+          sleep 8
+          curl -fsS http://127.0.0.1:3000/api/health
+
+      - name: Smoke script
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq
+          ADMIN_EMAIL="$ADMIN_EMAIL" ADMIN_PASSWORD="$ADMIN_PASSWORD" API_BASE="http://127.0.0.1:3000" bash scripts/ci_validate.sh

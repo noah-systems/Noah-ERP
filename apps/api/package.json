@@ -5,12 +5,13 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "start:prod": "node dist/main.js",
-    "prisma:generate": "prisma generate --schema ../prisma/schema.prisma",
-    "prisma:migrate:deploy": "prisma migrate deploy --schema ../prisma/schema.prisma",
-    "prisma:seed": "prisma db seed --schema ../prisma/schema.prisma",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy",
+    "prisma:seed": "node prisma/seed.js",
+    "seed": "npm run prisma:seed",
     "ci:deps": "npm ci",
-    "ci:prisma:validate": "prisma validate --schema ../prisma/schema.ci.prisma",
-    "ci:prisma:generate": "prisma generate --schema ../prisma/schema.ci.prisma",
+    "ci:prisma:validate": "prisma validate --schema prisma/schema.ci.prisma",
+    "ci:prisma:generate": "prisma generate --schema prisma/schema.ci.prisma",
     "ci:build": "tsc -p tsconfig.build.json",
     "test:acl": "node test/acl.e2e.js"
   },
@@ -23,6 +24,7 @@
     "bullmq": "^5.8.2",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "@liaoliaots/nestjs-redis": "file:libs/nestjs-redis",
     "ioredis": "^5.4.1",
     "reflect-metadata": "^0.1.13"
   },
@@ -33,6 +35,6 @@
     "typescript": "^5.5.4"
   },
   "prisma": {
-    "seed": "node ../prisma/seed.js"
+    "seed": "node prisma/seed.js"
   }
 }

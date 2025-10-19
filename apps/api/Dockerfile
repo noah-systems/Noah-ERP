@@ -10,10 +10,10 @@ WORKDIR /app/apps/api
 RUN npm ci --no-audit --no-fund
 
 # Copy project sources and Prisma schema
-COPY prisma /app/prisma
+COPY apps/api/prisma ./prisma
 COPY apps/api /app/apps/api
 
-RUN rm -f /app/prisma/.env && npx prisma generate --schema ../prisma/schema.prisma
+RUN rm -f ./prisma/.env && npx prisma generate
 
 # Build TypeScript sources
 RUN npm run build
@@ -31,7 +31,7 @@ RUN apk add --no-cache postgresql-client openssl bash
 COPY --from=build /app/apps/api/node_modules ./node_modules
 COPY --from=build /app/apps/api/package.json ./
 COPY --from=build /app/apps/api/package-lock.json ./
-COPY --from=build /app/prisma /app/prisma
+COPY --from=build /app/apps/api/prisma ./prisma
 COPY --from=build /app/apps/api/dist ./dist
 
 RUN mkdir -p /app/scripts

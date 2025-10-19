@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-REPO_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
-
-cd "$REPO_ROOT"
-
-echo "[dev-up] Executando docker compose -f docker/compose.dev.yml up --build"
-docker compose -f docker/compose.dev.yml up --build
+cp -n ./.env.example ./.env || true
+docker compose -f docker/compose.dev.yml up -d --build
+echo "Dev up: http://localhost:5173 (web) | http://localhost:3000/api/health (api)"

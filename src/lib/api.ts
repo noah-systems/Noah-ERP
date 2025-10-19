@@ -1,4 +1,5 @@
-export const API_BASE = import.meta.env.VITE_API_BASE || '/api';
+const base = (import.meta.env.VITE_API_BASE as string) || '/api';
+export const API_BASE = base.replace(/\/+$/, '');
 
 const rawMock = import.meta.env.VITE_MOCK;
 export const USE_MOCK =
@@ -8,8 +9,6 @@ export const USE_MOCK =
 
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const endpoint = path.startsWith('/') ? path : `/${path}`;
-  const base = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
-
   const headers = new Headers(init.headers as HeadersInit | undefined);
   const hasBody = init.body !== undefined && init.body !== null;
   const isFormData = typeof FormData !== 'undefined' && hasBody && init.body instanceof FormData;
@@ -17,7 +16,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
     headers.set('Content-Type', 'application/json');
   }
 
-  const response = await fetch(`${base}${endpoint}`, {
+  const response = await fetch(`${API_BASE}${endpoint}`, {
     ...init,
     headers,
     credentials: init.credentials ?? 'include',

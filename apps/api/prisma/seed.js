@@ -100,12 +100,9 @@ async function main() {
     db.discountPolicy.upsert({ where: { role: Role.ADMIN_NOAH }, update: {}, create: { role: Role.ADMIN_NOAH, maxPercent: 100 } }),
   ])
 
-  const isDev = (process.env.NODE_ENV || '').toLowerCase() !== 'production'
-  const name = (process.env.ADMIN_NAME || 'Administrator').trim()
-  const emailFallback = isDev ? 'admin@example.com' : ''
-  const passwordFallback = isDev ? 'ChangeMe123!' : ''
-  const email = (process.env.ADMIN_EMAIL || emailFallback).trim().toLowerCase()
-  const password = (process.env.ADMIN_PASSWORD || passwordFallback).trim()
+  const name = (process.env.ADMIN_NAME || 'Admin Noah').trim()
+  const email = (process.env.ADMIN_EMAIL || 'admin@noahomni.com.br').trim().toLowerCase()
+  const password = (process.env.ADMIN_PASSWORD || 'change-me-now').trim()
 
   if (!email) {
     throw new Error('ADMIN_EMAIL must be provided for the seed.')
