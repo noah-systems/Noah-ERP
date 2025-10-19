@@ -87,7 +87,7 @@ if [ "${PRISMA_MIGRATE_ON_START:-0}" = "1" ]; then
   run_with_retry "Prisma migrate deploy" "$MAX_ATTEMPTS" "$SLEEP_SECONDS" \
     env \
       API_DIR=/app/apps/api \
-      PRISMA_SCHEMA=/app/prisma/schema.prisma \
+      PRISMA_SCHEMA=/app/apps/api/prisma/schema.prisma \
       /app/scripts/prisma_migrate_deploy.sh \
       --direct
 else

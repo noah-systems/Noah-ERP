@@ -26,17 +26,14 @@ services:
     working_dir: /app/apps/api
     environment:
       NODE_ENV: production
-      PORT: 3000
-      # Use .env para setar DB_PASS e DATABASE_URL já encodada se tiver '@'
-      # Exemplo de fallback seguro quando DB_PASS vier de .env:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://noah:${DB_PASS}@db:5432/noah?schema=public}
-      PRISMA_MIGRATE_ON_START: 1
-      JWT_SECRET: ${JWT_SECRET:?Defina JWT_SECRET antes de subir a API}
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      CORS_ORIGINS: ${CORS_ORIGINS:-https://erp.noahomni.com.br,https://erpapi.noahomni.com.br}
-      ADMIN_NAME: ${ADMIN_NAME:-Admin Noah}
-      ADMIN_EMAIL: ${ADMIN_EMAIL:?Defina ADMIN_EMAIL para o seed inicial}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Defina ADMIN_PASSWORD para o seed inicial}
+      PRISMA_MIGRATE_ON_START: 1
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_NAME: ${ADMIN_NAME}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      CORS_ORIGINS: ${CORS_ORIGINS}
     depends_on: [db, redis]
     networks: [noah]
 

@@ -36,7 +36,7 @@ success "Cliente Prisma gerado."
 
 if [ -n "${DATABASE_URL:-}" ]; then
   info "Aplicando migrations no banco apontado em DATABASE_URL"
-  npm --prefix apps/api run prisma:migrate:deploy
+  npm --prefix apps/api run prisma:migrate
   success "Migrations aplicadas."
 else
   warn "DATABASE_URL não definido; pule migrations/seed conforme necessário."

@@ -29,6 +29,15 @@ err(){  echo -e "\033[1;91m✘ $*\033[0m"; }
 need(){ command -v "$1" >/dev/null 2>&1 || { err "Missing '$1'"; exit 1; } }
 require_root(){ [ "$(id -u)" -eq 0 ] || { err "Run as root"; exit 1; } }
 
+urlencode() {
+  local s="$1" i c out=""
+  for (( i=0; i<${#s}; i++ )); do
+    c=${s:$i:1}
+    case "$c" in [a-zA-Z0-9.~_-]) out+="$c" ;; *) printf -v out '%s%%%02X' "$out" "'$c" ;; esac
+  done
+  printf '%s' "$out"
+}
+
 detect_api_dir(){
   if [ -d "${REPO_DIR}/apps/api" ] && [ -f "${REPO_DIR}/apps/api/package.json" ]; then
     echo "${REPO_DIR}/apps/api"
@@ -153,7 +162,7 @@ fi
 [ -d "${API_DIR}" ] || { err "API directory not found (expected apps/api)."; exit 1; }
 ok "API at ${API_DIR}"
 
-PRISMA_DIR="$(cd "${API_DIR}/.." && pwd)/prisma"
+PRISMA_DIR="${API_DIR}/prisma"
 
 log "Preparing API environment"
 cd "${API_DIR}"
@@ -171,10 +180,11 @@ install -d /etc/noah-erp
 if [ ! -s "${API_ENV_FILE}" ]; then
   [ -n "${ADMIN_EMAIL}" ] || { err "ADMIN_EMAIL must be set (export ADMIN_EMAIL=admin@example.com)"; exit 1; }
   [ -n "${ADMIN_PASSWORD}" ] || { err "ADMIN_PASSWORD must be set (export ADMIN_PASSWORD=StrongPass)"; exit 1; }
+  DB_PASS_ENC="$(urlencode "$DB_PASS")"
   cat >"${API_ENV_FILE}" <<ENV
 NODE_ENV=production
 PORT=3000
-DATABASE_URL=postgresql://noah:${DB_PASS}@127.0.0.1:5432/noah?schema=public
+DATABASE_URL=postgresql://noah:${DB_PASS_ENC}@127.0.0.1:5432/noah?schema=public
 REDIS_URL=redis://127.0.0.1:6379
 JWT_SECRET=__FILL_ME__
 ADMIN_NAME=${ADMIN_NAME}
@@ -187,7 +197,8 @@ fi
 
 # (c) Force correct DATABASE_URL (in case file existed but had wrong user)
 sed -i '/^DATABASE_URL=/d' "${API_ENV_FILE}"
-echo "DATABASE_URL=postgresql://noah:${DB_PASS}@127.0.0.1:5432/noah?schema=public" >>"${API_ENV_FILE}"
+DB_PASS_ENC="$(urlencode "$DB_PASS")"
+echo "DATABASE_URL=postgresql://noah:${DB_PASS_ENC}@127.0.0.1:5432/noah?schema=public" >>"${API_ENV_FILE}"
 
 # (d) Link apps/api/.env to the runtime env and export vars to current shell
 ln -snf "${API_ENV_FILE}" "${API_DIR}/.env"
@@ -208,9 +219,9 @@ ensure_noah_db
 # (h) Run Prisma strictly in order; abort if any step fails
 log "Running Prisma generate/migrate/seed"
 if ! ( cd "${API_DIR}" && \
-    npx prisma generate --schema ../prisma/schema.prisma && \
-    npx prisma migrate deploy --schema ../prisma/schema.prisma && \
-    node ../prisma/seed.js ); then
+    npx prisma generate && \
+    npx prisma migrate deploy && \
+    node prisma/seed.js ); then
   err "[FATAL] Prisma pipeline failed"
   exit 1
 fi
@@ -247,7 +258,7 @@ ok "API started"
 
 log "Running API smoke tests"
 sleep 2
-if curl -fsS "http://127.0.0.1:${API_PORT}/api/worker/health" >/dev/null; then
+if curl -fsS "http://127.0.0.1:${API_PORT}/api/health" >/dev/null; then
   ok "Health check ok"
 else
   warn "Health check failed (see systemctl status noah-api)"

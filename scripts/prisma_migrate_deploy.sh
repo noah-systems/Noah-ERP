@@ -18,7 +18,7 @@ die() {
   exit 1
 }
 
-PRISMA_SCHEMA_DEFAULT="$REPO_ROOT/prisma/schema.prisma"
+PRISMA_SCHEMA_DEFAULT="$REPO_ROOT/apps/api/prisma/schema.prisma"
 DIRECT_MODE=0
 SKIP_SEED=${PRISMA_SKIP_SEED:-0}
 

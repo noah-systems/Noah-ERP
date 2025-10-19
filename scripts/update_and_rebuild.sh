@@ -57,7 +57,7 @@ sleep 5
 "${COMPOSE[@]}" logs --no-log-prefix --tail=80 api || true
 
 # 9) garantir seed idempotente (executa novamente por segurança)
-"${COMPOSE[@]}" exec -T api npx prisma db seed --schema ../prisma/schema.prisma
+"${COMPOSE[@]}" exec -T api npx prisma db seed --schema prisma/schema.prisma
 
 # 10) subir o web (Vite -> Nginx)
 "${COMPOSE[@]}" up -d web
@@ -80,7 +80,7 @@ curl -sS -X POST https://erpapi.noahomni.com.br/api/auth/login \
 echo
 
 echo "Healthcheck:"
-curl -sS https://erpapi.noahomni.com.br/api/worker/health || true
+curl -sS https://erpapi.noahomni.com.br/api/health || true
 echo
 
 echo "OK."

@@ -1,5 +1,26 @@
 # Noah ERP
 
+## Instalação Rápida
+
+### Docker (produção local)
+```bash
+cp .env.example .env
+# edite ADMIN_* e JWT_SECRET
+docker compose -f docker/compose.prod.yml up -d --build
+./scripts/ci_validate.sh
+
+Dev
+make dev
+# web: http://localhost:5173 | api: http://localhost:3000/api/health
+
+Bare-metal (Rocky Linux)
+sudo bash scripts/install-noah-baremetal.sh \
+  DOMAIN_WEB="erp.noahomni.com.br" DOMAIN_API="erpapi.noahomni.com.br" \
+  ADMIN_EMAIL="admin@noahomni.com.br" ADMIN_PASSWORD="troque" DB_PASS="noah"
+```
+
+---
+
 Este repositório reúne o front-end (Vite + React) e a API (NestJS + Prisma) utilizados no ERP da Noah Omni.
 
 ➡️ Consulte a seção [Validação automatizada](#validação-automatizada) para o roteiro oficial de smoke tests.
@@ -25,7 +46,7 @@ Este repositório reúne o front-end (Vite + React) e a API (NestJS + Prisma) ut
 4. Gere o cliente do Prisma e aplique o schema no banco local:
    ```bash
    npm --prefix apps/api run prisma:generate
-   npm --prefix apps/api run prisma:migrate:deploy
+   npm --prefix apps/api run prisma:migrate
    ```
 5. Popule dados básicos (admin). Utilize variáveis `ADMIN_EMAIL`, `ADMIN_PASSWORD` e `ADMIN_NAME` com valores fictícios:
    ```bash
@@ -47,7 +68,7 @@ O front consome a API através da variável `VITE_API_BASE`. Por padrão, o valo
   ```bash
   ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD='TroqueEstaSenha123!' ./scripts/ci_validate.sh
   ```
-  O script sobe `db`, `redis` e `api` a partir de [`docker/compose.prod.yml`](docker/compose.prod.yml), aguarda o endpoint `/api/worker/health` responder e valida o login do administrador via `/api/auth/login`.
+  O script sobe `db`, `redis` e `api` a partir de [`docker/compose.prod.yml`](docker/compose.prod.yml), aguarda o endpoint `/api/health` responder e valida o login do administrador via `/api/auth/login`.
 - Para validar rapidamente o ambiente publicado (API + front) utilize o script de fumaça oficial `./scripts/noah_e2e_check.sh`, informando as credenciais reais via `--admin-email`/`--admin-pass`.
 - Consultar [docs/QA.md](docs/QA.md) para a lista completa de comandos manuais (cURLs obrigatórios, prints e checklist por papel).
 - Para um diagnóstico rápido do ambiente após merges na `main`, confira [docs/post-merge-diagnostic.md](docs/post-merge-diagnostic.md).
@@ -69,7 +90,7 @@ ln -sf /etc/noah-erp/api.env .env
 
 npm install
 npm run prisma:generate
-npm run prisma:migrate:deploy
+npm run prisma:migrate
 npm run prisma:seed
 npm run build
 npm run start:prod
