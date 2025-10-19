@@ -1,6 +1,6 @@
 /**
- * Camada mínima de HTTP com fallback de base URL.
- * Não quebra se VITE_API_BASE não estiver definido.
+ * HTTP client com fallback da base para '/api'
+ * (funciona mesmo sem VITE_API_BASE).
  */
 const fromEnv =
   (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_BASE) ||

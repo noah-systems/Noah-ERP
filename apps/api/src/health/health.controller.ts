@@ -1,13 +1,18 @@
 import { Controller, Get } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient(); // simples e auto-contido para health
 
 @Controller('health')
 export class HealthController {
-  constructor(private readonly prisma: PrismaService) {}
-
   @Get()
-  async ok() {
-    await this.prisma.$queryRaw`SELECT 1`;
+  ok() {
     return { ok: true, ts: new Date().toISOString() };
+  }
+
+  @Get('db')
+  async db() {
+    await prisma.$queryRaw`SELECT 1`;
+    return { db: 'ok' };
   }
 }

@@ -4,9 +4,10 @@ API="${API_BASE:-http://localhost:3000}"
 WEB="${WEB_BASE:-http://localhost:5173}"
 
 echo ">> HEALTH"
-curl -fsS "${API}/api/health" >/dev/null || curl -fsS "${API}/api/worker/health" >/dev/null
+curl -fsS "${API}/api/health" >/dev/null
+curl -fsS "${API}/api/health/db" >/dev/null || { echo "DB health falhou"; exit 1; }
 
-# Login opcional (só valida se o endpoint existir e ADMIN_* estiverem setados)
+# Login opcional (só testa se o endpoint existir e ADMIN_* estiverem setados)
 if curl -fsS -o /dev/null -w '%{http_code}' "${API}/api/auth/login" | grep -qE '200|401|404'; then
   if [ -n "${ADMIN_EMAIL:-}" ] && [ -n "${ADMIN_PASSWORD:-}" ]; then
     token="$(curl -sf -X POST "${API}/api/auth/login" -H 'Content-Type: application/json' \

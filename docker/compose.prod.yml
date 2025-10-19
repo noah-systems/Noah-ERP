@@ -34,7 +34,9 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       CORS_ORIGINS: ${CORS_ORIGINS}
-    # Observação: NUNCA codificar usuário/senha no YAML. Se a senha tiver '@', usar %40 na DATABASE_URL do .env.
+    # Observações:
+    # - NUNCA codificar usuário/senha diretamente no YAML.
+    # - Se a senha do banco tiver '@', usar %40 na DATABASE_URL do .env.
     depends_on: [db, redis]
     networks: [noah]
 
