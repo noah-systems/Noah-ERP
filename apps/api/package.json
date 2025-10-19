@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "main": "dist/main.js",
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "start:prod": "node dist/main.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
