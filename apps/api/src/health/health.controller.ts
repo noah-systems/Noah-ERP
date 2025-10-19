@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient(); // simples e auto-contido para health
+const prisma = new PrismaClient();
 
 @Controller('health')
 export class HealthController {

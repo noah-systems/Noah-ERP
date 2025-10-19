@@ -28,7 +28,7 @@ services:
       NODE_ENV: production
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      PRISMA_MIGRATE_ON_START: 1
+      PRISMA_MIGRATE_ON_START: "1"
       JWT_SECRET: ${JWT_SECRET}
       ADMIN_NAME: ${ADMIN_NAME}
       ADMIN_EMAIL: ${ADMIN_EMAIL}
