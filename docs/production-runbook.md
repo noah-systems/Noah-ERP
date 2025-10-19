@@ -49,13 +49,14 @@ Este runbook descreve o fluxo completo para provisionar, validar e atualizar o N
 
 - O arquivo **`/etc/noah-erp/api.env`** é a única fonte de verdade para a API em instalações bare-metal. O instalador cria esse arquivo (se ainda não existir) com os defaults de produção e reforça que o conteúdo utilize o usuário de banco `noah`.
 - Dentro do repositório, `api/.env` deve ser **apenas um symlink** para `/etc/noah-erp/api.env` (`ln -snf /etc/noah-erp/api.env api/.env`). Não crie cópias locais do arquivo.
-- `api/prisma/.env` é intencionalmente não utilizado. Se o arquivo aparecer novamente, remova-o imediatamente — duplicar variáveis causa colisões no Prisma e resulta em erros de conexão.
+- `prisma/.env` é intencionalmente não utilizado. Se o arquivo aparecer novamente, remova-o imediatamente — duplicar variáveis causa colisões no Prisma e resulta em erros de conexão.
 
 Se o Prisma voltar a acusar `P1012` (DATABASE_URL ausente), execute o bloco abaixo no servidor. Ele recria o ambiente único, remove o `prisma/.env`, reforça o usuário `noah` e reroda o pipeline do Prisma com as variáveis corretas:
 
 ```bash
 API_DIR="/opt/noah-erp/Noah-ERP/api"
-rm -f "$API_DIR/prisma/.env"
+PRISMA_DIR="/opt/noah-erp/Noah-ERP/prisma"
+rm -f "$PRISMA_DIR/.env"
 install -d /etc/noah-erp
 cat >/etc/noah-erp/api.env <<'ENV'
 NODE_ENV=production

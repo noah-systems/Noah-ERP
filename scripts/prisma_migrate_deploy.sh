@@ -18,7 +18,7 @@ die() {
   exit 1
 }
 
-PRISMA_SCHEMA_DEFAULT="/app/apps/api/prisma/schema.prisma"
+PRISMA_SCHEMA_DEFAULT="$REPO_ROOT/prisma/schema.prisma"
 DIRECT_MODE=0
 SKIP_SEED=${PRISMA_SKIP_SEED:-0}
 
@@ -44,7 +44,7 @@ while [ "$#" -gt 0 ]; do
 done
 
 PRISMA_SCHEMA="${PRISMA_SCHEMA:-$PRISMA_SCHEMA_DEFAULT}"
-API_DIR="${API_DIR:-$(cd "$(dirname "$PRISMA_SCHEMA")/.." && pwd)}"
+API_DIR="${API_DIR:-$REPO_ROOT/apps/api}"
 
 run_direct() {
   local schema="$1"

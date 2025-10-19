@@ -35,7 +35,15 @@ detect_api_dir(){
     return
   fi
   local s; s="$(find "${REPO_DIR}" -maxdepth 3 -type f -path '*/prisma/schema.prisma' 2>/dev/null | head -n1 || true)"
-  [ -n "$s" ] && dirname "$(dirname "$s")" || echo ""
+  if [ -n "$s" ]; then
+    local repo_root
+    repo_root="$(dirname "$(dirname "$s")")"
+    if [ -d "${repo_root}/apps/api" ]; then
+      echo "${repo_root}/apps/api"
+      return
+    fi
+  fi
+  echo ""
 }
 
 ensure_noah_db(){
@@ -145,6 +153,8 @@ fi
 [ -d "${API_DIR}" ] || { err "API directory not found (expected apps/api)."; exit 1; }
 ok "API at ${API_DIR}"
 
+PRISMA_DIR="$(cd "${API_DIR}/.." && pwd)/prisma"
+
 log "Preparing API environment"
 cd "${API_DIR}"
 
@@ -154,7 +164,7 @@ id -u noah >/dev/null 2>&1 || useradd --system --home "${INSTALL_DIR}" --shell /
 API_ENV_FILE="/etc/noah-erp/api.env"
 
 # (a) Remove prisma/.env if present (it causes collisions)
-rm -f "${API_DIR}/prisma/.env"
+rm -f "${PRISMA_DIR}/.env"
 
 # (b) Ensure runtime env exists and contains DATABASE_URL for user "noah"
 install -d /etc/noah-erp
@@ -198,9 +208,9 @@ ensure_noah_db
 # (h) Run Prisma strictly in order; abort if any step fails
 log "Running Prisma generate/migrate/seed"
 if ! ( cd "${API_DIR}" && \
-    npx prisma generate && \
-    npx prisma migrate deploy && \
-    node prisma/seed.js ); then
+    npx prisma generate --schema ../prisma/schema.prisma && \
+    npx prisma migrate deploy --schema ../prisma/schema.prisma && \
+    node ../prisma/seed.js ); then
   err "[FATAL] Prisma pipeline failed"
   exit 1
 fi
