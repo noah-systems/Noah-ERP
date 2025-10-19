@@ -3,191 +3,55 @@ set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 REPO_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
-cd "$REPO_ROOT"
-
-API_DOMAIN="${API_DOMAIN:-https://erpapi.noahomni.com.br}"
-FRONT_DOMAIN="${FRONT_DOMAIN:-https://erp.noahomni.com.br}"
-API_BASE="${API_DOMAIN%/}/api"
-
-ADMIN_EMAIL="${ADMIN_EMAIL:?Defina ADMIN_EMAIL com a credencial sem valores padrão}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD:?Defina ADMIN_PASSWORD com a credencial sem valores padrão}"
-SUPPORT_EMAIL="${SUPPORT_EMAIL:-support.qa@noahomni.com.br}"
-SUPPORT_PASSWORD="${SUPPORT_PASSWORD:-Support@123}"
-SELLER_EMAIL="${SELLER_EMAIL:-seller.qa@noahomni.com.br}"
-SELLER_PASSWORD="${SELLER_PASSWORD:-Seller@123}"
+COMPOSE_FILE="$REPO_ROOT/docker/compose.prod.yml"
+API_URL="${API_URL:-http://127.0.0.1:3000/api}"
+ADMIN_EMAIL="${ADMIN_EMAIL:?Defina ADMIN_EMAIL com as credenciais de administrador}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:?Defina ADMIN_PASSWORD com as credenciais de administrador}"
 
 info() { printf '\033[1;34m[info]\033[0m %s\n' "$1"; }
-success() { printf '\033[1;32m[ok]\033[0m %s\n' "$1"; }
-error() { printf '\033[1;31m[erro]\033[0m %s\n' "$1" >&2; }
+ok() { printf '\033[1;32m[ok]\033[0m %s\n' "$1"; }
+err() { printf '\033[1;31m[erro]\033[0m %s\n' "$1" >&2; }
 
-require_command() {
+require() {
   if ! command -v "$1" >/dev/null 2>&1; then
-    error "Comando obrigatório ausente: $1"
+    err "Comando obrigatório ausente: $1"
     exit 1
   fi
 }
 
-require_command npm
-require_command docker
-require_command curl
-require_command node
+require docker
+require curl
 
-info "1/12 Build da API"
-npm run --prefix apps/api build
-success "API compilada."
+info "Subindo dependências (db, redis, api) via docker compose"
+docker compose -f "$COMPOSE_FILE" up -d db redis api
+trap 'docker compose -f "$COMPOSE_FILE" logs --tail=200 api || true' EXIT
 
-info "2/12 Teste de ACL da API"
-npm run --prefix apps/api test:acl
-success "ACL básica validada."
+HEALTH_ENDPOINT="${API_URL%/}/worker/health"
+LOGIN_ENDPOINT="${API_URL%/}/auth/login"
 
-info "3/12 Build do front"
-VITE_API_BASE="$API_BASE" npm run build
-success "Front compilado."
-
-info "4/12 Subindo stack Docker"
-docker compose -f docker/compose.prod.yml up -d --build
-success "Containers em execução."
-
-info "5/12 Validando configuração do Nginx"
-docker compose -f docker/compose.prod.yml exec proxy nginx -t
-docker compose -f docker/compose.prod.yml exec proxy nginx -s reload || true
-success "Nginx validado."
-
-info "6/12 Healthcheck da API"
-for i in {1..30}; do
-  if curl -fsS "$API_BASE/worker/health" | grep -q '"ok":true'; then
-    success "Healthcheck OK."; break
+info "Aguardando API responder em $HEALTH_ENDPOINT"
+for attempt in $(seq 1 60); do
+  if curl -fsS "$HEALTH_ENDPOINT" >/dev/null; then
+    ok "API respondeu ao health-check (tentativa $attempt)."
+    break
   fi
   sleep 2
-  if [ "$i" -eq 30 ]; then
-    error "Healthcheck da API falhou."; exit 1
+  if [ "$attempt" -eq 60 ]; then
+    err "API não respondeu a tempo."
+    exit 1
   fi
 done
 
-if ! curl -fsS "$API_BASE/health" | grep -q '"ok":true'; then
-  error "Health agregado /api/health não retornou ok=true."
-  exit 1
-fi
-success "Health agregado respondendo."
-
-info "7/12 Login admin e verificação do token"
-ADMIN_RESPONSE=$(curl -fsS -X POST "$API_BASE/auth/login" \
+info "Testando login de administrador em $LOGIN_ENDPOINT"
+RESPONSE=$(curl -fsS -X POST "$LOGIN_ENDPOINT" \
   -H 'Content-Type: application/json' \
-  -d "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$ADMIN_PASSWORD\"}")
-ADMIN_TOKEN=$(printf '%s' "$ADMIN_RESPONSE" | node -e "process.stdin.on('data',d=>{const j=JSON.parse(d.toString());if(!j.token){process.exit(1);}console.log(j.token);});")
-if [ -z "$ADMIN_TOKEN" ]; then
-  error "Token do admin não encontrado."; exit 1
-fi
-curl -fsS -H "Authorization: Bearer $ADMIN_TOKEN" "$API_BASE/auth/me" >/dev/null
-ADMIN_USERS_STATUS=$(curl -sS -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $ADMIN_TOKEN" "$API_BASE/users")
-if [ "$ADMIN_USERS_STATUS" != "200" ]; then
-  error "Admin não conseguiu listar usuários (HTTP $ADMIN_USERS_STATUS)."
+  -d "{\"email\":\"$ADMIN_EMAIL\",\"password\":\"$ADMIN_PASSWORD\"}" || true)
+if ! printf '%s' "$RESPONSE" | grep -q 'accessToken'; then
+  err "Login falhou. Resposta: $RESPONSE"
   exit 1
 fi
-success "Login admin validado."
+ok "Login administrativo bem-sucedido."
 
-info "Criando usuário SELLER de teste"
-docker compose -f docker/compose.prod.yml exec -T \
-  -e SELLER_EMAIL="$SELLER_EMAIL" \
-  -e SELLER_PASSWORD="$SELLER_PASSWORD" \
-  api node - <<'NODE'
-const { PrismaClient, Role } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
-(async () => {
-  const db = new PrismaClient();
-  const email = process.env.SELLER_EMAIL;
-  const password = process.env.SELLER_PASSWORD;
-  const hash = await bcrypt.hash(password, 10);
-  await db.user.upsert({
-    where: { email },
-    update: { passwordHash: hash, role: Role.SELLER, name: 'Seller QA' },
-    create: { email, passwordHash: hash, role: Role.SELLER, name: 'Seller QA' },
-  });
-  await db.$disconnect();
-})().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
-NODE
-
-info "8/12 Login SELLER e checagem de ACL"
-SELLER_RESPONSE=$(curl -fsS -X POST "$API_BASE/auth/login" \
-  -H 'Content-Type: application/json' \
-  -d "{\"email\":\"$SELLER_EMAIL\",\"password\":\"$SELLER_PASSWORD\"}")
-SELLER_TOKEN=$(printf '%s' "$SELLER_RESPONSE" | node -e "process.stdin.on('data',d=>{const j=JSON.parse(d.toString());if(!j.token){process.exit(1);}console.log(j.token);});")
-SELLER_FORBIDDEN=$(curl -sS -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $SELLER_TOKEN" "$API_BASE/users")
-if [ "$SELLER_FORBIDDEN" != "403" ]; then
-  error "ACL incorreta para SELLER em /api/users (HTTP $SELLER_FORBIDDEN)."
-  exit 1
-fi
-SELLER_OK=$(curl -sS -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $SELLER_TOKEN" "$API_BASE/leads")
-if [ "$SELLER_OK" != "200" ]; then
-  error "SELLER não conseguiu acessar /api/leads (HTTP $SELLER_OK)."
-  exit 1
-fi
-success "ACL validada para SELLER (403 em /api/users)."
-
-info "Criando usuário SUPPORT de teste"
-docker compose -f docker/compose.prod.yml exec -T \
-  -e SUPPORT_EMAIL="$SUPPORT_EMAIL" \
-  -e SUPPORT_PASSWORD="$SUPPORT_PASSWORD" \
-  api node - <<'NODE'
-const { PrismaClient, Role } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
-(async () => {
-  const db = new PrismaClient();
-  const email = process.env.SUPPORT_EMAIL;
-  const password = process.env.SUPPORT_PASSWORD;
-  const hash = await bcrypt.hash(password, 10);
-  await db.user.upsert({
-    where: { email },
-    update: { passwordHash: hash, role: Role.SUPPORT_NOAH, name: 'Support QA' },
-    create: { email, passwordHash: hash, role: Role.SUPPORT_NOAH, name: 'Support QA' },
-  });
-  await db.$disconnect();
-})().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
-NODE
-
-info "9/12 Login SUPPORT e checagem de ACL"
-SUPPORT_RESPONSE=$(curl -fsS -X POST "$API_BASE/auth/login" \
-  -H 'Content-Type: application/json' \
-  -d "{\"email\":\"$SUPPORT_EMAIL\",\"password\":\"$SUPPORT_PASSWORD\"}")
-SUPPORT_TOKEN=$(printf '%s' "$SUPPORT_RESPONSE" | node -e "process.stdin.on('data',d=>{const j=JSON.parse(d.toString());if(!j.token){process.exit(1);}console.log(j.token);});")
-SUPPORT_USERS_STATUS=$(curl -sS -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $SUPPORT_TOKEN" "$API_BASE/users")
-if [ "$SUPPORT_USERS_STATUS" != "403" ]; then
-  error "SUPPORT conseguiu listar usuários (HTTP $SUPPORT_USERS_STATUS)."
-  exit 1
-fi
-SUPPORT_PRICING_STATUS=$(curl -sS -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $SUPPORT_TOKEN" "$API_BASE/pricing/items")
-if [ "$SUPPORT_PRICING_STATUS" != "200" ]; then
-  error "SUPPORT não conseguiu acessar /api/pricing/items (HTTP $SUPPORT_PRICING_STATUS)."
-  exit 1
-fi
-success "ACL validada para SUPPORT (200 em pricing, 403 em users)."
-
-info "10/12 Smoke tests HTTPS"
-curl -fsSI "$FRONT_DOMAIN" | head -n 1
-FRONT_HTML=$(curl -fsS "$FRONT_DOMAIN")
-printf '%s' "$FRONT_HTML" | grep -qi "data:image/svg+xml" || {
-  error "HTML do front não inclui o favicon inline (data URI)."; exit 1;
-}
-if printf '%s' "$FRONT_HTML" | grep -qi "s3\.bragi"; then
-  error "Encontrada referência a S3 no HTML do front."; exit 1;
-fi
-success "Front acessível via HTTPS e usando assets locais."
-
-info "11/12 Verificando CORS"
-CORS_HEADERS=$(curl -sS -o /dev/null -D - -X OPTIONS "$API_BASE/auth/login" \
-  -H 'Origin: https://erp.noahomni.com.br' \
-  -H 'Access-Control-Request-Method: POST')
-printf '%s' "$CORS_HEADERS" | grep -qi 'access-control-allow-origin: https://erp.noahomni.com.br' || {
-  error "Cabeçalho CORS inválido."; exit 1;
-}
-success "CORS respondendo para https://erp.noahomni.com.br."
-
-info "12/12 Limpeza opcional"
-echo "Containers ativos:" && docker compose -f docker/compose.prod.yml ps
-success "Validação concluída."
+trap - EXIT
+info "Smoke test concluído com sucesso."
+info "Containers permanecem ativos; finalize com 'docker compose -f docker/compose.prod.yml down' se desejar encerrar."

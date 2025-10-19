@@ -43,11 +43,11 @@ O front consome a API através da variável `VITE_API_BASE`. Por padrão, o valo
 
 ## Validação automatizada
 
-- Para reproduzir os testes de fumaça utilizados na esteira, execute:
+- Para reproduzir o smoke test oficial em Docker local, defina `ADMIN_EMAIL`/`ADMIN_PASSWORD` com as credenciais temporárias e execute:
   ```bash
-  ./scripts/ci_validate.sh
+  ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD='TroqueEstaSenha123!' ./scripts/ci_validate.sh
   ```
-  O script compila API e web, sobe `docker/compose.prod.yml`, roda health checks (`/api/worker/health`), valida ACLs (403 para `SELLER` em `/api/users`), testa CORS e derruba os contêineres ao final.
+  O script sobe `db`, `redis` e `api` a partir de [`docker/compose.prod.yml`](docker/compose.prod.yml), aguarda o endpoint `/api/worker/health` responder e valida o login do administrador via `/api/auth/login`.
 - Para validar rapidamente o ambiente publicado (API + front) utilize o script de fumaça oficial `./scripts/noah_e2e_check.sh`, informando as credenciais reais via `--admin-email`/`--admin-pass`.
 - Consultar [docs/QA.md](docs/QA.md) para a lista completa de comandos manuais (cURLs obrigatórios, prints e checklist por papel).
 - Para um diagnóstico rápido do ambiente após merges na `main`, confira [docs/post-merge-diagnostic.md](docs/post-merge-diagnostic.md).
@@ -89,17 +89,18 @@ curl -sf http://127.0.0.1:3000/api/worker/health
 
 ## Estrutura do Prisma
 
-O schema mínimo está em [`apps/api/prisma/schema.prisma`](apps/api/prisma/schema.prisma) e contempla:
+O schema oficial mora em [`prisma/schema.prisma`](prisma/schema.prisma) e contempla:
 
 - Usuários (`User`) com papéis `ADMIN` ou `USER`
 - Leads (`Lead`) com estágios (`LeadStage`) e origens (`Source`)
 - Oportunidades (`Opportunity`) com estágios (`OpportunityStage`)
 
-O seed [`apps/api/prisma/seed.js`](apps/api/prisma/seed.js) cria o usuário admin definido nas variáveis `ADMIN_EMAIL`/`ADMIN_PASSWORD` (sem valores padrão em produção; defina via `.env`).
+O seed [`prisma/seed.js`](prisma/seed.js) cria o usuário admin definido nas variáveis `ADMIN_EMAIL`/`ADMIN_PASSWORD` (sem valores padrão em produção; defina via `.env`).
 
 ## Front-end
 
-- Configuração de tema: [`tailwind.config.ts`](tailwind.config.ts) estende as cores `primary` (`#C3FF00`) e `dark` (`#0A0A0A`).
+- Configuração de tema: [`tailwind.config.ts`](tailwind.config.ts) referencia as variáveis CSS definidas em [`src/styles/globals.css`](src/styles/globals.css) / [`src/theme.css`](src/theme.css) para manter contraste e foco alinhados ao design system.
+- Os assets de marca ficam em [`public/brand`](public/brand); ajuste `VITE_LOGO_*`/`VITE_LOGIN_BG*` no `.env` para apontar para os arquivos hospedados localmente (por exemplo, `/brand/logo.svg`).
 - A tela de login (`src/pages/Login.tsx`) realiza autenticação real utilizando [`src/services/api.ts`](src/services/api.ts), que persiste o token JWT em `localStorage`.
 
 ## Boas práticas

@@ -70,8 +70,13 @@ add("src/pages/Login.tsx exists", ex(P("src","pages","Login.tsx")), "Create/adju
 add("src/pages/login.css exists", ex(P("src","pages","login.css")), "Create/adjust login CSS");
 
 // 8) Prisma env hygiene (bare-metal resilience)
-const prismaEnvPath = P("apps", "api", "prisma", ".env");
-add("apps/api/prisma/.env absent", !ex(prismaEnvPath), "Remove duplicate env: rm -f apps/api/prisma/.env");
+const prismaEnvPath = P("prisma", ".env");
+add("prisma/.env absent", !ex(prismaEnvPath), "Remove duplicate env: rm -f prisma/.env");
+add(
+  "apps/api/prisma/ removido",
+  !ex(P("apps", "api", "prisma")),
+  "Consolide o schema em prisma/"
+);
 
 const runtimeEnvFile = "/etc/noah-erp/api.env";
 const runtimeEnvExists = ex(runtimeEnvFile);

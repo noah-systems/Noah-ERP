@@ -5,14 +5,9 @@ import { AppModule } from './modules/app.module';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
 
 const DEFAULT_ALLOWED_ORIGINS = [
-  'https://erp.noahomni.com.br',
-  'https://erpapi.noahomni.com.br',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
-  'http://localhost:4173',
-  'http://127.0.0.1:4173',
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
+  'https://erp.noahomni.com.br',
 ];
 
 const ORIGIN_ENV_KEYS = [

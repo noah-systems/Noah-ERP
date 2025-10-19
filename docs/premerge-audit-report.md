@@ -32,9 +32,9 @@ A recomendação final permanece **NÃO APTO PARA MERGE** até que o audit compl
 - `docker/nginx.conf` possui apenas blocos `server` na porta 80 para `erpapi.noahomni.com.br` e `erp.noahomni.com.br`, sem `listen 443 ssl`, sem `ssl_certificate`/`ssl_certificate_key` e sem `location /.well-known/acme-challenge/` apontando para `/var/www/certbot`. Isso inviabiliza o método webroot exigido pelo Certbot e impede HTTPS.【F:docker/nginx.conf†L1-L36】
 
 ### API/Prisma (PASS)
-- `apps/api/package.json` registra o script Prisma seed (`"prisma": { "seed": "node prisma/seed.js" }`).【F:apps/api/package.json†L1-L34】
-- `apps/api/prisma/schema.prisma` existe, referencia `env("DATABASE_URL")` e define o schema completo; o diretório `apps/api/prisma/migrations/` contém a migration inicial (`0001_init`) e o `migration_lock.toml`, confirmando versionamento de schema.【F:apps/api/prisma/schema.prisma†L1-L28】【c9f528†L1-L3】
-- O seed `apps/api/prisma/seed.js` cria/atualiza o admin usando `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, garantindo idempotência do usuário de acesso.【F:apps/api/prisma/seed.js†L1-L74】
+- `apps/api/package.json` registra o script Prisma seed (`"prisma": { "seed": "node ../prisma/seed.js" }`).【F:apps/api/package.json†L1-L34】
+- `prisma/schema.prisma` existe, referencia `env("DATABASE_URL")` e define o schema completo; o diretório `prisma/migrations/` contém a migration inicial (`0001_init`) e o `migration_lock.toml`, confirmando versionamento de schema.【F:prisma/schema.prisma†L1-L28】【F:prisma/migrations/0001_init/migration.sql†L1-L40】
+- O seed `prisma/seed.js` cria/atualiza o admin usando `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, garantindo idempotência do usuário de acesso.【F:prisma/seed.js†L1-L74】
 
 ### Front (PASS)
 - `.env.example` inclui `VITE_API_BASE` com sufixo `/api`, alinhado ao proxy público exigido pelo deploy.【F:.env.example†L1-L10】

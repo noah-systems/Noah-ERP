@@ -60,8 +60,8 @@ export function Sidebar({ module, onModuleChange }: SidebarProps) {
   );
 
   return (
-    <aside className="flex w-64 flex-col bg-gray-900 text-white">
-      <div className="flex items-center justify-center px-6 py-6">
+    <aside className="flex w-64 flex-col bg-[var(--sidebar)] text-[var(--sidebar-foreground)] shadow-[0_0_32px_color-mix(in_srgb,var(--sidebar-border)_45%,transparent)]">
+      <div className="flex items-center justify-center border-b border-[color:color-mix(in_srgb,var(--sidebar-border)_80%,transparent)] px-6 py-6">
         {logo ? (
           <img src={logo} alt="Noah Omni" className="max-h-12 object-contain" />
         ) : (
@@ -70,13 +70,13 @@ export function Sidebar({ module, onModuleChange }: SidebarProps) {
       </div>
 
       <div className="px-4 pb-4">
-        <div className="flex items-center gap-2 rounded-xl bg-gray-800 p-1 text-sm">
+        <div className="flex items-center gap-2 rounded-xl bg-[color:color-mix(in_srgb,var(--sidebar-accent)_65%,transparent)] p-1 text-sm">
           <button
             type="button"
             className={`flex-1 rounded-lg px-3 py-2 transition-colors ${
               module === 'internal'
-                ? 'bg-[var(--primary)] text-[#0A1400] shadow-[0_10px_24px_rgba(12,24,4,0.35)]'
-                : 'hover:bg-gray-700 text-gray-300'
+                ? 'bg-[var(--sidebar-primary)] text-[var(--sidebar-primary-foreground)] shadow-[0_10px_24px_color-mix(in_srgb,var(--sidebar-primary)_35%,transparent)]'
+                : 'text-[color:color-mix(in_srgb,var(--sidebar-foreground)_75%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--sidebar-accent)_70%,transparent)]'
             }`}
             onClick={() => onModuleChange('internal')}
           >
@@ -86,8 +86,8 @@ export function Sidebar({ module, onModuleChange }: SidebarProps) {
             type="button"
             className={`flex-1 rounded-lg px-3 py-2 transition-colors ${
               module === 'partner'
-                ? 'bg-[var(--primary)] text-[#0A1400] shadow-[0_10px_24px_rgba(12,24,4,0.35)]'
-                : 'hover:bg-gray-700 text-gray-300'
+                ? 'bg-[var(--sidebar-primary)] text-[var(--sidebar-primary-foreground)] shadow-[0_10px_24px_color-mix(in_srgb,var(--sidebar-primary)_35%,transparent)]'
+                : 'text-[color:color-mix(in_srgb,var(--sidebar-foreground)_75%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--sidebar-accent)_70%,transparent)]'
             } ${canAccessPartner ? '' : 'cursor-not-allowed opacity-40'}`}
             onClick={() => canAccessPartner && onModuleChange('partner')}
             disabled={!canAccessPartner}
@@ -106,8 +106,8 @@ export function Sidebar({ module, onModuleChange }: SidebarProps) {
             className={({ isActive }) =>
               `flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm transition-colors ${
                 isActive
-                  ? 'bg-[var(--primary)] text-[#0A1400] shadow-[0_16px_32px_rgba(12,24,4,0.3)]'
-                  : 'text-gray-300 hover:bg-gray-800'
+                  ? 'bg-[var(--sidebar-primary)] text-[var(--sidebar-primary-foreground)] shadow-[0_16px_32px_color-mix(in_srgb,var(--sidebar-primary)_30%,transparent)]'
+                  : 'text-[color:color-mix(in_srgb,var(--sidebar-foreground)_78%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--sidebar-accent)_70%,transparent)]'
               }`
             }
           >
@@ -116,13 +116,13 @@ export function Sidebar({ module, onModuleChange }: SidebarProps) {
           </NavLink>
         ))}
         {items.length === 0 && (
-          <div className="rounded-lg border border-dashed border-gray-700 px-4 py-8 text-center text-xs text-gray-400">
+          <div className="rounded-lg border border-dashed border-[color:color-mix(in_srgb,var(--sidebar-border)_85%,transparent)] px-4 py-8 text-center text-xs text-[color:color-mix(in_srgb,var(--sidebar-foreground)_55%,transparent)]">
             Sem permissões para este módulo.
           </div>
         )}
       </nav>
 
-      <div className="px-6 py-4 text-xs text-gray-500">
+      <div className="px-6 py-4 text-xs text-[color:color-mix(in_srgb,var(--sidebar-foreground)_55%,transparent)]">
         <div className="flex items-center gap-2">
           <Building2 className="h-4 w-4" />
           <span>Noah Omni</span>
