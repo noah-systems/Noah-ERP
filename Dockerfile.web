@@ -2,9 +2,8 @@ FROM node:20-alpine AS build
 WORKDIR /work
 COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
 RUN if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
-COPY apps/web /work/apps/web
-WORKDIR /work/apps/web
-RUN npm run build
+COPY . .
+RUN npm run build:web
 
 FROM nginx:alpine
-COPY --from=build /work/apps/web/dist /usr/share/nginx/html
+COPY --from=build /work/dist /usr/share/nginx/html
