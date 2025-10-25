@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import Redis from 'ioredis';
+import { resolveRedisUrl } from './redis.config';
 
 export const REDIS_TOKEN = 'REDIS_CLIENT';
 
@@ -9,9 +10,7 @@ export const REDIS_TOKEN = 'REDIS_CLIENT';
     {
       provide: REDIS_TOKEN,
       useFactory: () => {
-        const host = process.env.REDIS_HOST || 'redis';
-        const port = +(process.env.REDIS_PORT || '6379');
-        const url = process.env.REDIS_URL || `redis://${host}:${port}`;
+        const url = resolveRedisUrl();
         return new Redis(url);
       },
     },
