@@ -1,17 +1,15 @@
 # ---- deps ----
-FROM node:20-bookworm-slim AS deps
+FROM node:20-alpine AS deps
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
+RUN apk add --no-cache \
         bash \
         openssl \
         postgresql-client \
         python3 \
         make \
         g++ \
-        git \
-    && rm -rf /var/lib/apt/lists/*
+        git
 
 # Copia apenas manifestos primeiro (cache melhor)
 COPY apps/api/package*.json ./apps/api/
@@ -26,14 +24,12 @@ RUN npx prisma generate || true
 RUN npm run build || npm run build:prod || true
 
 # ---- runtime ----
-FROM node:20-bookworm-slim AS runtime
+FROM node:20-alpine AS runtime
 WORKDIR /app/apps/api
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
+RUN apk add --no-cache \
         bash \
         openssl \
-        postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
+        postgresql-client
 
 ENV NODE_ENV=production
 ENV PORT=3000
