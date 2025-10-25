@@ -8,10 +8,8 @@ RUN apk add --no-cache bash openssl postgresql-client python3 make g++ git
 COPY apps/api/package*.json ./apps/api/
 WORKDIR /app/apps/api
 
-# Remove dependência quebrada e instala deps
-RUN sed -i '\#"@liaoliaots/nestjs-redis"#d' package.json || true
+# Instala dependências declaradas
 RUN npm ci --no-audit --no-fund || npm install --no-audit --no-fund
-RUN npm i ioredis@^5 --no-audit --no-fund
 
 # Copia fontes e Prisma
 COPY apps/api /app/apps/api

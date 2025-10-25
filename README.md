@@ -4,10 +4,10 @@
 
 ### Docker (produção local)
 ```bash
-cp .env.example .env
-# edite ADMIN_* e JWT_SECRET
-docker compose -f docker/compose.prod.yml up -d --build
+./scripts/prod-up.sh
 ./scripts/ci_validate.sh
+
+```
 
 Dev
 make dev
