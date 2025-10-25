@@ -73,11 +73,36 @@ O front consome a API através da variável `VITE_API_BASE`. Por padrão, o valo
 - Consultar [docs/QA.md](docs/QA.md) para a lista completa de comandos manuais (cURLs obrigatórios, prints e checklist por papel).
 - Para um diagnóstico rápido do ambiente após merges na `main`, confira [docs/post-merge-diagnostic.md](docs/post-merge-diagnostic.md).
 
+
 ## Produção (Docker)
-1. Crie `.env` conforme exemplo acima (ATENÇÃO ao `%40` na senha).
-2. `docker compose -f docker/compose.prod.yml up -d --build`
-3. Valide:
-   - `./scripts/ci_validate.sh`  # checa health da API, login admin, CORS e front
+0. Prepare o servidor com os diretórios de configuração e aponte o Nginx inicial para HTTP:
+   ```bash
+   sudo mkdir -p /opt/noah-erp/nginx /opt/noah-erp/certbot-webroot
+   sudo cp docker/proxy/default.http.conf /opt/noah-erp/nginx/default.http.conf
+   ```
+1. Exporte um `.env` a partir de [.env.example](.env.example) (substitua `JWT_SECRET`, `POSTGRES_PASSWORD` e `LE_EMAIL` por valores reais; lembre-se de escapar `@` como `%40` na `DATABASE_URL`).
+2. Construa as imagens e suba os serviços base (PostgreSQL, Redis e proxy em HTTP):
+   ```bash
+   docker compose -f docker/compose.prod.yml build api web
+   docker compose -f docker/compose.prod.yml up -d db redis proxy
+   docker compose -f docker/compose.prod.yml up -d api web
+   ```
+3. Emita o certificado TLS e troque o proxy para HTTPS:
+   ```bash
+   bash scripts/issue-cert-and-switch.sh erp.noahomni.com.br
+   ```
+4. Valide o ambiente:
+   ```bash
+   curl -fsS https://erp.noahomni.com.br/api/health && echo OK
+   curl -fsS -X POST https://erp.noahomni.com.br/api/auth/login \
+     -H 'Content-Type: application/json' \
+     -d '{"email":"admin@noahomni.com.br","password":"TroqueEssaSenha123"}' | head
+   ```
+5. Atualize a identidade visual copiando os assets PNG para `apps/web/public/brand/` e rebuildando a imagem da web quando necessário:
+   ```bash
+   docker compose -f docker/compose.prod.yml build web
+   docker compose -f docker/compose.prod.yml up -d web
+   ```
 
 ## Backend (bare metal)
 
