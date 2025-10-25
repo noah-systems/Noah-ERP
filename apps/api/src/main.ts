@@ -45,16 +45,17 @@ async function bootstrap() {
 
   const corsEnv = process.env.CORS_ORIGINS || '';
   const origins = corsEnv
-    ? corsEnv.split(',').map((s) => s.trim()).filter(Boolean)
-    : ['http://localhost:5173', 'https://erp.noahomni.com.br'];
-  app.enableCors({ origin: origins, credentials: true });
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const allowedOrigins = origins.length ? origins : ['https://erp.noahomni.com.br'];
+  app.enableCors({ origin: allowedOrigins, credentials: true });
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
 
-  app.setGlobalPrefix('api');
   await app.listen(process.env.PORT || 3000, '0.0.0.0');
 
-  logger.log(`CORS origins: ${origins.join(', ') || '(none)'}`);
+  logger.log(`CORS origins: ${allowedOrigins.join(', ') || '(none)'}`);
   const server = app.getHttpServer();
   const address = server.address();
   const port = typeof address === 'object' && address ? address.port : process.env.PORT || 3000;

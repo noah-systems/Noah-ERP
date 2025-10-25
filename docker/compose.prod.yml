@@ -1,87 +1,67 @@
-version: "3.9"
-
-networks:
-  noah:
-
 services:
   db:
     image: postgres:16-alpine
-    container_name: docker-db-1
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-noah}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-noah}
     volumes:
       - db-data:/var/lib/postgresql/data
-    networks: [noah]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
 
   redis:
     image: redis:7-alpine
-    container_name: docker-redis-1
-    networks: [noah]
 
   api:
     build:
       context: .
-      dockerfile: apps/api/Dockerfile
-    image: docker-api
-    container_name: docker-api-1
+      dockerfile: Dockerfile.api
+    env_file:
+      - .env
     depends_on:
-      db: { condition: service_started }
-      redis: { condition: service_started }
-    environment:
-      NODE_ENV: production
-      PORT: 3000
-      # DB (compose usa host 'db'):
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: ${POSTGRES_USER:-noah}
-      DATABASE_URL: ${DATABASE_URL}
-      # Redis
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      # JWT e CORS
-      JWT_SECRET: ${JWT_SECRET}
-      CORS_ORIGINS: ${CORS_ORIGINS}
-      # admin seed
-      ADMIN_NAME: ${ADMIN_NAME}
-      ADMIN_EMAIL: ${ADMIN_EMAIL}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
-    networks: [noah]
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || wget -qO- http://localhost:3000/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 30
 
   web:
     build:
       context: .
-      dockerfile: docker/Dockerfile.web
-    image: docker-web
-    container_name: docker-web-1
+      dockerfile: Dockerfile.web
     depends_on:
-      api: { condition: service_started }
-    networks: [noah]
+      api:
+        condition: service_started
 
   proxy:
     image: nginx:alpine
-    container_name: docker-proxy-1
     depends_on:
-      api: { condition: service_started }
-      web: { condition: service_started }
+      web:
+        condition: service_started
+      api:
+        condition: service_started
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      # inicia com HTTP conf (antes do cert)
-      - /opt/noah-erp/nginx/default.http.conf:/etc/nginx/conf.d/default.conf:ro
-      - /opt/noah-erp/certbot-webroot:/var/www/certbot
+      - ./docker/proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt
-    networks: [noah]
+      - ./certbot-webroot:/var/www/certbot
 
   certbot:
     image: certbot/certbot
-    container_name: docker-certbot-1
     volumes:
-      - /opt/noah-erp/certbot-webroot:/var/www/certbot
       - /etc/letsencrypt:/etc/letsencrypt
-    networks: [noah]
+      - ./certbot-webroot:/var/www/certbot
+    entrypoint: sh -lc "trap exit TERM; while :; do sleep 12h & wait $${!}; certbot renew --quiet && nginx -s reload || true; done"
 
 volumes:
-  db-data:
+  db-data: {}
