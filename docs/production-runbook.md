@@ -75,26 +75,24 @@ echo 'DATABASE_URL=postgresql://noah:noah@127.0.0.1:5432/noah?schema=public' >> 
 ln -snf /etc/noah-erp/api.env "$API_DIR/.env"
 set -a; . /etc/noah-erp/api.env; set +a
 echo "DATABASE_URL ativa: $(echo "$DATABASE_URL" | sed 's#://\([^:]*\):[^@]*@#://\1:***@#')"
-sudo -u postgres psql -v ON_ERROR_STOP=1 <<'SQL'
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'noah') THEN
-    CREATE ROLE noah LOGIN PASSWORD 'noah';
-  END IF;
-END $$;
-
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT FROM pg_database WHERE datname = 'noah') THEN
-    CREATE DATABASE noah OWNER noah;
-  END IF;
-END $$;
-
-ALTER DATABASE noah OWNER TO noah;
-GRANT ALL PRIVILEGES ON DATABASE noah TO noah;
-
-\connect noah
-GRANT USAGE, CREATE ON SCHEMA public TO noah;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO noah;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO noah;
+sudo -u postgres psql -v ON_ERROR_STOP=1 \
+  -v user="noah" \
+  -v pass="noah" \
+  -v db="noah" <<'SQL'
+SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', :'user', :'pass')
+  WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :'user')
+\gexec
+SELECT format('ALTER ROLE %I WITH LOGIN PASSWORD %L', :'user', :'pass')
+\gexec
+SELECT format('CREATE DATABASE %I OWNER %I', :'db', :'user')
+  WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = :'db')
+\gexec
+SELECT format('ALTER DATABASE %I OWNER TO %I', :'db', :'user')
+\gexec
+\connect :db
+SELECT format('GRANT USAGE, CREATE ON SCHEMA public TO %I', :'user')\gexec
+SELECT format('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO %I', :'user')\gexec
+SELECT format('ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO %I', :'user')\gexec
 SQL
 
 cd "$API_DIR"

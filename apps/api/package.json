@@ -8,7 +8,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:seed": "node prisma/seed.js",
-    "seed": "npm run prisma:seed"
+    "seed": "npm run prisma:seed",
+    "postinstall": "node scripts/install-redis-shim.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -20,7 +21,8 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "ioredis": "^5.4.1",
-    "reflect-metadata": "^0.1.13"
+    "reflect-metadata": "^0.1.13",
+    "rxjs": "^7.8.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.2",
