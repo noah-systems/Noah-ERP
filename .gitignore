@@ -29,6 +29,7 @@ Thumbs.db
 docker/letsencrypt/
 docker/certbot/
 acme.json
+certbot-webroot/
 
 # Prisma
 prisma/*-journal

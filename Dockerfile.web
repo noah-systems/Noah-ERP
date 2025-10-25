@@ -1,48 +1,10 @@
-# Dockerfile.web — build confiável do Vite/Rollup
-FROM node:20-bookworm-slim AS build
-WORKDIR /app
-
-# Evita tentativa de binário nativo do Rollup (bug em npm + Alpine/musl)
-ENV ROLLUP_SKIP_NODEJS_NATIVE=true \
-    npm_config_audit=false \
-    npm_config_fund=false
-
-# Suporte opcional a proxy/registry (passados via build-args no compose)
-ARG NPM_CONFIG_REGISTRY=https://registry.npmjs.org/
-ARG HTTP_PROXY=""
-ARG HTTPS_PROXY=""
-ARG NO_PROXY="localhost,127.0.0.1"
-
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
- && rm -rf /var/lib/apt/lists/*
-
-# Copia manifests primeiro para cache de dependências
+FROM node:20-alpine AS build
+WORKDIR /work
 COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
-
-# Instalação resiliente: tenta `npm ci`, cai para `npm install` se lock estiver quebrado
-RUN set -eux; \
-  npm config set registry "$NPM_CONFIG_REGISTRY"; \
-  if [ -n "$HTTP_PROXY" ]; then npm config set proxy "$HTTP_PROXY"; fi; \
-  if [ -n "$HTTPS_PROXY" ]; then npm config set https-proxy "$HTTPS_PROXY"; fi; \
-  export ROLLUP_SKIP_NODEJS_NATIVE=true; \
-  if [ -f package-lock.json ]; then \
-    (npm ci --no-audit --no-fund --include=dev) \
-    || (echo "npm ci failed → fallback to npm install" \
-        && rm -f package-lock.json \
-        && npm install --no-audit --no-fund --legacy-peer-deps --include=dev \
-        && npm dedupe); \
-  elif [ -f pnpm-lock.yaml ]; then \
-    corepack enable && (pnpm i --frozen-lockfile --prod=false || pnpm i --prod=false); \
-  elif [ -f yarn.lock ]; then \
-    (yarn --frozen-lockfile --production=false || yarn --production=false); \
-  else \
-    npm install --no-audit --no-fund --legacy-peer-deps --include=dev; \
-  fi
-
-# Código e build
-COPY . .
+RUN if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; else npm install --no-audit --no-fund; fi
+COPY apps/web /work/apps/web
+WORKDIR /work/apps/web
 RUN npm run build
 
-# Runtime leve servindo o bundle estático
 FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /work/apps/web/dist /usr/share/nginx/html

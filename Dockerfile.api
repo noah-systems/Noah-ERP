@@ -1,0 +1,39 @@
+# ---- deps ----
+FROM node:20-alpine AS deps
+WORKDIR /app
+
+RUN apk add --no-cache bash openssl postgresql-client python3 make g++ git
+
+# Copia apenas manifestos primeiro (cache melhor)
+COPY apps/api/package*.json ./apps/api/
+WORKDIR /app/apps/api
+
+# Remove dependência quebrada e instala deps
+RUN sed -i '\#"@liaoliaots/nestjs-redis"#d' package.json || true
+RUN npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+RUN npm i ioredis@^5 --no-audit --no-fund
+
+# Copia fontes e Prisma
+COPY apps/api /app/apps/api
+RUN npx prisma generate || true
+RUN npm run build || npm run build:prod || true
+
+# ---- runtime ----
+FROM node:20-alpine AS runtime
+WORKDIR /app/apps/api
+RUN apk add --no-cache bash openssl postgresql-client
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Artefatos
+COPY --from=deps /app/apps/api/node_modules ./node_modules
+COPY --from=deps /app/apps/api/dist        ./dist
+COPY --from=deps /app/apps/api/prisma      ./prisma
+
+# Entrypoint
+COPY docker/apps/api/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+EXPOSE 3000
+CMD ["/entrypoint.sh"]

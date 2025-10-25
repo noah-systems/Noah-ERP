@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { RedisModule } from '@liaoliaots/nestjs-redis';
+import { RedisModule } from '../redis/redis.module';
 import { JwtModule } from './jwt/jwt.module';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthModule } from './auth/auth.module';
@@ -22,11 +22,7 @@ if (!JWT_SECRET) {
 
 @Module({
   imports: [
-    RedisModule.forRoot({
-      config: {
-        url: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
-      },
-    }),
+    RedisModule,
     JwtModule.register({ global: true, secret: JWT_SECRET }),
     AuthModule,
     UsersModule,
