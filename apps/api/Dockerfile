@@ -1,45 +1,35 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Install runtime libraries required by Prisma's engines during the build.
+# Dependências de build (sem openssl1.1-compat)
 RUN apk add --no-cache openssl
 
-# Install dependencies for the API workspace
-COPY apps/api/package*.json ./apps/api/
-WORKDIR /app/apps/api
+# Copiar manifetos e instalar no modo workspace (somente o que é preciso para a API)
+COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
+COPY apps/api/package.json ./apps/api/
 RUN npm ci --no-audit --no-fund
 
-# Copy project sources and Prisma schema
+# Copiar fontes e prisma e buildar
+COPY apps/api ./apps/api
 COPY apps/api/prisma ./prisma
-COPY apps/api /app/apps/api
+WORKDIR /app/apps/api
+RUN npx prisma generate && npm run build
 
-RUN rm -f ./prisma/.env && npx prisma generate
-
-# Build TypeScript sources
-RUN npm run build
-
+# ---------- runtime ----------
 FROM node:20-alpine AS runtime
 WORKDIR /app/apps/api
 
-ENV NODE_ENV=production
-ENV PRISMA_MIGRATE_ON_START=0
+# Ferramentas úteis p/ health e prisma
+RUN apk add --no-cache postgresql-client openssl bash curl
 
-# Required tools for the entrypoint checks and Prisma engine
-RUN apk add --no-cache postgresql-client openssl bash
-
-# Copy only the runtime artifacts
+# Copiar só artefatos de runtime
 COPY --from=build /app/apps/api/node_modules ./node_modules
-COPY --from=build /app/apps/api/package.json ./
-COPY --from=build /app/apps/api/package-lock.json ./
-COPY --from=build /app/apps/api/prisma ./prisma
 COPY --from=build /app/apps/api/dist ./dist
-
-RUN mkdir -p /app/scripts
-COPY scripts/prisma_migrate_deploy.sh /app/scripts/prisma_migrate_deploy.sh
-RUN chmod +x /app/scripts/prisma_migrate_deploy.sh
-
+COPY --from=build /app/apps/api/prisma ./prisma
 COPY docker/apps/api/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
 
+ENV NODE_ENV=production PORT=3000
 EXPOSE 3000
+
+RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

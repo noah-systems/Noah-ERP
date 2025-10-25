@@ -4,9 +4,6 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "baseUrl": "./",
-    "paths": {
-      "@liaoliaots/nestjs-redis": ["libs/nestjs-redis"]
-    },
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
@@ -17,6 +14,13 @@
     "emitDecoratorMetadata": true,
     "useDefineForClassFields": false
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "test", "**/*.spec.ts"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "test",
+    "**/*.spec.ts"
+  ]
 }
