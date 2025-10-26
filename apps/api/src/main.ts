@@ -4,6 +4,8 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './modules/app.module';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
 
+const DEFAULT_ALLOWED_ORIGINS = ['https://erp.noahomni.com.br'];
+
 type BasicResponse = {
   setHeader(name: string, value: string): void;
 };
@@ -48,7 +50,7 @@ async function bootstrap() {
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
-  const allowedOrigins = origins.length ? origins : ['https://erp.noahomni.com.br'];
+  const allowedOrigins = origins.length ? origins : DEFAULT_ALLOWED_ORIGINS;
   app.enableCors({ origin: allowedOrigins, credentials: true });
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));

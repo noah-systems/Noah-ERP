@@ -98,7 +98,7 @@ O front consome a API através da variável `VITE_API_BASE`. Por padrão, o valo
      -H 'Content-Type: application/json' \
      -d '{"email":"admin@noahomni.com.br","password":"TroqueEssaSenha123"}' | head
    ```
-5. Atualize a identidade visual copiando os assets PNG para `apps/web/public/brand/` e rebuildando a imagem da web quando necessário:
+5. Atualize a identidade visual copiando os assets PNG para `public/brand/` e rebuildando a imagem da web quando necessário:
    ```bash
    docker compose -f docker/compose.prod.yml build web
    docker compose -f docker/compose.prod.yml up -d web

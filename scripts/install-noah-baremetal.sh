@@ -162,7 +162,7 @@ fi
 [ -d "${API_DIR}" ] || { err "API directory not found (expected apps/api)."; exit 1; }
 ok "API at ${API_DIR}"
 
-PRISMA_DIR="${API_DIR}/prisma"
+PRISMA_DIR="${REPO_DIR}/prisma"
 
 log "Preparing API environment"
 cd "${API_DIR}"

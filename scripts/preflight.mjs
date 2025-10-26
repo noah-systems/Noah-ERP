@@ -72,9 +72,12 @@ add("src/pages/login.css exists", ex(P("src","pages","login.css")), "Create/adju
 // 8) Prisma env hygiene (bare-metal resilience)
 const prismaEnvPath = P("prisma", ".env");
 add("prisma/.env absent", !ex(prismaEnvPath), "Remove duplicate env: rm -f prisma/.env");
+const apiPrismaPath = P("apps", "api", "prisma");
+const prismaSymlinkOk = symlinkPointsTo(apiPrismaPath, P("prisma"));
+const prismaRemoved = !ex(apiPrismaPath) || prismaSymlinkOk;
 add(
   "apps/api/prisma/ removido",
-  !ex(P("apps", "api", "prisma")),
+  prismaRemoved,
   "Consolide o schema em prisma/"
 );
 
