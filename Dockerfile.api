@@ -8,14 +8,17 @@ WORKDIR /app
 RUN set -eux; \
     sed -i "s|https://dl-cdn.alpinelinux.org|${ALPINE_MIRROR}|g" /etc/apk/repositories; \
     for attempt in $(seq 1 5); do \
-        if apk update && apk add --no-cache \
-            bash \
-            openssl \
-            postgresql-client \
-            python3 \
-            make \
-            g++ \
-            git; \
+        if apk update \ \
+            && apk add --no-cache \
+                bash \
+                openssl \
+                python3 \
+                make \
+                g++ \
+                git \ \
+            && (apk add --no-cache postgresql-client \
+                || apk add --no-cache postgresql16-client \
+                || apk add --no-cache postgresql15-client); \
         then \
             rm -rf /var/cache/apk/* || true; \
             break; \
@@ -47,11 +50,14 @@ WORKDIR /app/apps/api
 RUN set -eux; \
     sed -i "s|https://dl-cdn.alpinelinux.org|${ALPINE_MIRROR}|g" /etc/apk/repositories; \
     for attempt in $(seq 1 5); do \
-        if apk update && apk add --no-cache \
-            bash \
-            openssl \
-            postgresql-client \
-            curl; \
+        if apk update \ \
+            && apk add --no-cache \
+                bash \
+                openssl \
+                curl \ \
+            && (apk add --no-cache postgresql-client \
+                || apk add --no-cache postgresql16-client \
+                || apk add --no-cache postgresql15-client); \
         then \
             rm -rf /var/cache/apk/* || true; \
             break; \
