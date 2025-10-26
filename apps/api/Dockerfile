@@ -1,6 +1,8 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
+ENV PRISMA_SCHEMA_PATH=/app/prisma/schema.prisma
+
 RUN set -eux; \
     printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf; \
     if [ -d /etc/apt ]; then \
@@ -11,11 +13,17 @@ RUN set -eux; \
     apk add --no-cache \
         bash \
         openssl \
+        ca-certificates \
         postgresql-client \
         python3 \
         make \
         g++ \
-        git
+        git; \
+    if command -v apt-get >/dev/null 2>&1; then \
+        apt-get update; \
+        apt-get install -y --no-install-recommends openssl ca-certificates; \
+        rm -rf /var/lib/apt/lists/*; \
+    fi
 
 # Copiar manifestos e scripts necessários para instalar dependências (cache melhor)
 COPY apps/api/package*.json ./apps/api/
@@ -55,11 +63,14 @@ RUN set -eux; \
     fi
 
 # Copiar fontes e prisma e buildar
+COPY prisma /app/prisma
 COPY apps/api ./
-RUN npx prisma generate && npm run build
+RUN rm -rf prisma && ln -s ../prisma prisma
+RUN npx prisma generate --schema "$PRISMA_SCHEMA_PATH" && npm run build
 
 # ---------- runtime ----------
 FROM node:20-alpine AS runtime
+ENV PRISMA_SCHEMA_PATH=/app/prisma/schema.prisma
 WORKDIR /app/apps/api
 
 # Ferramentas úteis p/ health e prisma
@@ -73,13 +84,20 @@ RUN set -eux; \
     apk add --no-cache \
         bash \
         openssl \
+        ca-certificates \
         postgresql-client \
-        curl
+        curl; \
+    if command -v apt-get >/dev/null 2>&1; then \
+        apt-get update; \
+        apt-get install -y --no-install-recommends openssl ca-certificates; \
+        rm -rf /var/lib/apt/lists/*; \
+    fi
 
 # Copiar só artefatos de runtime
 COPY --from=build /app/apps/api/node_modules ./node_modules
 COPY --from=build /app/apps/api/dist ./dist
-COPY --from=build /app/apps/api/prisma ./prisma
+COPY --from=build /app/prisma /app/prisma
+COPY --from=build /app/prisma ./prisma
 COPY docker/apps/api/entrypoint.sh /entrypoint.sh
 
 ENV NODE_ENV=production PORT=3000

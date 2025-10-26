@@ -5,6 +5,8 @@ FROM node:20-alpine AS deps
 ARG ALPINE_MIRROR
 WORKDIR /app
 
+ENV PRISMA_SCHEMA_PATH=/app/prisma/schema.prisma
+
 RUN set -eux; \
     printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf; \
     if [ -d /etc/apt ]; then \
@@ -13,7 +15,7 @@ RUN set -eux; \
         sed -i 's#http://deb.debian.org/debian#http://mirror.hetzner.com/debian#g; s#http://security.debian.org/debian-security#http://mirror.hetzner.com/debian-security#g' /etc/apt/sources.list || true; \
     fi; \
     sed -i "s|https://dl-cdn.alpinelinux.org|${ALPINE_MIRROR}|g" /etc/apk/repositories; \
-    common_packages="bash openssl python3 make g++ git"; \
+    common_packages="bash openssl ca-certificates python3 make g++ git"; \
     pg_clients="postgresql16-client postgresql15-client postgresql14-client postgresql-client"; \
     pg_installed=0; \
     for attempt in $(seq 1 5); do \
@@ -40,6 +42,11 @@ RUN set -eux; \
     if [ "${pg_installed}" -ne 1 ]; then \
         echo "unable to install PostgreSQL client package" >&2; \
         exit 1; \
+    fi; \
+    if command -v apt-get >/dev/null 2>&1; then \
+        apt-get update; \
+        apt-get install -y --no-install-recommends openssl ca-certificates; \
+        rm -rf /var/lib/apt/lists/*; \
     fi
 
 # Copia apenas manifestos e scripts necessários para instalar dependências (cache melhor)
@@ -82,13 +89,16 @@ RUN set -eux; \
     fi
 
 # Copia fontes e Prisma
+COPY prisma /app/prisma
 COPY apps/api /app/apps/api
-RUN npx prisma generate
+RUN rm -rf prisma && ln -s ../prisma prisma
+RUN npx prisma generate --schema "$PRISMA_SCHEMA_PATH"
 RUN npm run build
 
 # ---- runtime ----
 FROM node:20-alpine AS runtime
 ARG ALPINE_MIRROR
+ENV PRISMA_SCHEMA_PATH=/app/prisma/schema.prisma
 WORKDIR /app/apps/api
 RUN set -eux; \
     printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf; \
@@ -98,7 +108,7 @@ RUN set -eux; \
         sed -i 's#http://deb.debian.org/debian#http://mirror.hetzner.com/debian#g; s#http://security.debian.org/debian-security#http://mirror.hetzner.com/debian-security#g' /etc/apt/sources.list || true; \
     fi; \
     sed -i "s|https://dl-cdn.alpinelinux.org|${ALPINE_MIRROR}|g" /etc/apk/repositories; \
-    common_packages="bash openssl curl"; \
+    common_packages="bash openssl ca-certificates curl"; \
     pg_clients="postgresql16-client postgresql15-client postgresql14-client postgresql-client"; \
     pg_installed=0; \
     for attempt in $(seq 1 5); do \
@@ -125,6 +135,11 @@ RUN set -eux; \
     if [ "${pg_installed}" -ne 1 ]; then \
         echo "unable to install PostgreSQL client package" >&2; \
         exit 1; \
+    fi; \
+    if command -v apt-get >/dev/null 2>&1; then \
+        apt-get update; \
+        apt-get install -y --no-install-recommends openssl ca-certificates; \
+        rm -rf /var/lib/apt/lists/*; \
     fi
 
 ENV NODE_ENV=production
@@ -133,7 +148,8 @@ ENV PORT=3000
 # Artefatos
 COPY --from=deps /app/apps/api/node_modules ./node_modules
 COPY --from=deps /app/apps/api/dist        ./dist
-COPY --from=deps /app/apps/api/prisma      ./prisma
+COPY --from=deps /app/prisma /app/prisma
+COPY --from=deps /app/prisma ./prisma
 
 # Entrypoint
 COPY docker/apps/api/entrypoint.sh /entrypoint.sh

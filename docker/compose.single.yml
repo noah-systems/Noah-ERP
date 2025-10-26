@@ -3,7 +3,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-noah}
     volumes:
       - db-data:/var/lib/postgresql/data
@@ -27,6 +27,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    environment:
+      NODE_ENV: production
+      PORT: 3000
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || wget -qO- http://localhost:3000/health"]
       interval: 10s

@@ -1,25 +1,31 @@
-FROM node:20-alpine AS build
+FROM node:20-bookworm-slim AS build
+
+ENV ROLLUP_SKIP_NODEJS_NATIVE=true \
+    npm_config_optional=false
+
 WORKDIR /work
-COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
+
+COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* .npmrc* ./
+
 RUN set -eux; \
     npm config set fund false; \
     npm config set audit false; \
     npm config set fetch-retry-mintimeout 20000; \
     npm config set fetch-retry-maxtimeout 120000; \
     npm config set fetch-retry-factor 10; \
-    success=0; \
+    install_success=0; \
     ci_attempted=0; \
     for attempt in 1 2 3; do \
         if [ -f package-lock.json ] && [ "${ci_attempted}" -eq 0 ]; then \
             if npm ci --no-audit --no-fund; then \
-                success=1; \
+                install_success=1; \
                 break; \
             fi; \
             echo 'npm ci failed; falling back to npm install' >&2; \
             ci_attempted=1; \
         fi; \
-        if npm install --no-audit --no-fund; then \
-            success=1; \
+        if npm install --no-audit --no-fund --legacy-peer-deps; then \
+            install_success=1; \
             break; \
         fi; \
         if [ "${attempt}" -eq 3 ]; then \
@@ -29,11 +35,13 @@ RUN set -eux; \
         npm cache clean --force; \
         sleep $((attempt * 2)); \
     done; \
-    if [ "${success}" -ne 1 ]; then \
+    if [ "${install_success}" -ne 1 ]; then \
         echo 'npm dependency installation failed after retries' >&2; \
         exit 1; \
     fi
+
 COPY . .
+
 RUN npm run build:web
 
 FROM nginx:alpine
