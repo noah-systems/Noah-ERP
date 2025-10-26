@@ -4,7 +4,6 @@ WORKDIR /app
 ENV PRISMA_SCHEMA_PATH=/app/prisma/schema.prisma
 
 RUN set -eux; \
-    printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf; \
     if [ -d /etc/apt ]; then \
         mkdir -p /etc/apt/apt.conf.d; \
         printf 'Acquire::Retries "5";\n' > /etc/apt/apt.conf.d/80-retries; \
@@ -75,7 +74,6 @@ WORKDIR /app/apps/api
 
 # Ferramentas úteis p/ health e prisma
 RUN set -eux; \
-    printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf; \
     if [ -d /etc/apt ]; then \
         mkdir -p /etc/apt/apt.conf.d; \
         printf 'Acquire::Retries "5";\n' > /etc/apt/apt.conf.d/80-retries; \
