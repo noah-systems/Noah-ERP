@@ -49,6 +49,7 @@ public/brand/*
 *.pdf
 *.zip
 *.tar
+*.tgz
 *.gz
 *.webp
 *.mp4

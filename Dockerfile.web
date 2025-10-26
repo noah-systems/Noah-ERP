@@ -6,6 +6,7 @@ ENV ROLLUP_SKIP_NODEJS_NATIVE=true \
 WORKDIR /work
 
 COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* .npmrc* ./
+COPY vendor ./vendor
 
 RUN set -eux; \
     npm config set fund false; \
