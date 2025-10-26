@@ -6,6 +6,12 @@ ARG ALPINE_MIRROR
 WORKDIR /app
 
 RUN set -eux; \
+    printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf; \
+    if [ -d /etc/apt ]; then \
+        mkdir -p /etc/apt/apt.conf.d; \
+        printf 'Acquire::Retries "5";\n' > /etc/apt/apt.conf.d/80-retries; \
+        sed -i 's#http://deb.debian.org/debian#http://mirror.hetzner.com/debian#g; s#http://security.debian.org/debian-security#http://mirror.hetzner.com/debian-security#g' /etc/apt/sources.list || true; \
+    fi; \
     sed -i "s|https://dl-cdn.alpinelinux.org|${ALPINE_MIRROR}|g" /etc/apk/repositories; \
     common_packages="bash openssl python3 make g++ git"; \
     pg_clients="postgresql16-client postgresql15-client postgresql14-client postgresql-client"; \
@@ -36,23 +42,61 @@ RUN set -eux; \
         exit 1; \
     fi
 
-# Copia apenas manifestos primeiro (cache melhor)
+# Copia apenas manifestos e scripts necessários para instalar dependências (cache melhor)
 COPY apps/api/package*.json ./apps/api/
+COPY apps/api/scripts ./apps/api/scripts
 WORKDIR /app/apps/api
 
-# Instala dependências declaradas
-RUN npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+# Instala dependências declaradas com tentativas adicionais para contornar problemas de rede/cache
+RUN set -eux; \
+    npm config set fund false; \
+    npm config set audit false; \
+    npm config set fetch-retry-mintimeout 20000; \
+    npm config set fetch-retry-maxtimeout 120000; \
+    npm config set fetch-retry-factor 10; \
+    install_success=0; \
+    ci_attempted=0; \
+    for attempt in 1 2 3; do \
+        if [ -f package-lock.json ] && [ "${ci_attempted}" -eq 0 ]; then \
+            if npm ci --no-audit --no-fund; then \
+                install_success=1; \
+                break; \
+            fi; \
+            echo 'npm ci failed; falling back to npm install' >&2; \
+            ci_attempted=1; \
+        fi; \
+        if npm install --no-audit --no-fund; then \
+            install_success=1; \
+            break; \
+        fi; \
+        if [ "${attempt}" -eq 3 ]; then \
+            break; \
+        fi; \
+        echo "npm install attempt ${attempt} failed, cleaning cache and retrying..." >&2; \
+        npm cache clean --force; \
+        sleep $((attempt * 2)); \
+    done; \
+    if [ "${install_success}" -ne 1 ]; then \
+        echo 'npm dependency installation failed after retries' >&2; \
+        exit 1; \
+    fi
 
 # Copia fontes e Prisma
 COPY apps/api /app/apps/api
-RUN npx prisma generate || true
-RUN npm run build || npm run build:prod || true
+RUN npx prisma generate
+RUN npm run build
 
 # ---- runtime ----
 FROM node:20-alpine AS runtime
 ARG ALPINE_MIRROR
 WORKDIR /app/apps/api
 RUN set -eux; \
+    printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf; \
+    if [ -d /etc/apt ]; then \
+        mkdir -p /etc/apt/apt.conf.d; \
+        printf 'Acquire::Retries "5";\n' > /etc/apt/apt.conf.d/80-retries; \
+        sed -i 's#http://deb.debian.org/debian#http://mirror.hetzner.com/debian#g; s#http://security.debian.org/debian-security#http://mirror.hetzner.com/debian-security#g' /etc/apt/sources.list || true; \
+    fi; \
     sed -i "s|https://dl-cdn.alpinelinux.org|${ALPINE_MIRROR}|g" /etc/apk/repositories; \
     common_packages="bash openssl curl"; \
     pg_clients="postgresql16-client postgresql15-client postgresql14-client postgresql-client"; \
