@@ -7,19 +7,20 @@ WORKDIR /app
 
 RUN set -eux; \
     sed -i "s|https://dl-cdn.alpinelinux.org|${ALPINE_MIRROR}|g" /etc/apk/repositories; \
+    common_packages="bash openssl python3 make g++ git"; \
+    pg_clients="postgresql16-client postgresql15-client postgresql14-client postgresql-client"; \
+    pg_installed=0; \
     for attempt in $(seq 1 5); do \
-        if apk update \ \
-            && apk add --no-cache \
-                bash \
-                openssl \
-                python3 \
-                make \
-                g++ \
-                git \ \
-            && (apk add --no-cache postgresql-client \
-                || apk add --no-cache postgresql16-client \
-                || apk add --no-cache postgresql15-client); \
-        then \
+        pg_installed=0; \
+        if apk update; then \
+            for pg_pkg in ${pg_clients}; do \
+                if apk add --no-cache ${common_packages} "${pg_pkg}"; then \
+                    pg_installed=1; \
+                    break; \
+                fi; \
+            done; \
+        fi; \
+        if [ "${pg_installed}" -eq 1 ]; then \
             rm -rf /var/cache/apk/* || true; \
             break; \
         fi; \
@@ -29,7 +30,11 @@ RUN set -eux; \
         fi; \
         echo "apk add failed on attempt ${attempt}, retrying..." >&2; \
         sleep $((attempt * 2)); \
-    done
+    done; \
+    if [ "${pg_installed}" -ne 1 ]; then \
+        echo "unable to install PostgreSQL client package" >&2; \
+        exit 1; \
+    fi
 
 # Copia apenas manifestos primeiro (cache melhor)
 COPY apps/api/package*.json ./apps/api/
@@ -49,16 +54,20 @@ ARG ALPINE_MIRROR
 WORKDIR /app/apps/api
 RUN set -eux; \
     sed -i "s|https://dl-cdn.alpinelinux.org|${ALPINE_MIRROR}|g" /etc/apk/repositories; \
+    common_packages="bash openssl curl"; \
+    pg_clients="postgresql16-client postgresql15-client postgresql14-client postgresql-client"; \
+    pg_installed=0; \
     for attempt in $(seq 1 5); do \
-        if apk update \ \
-            && apk add --no-cache \
-                bash \
-                openssl \
-                curl \ \
-            && (apk add --no-cache postgresql-client \
-                || apk add --no-cache postgresql16-client \
-                || apk add --no-cache postgresql15-client); \
-        then \
+        pg_installed=0; \
+        if apk update; then \
+            for pg_pkg in ${pg_clients}; do \
+                if apk add --no-cache ${common_packages} "${pg_pkg}"; then \
+                    pg_installed=1; \
+                    break; \
+                fi; \
+            done; \
+        fi; \
+        if [ "${pg_installed}" -eq 1 ]; then \
             rm -rf /var/cache/apk/* || true; \
             break; \
         fi; \
@@ -68,7 +77,11 @@ RUN set -eux; \
         fi; \
         echo "apk add failed on attempt ${attempt}, retrying..." >&2; \
         sleep $((attempt * 2)); \
-    done
+    done; \
+    if [ "${pg_installed}" -ne 1 ]; then \
+        echo "unable to install PostgreSQL client package" >&2; \
+        exit 1; \
+    fi
 
 ENV NODE_ENV=production
 ENV PORT=3000
