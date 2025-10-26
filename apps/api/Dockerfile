@@ -1,17 +1,15 @@
-FROM node:20-bookworm-slim AS build
+FROM node:20-alpine AS build
 WORKDIR /app
 
 # Dependências de build
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
+RUN apk add --no-cache \
         bash \
         openssl \
         postgresql-client \
         python3 \
         make \
         g++ \
-        git \
-    && rm -rf /var/lib/apt/lists/*
+        git
 
 # Copiar manifetos e instalar no modo workspace (somente o que é preciso para a API)
 COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* ./
@@ -25,17 +23,15 @@ WORKDIR /app/apps/api
 RUN npx prisma generate && npm run build
 
 # ---------- runtime ----------
-FROM node:20-bookworm-slim AS runtime
+FROM node:20-alpine AS runtime
 WORKDIR /app/apps/api
 
 # Ferramentas úteis p/ health e prisma
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
+RUN apk add --no-cache \
         bash \
         openssl \
         postgresql-client \
-        curl \
-    && rm -rf /var/lib/apt/lists/*
+        curl
 
 # Copiar só artefatos de runtime
 COPY --from=build /app/apps/api/node_modules ./node_modules

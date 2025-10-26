@@ -29,7 +29,8 @@ WORKDIR /app/apps/api
 RUN apk add --no-cache \
         bash \
         openssl \
-        postgresql-client
+        postgresql-client \
+        curl
 
 ENV NODE_ENV=production
 ENV PORT=3000
