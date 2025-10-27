@@ -26,6 +26,7 @@ RUN set -eux; \
 
 # Copiar manifestos necessários para instalar dependências (cache melhor)
 COPY apps/api/package*.json ./apps/api/
+COPY apps/api/scripts ./apps/api/scripts
 WORKDIR /app/apps/api
 RUN set -eux; \
     npm config set fund false; \
@@ -64,7 +65,8 @@ RUN set -eux; \
 COPY prisma /app/prisma
 COPY apps/api ./
 RUN rm -rf prisma && ln -s ../prisma prisma
-RUN npx prisma generate --schema "$PRISMA_SCHEMA_PATH" && npm run build
+RUN npx prisma generate --schema "$PRISMA_SCHEMA_PATH"
+RUN npm run build
 
 # ---------- runtime ----------
 FROM node:20-alpine AS runtime

@@ -1,23 +1,33 @@
 FROM node:20-bookworm-slim AS build
 WORKDIR /work
 
-RUN npm config set fund false \
- && npm config set audit false \
- && npm config set fetch-retry-mintimeout 20000 \
- && npm config set fetch-retry-maxtimeout 120000 \
- && npm config set fetch-retry-factor 10 \
- && npm config set registry https://registry.npmmirror.com
+COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* .npmrc* ./
+COPY vendor ./vendor
 
-COPY package*.json ./
-
-ENV npm_config_optional=true
-
-RUN npm ci --no-audit --no-fund --include=optional \
- || npm install --no-audit --no-fund --legacy-peer-deps --include=optional
+RUN set -eux; \
+  npm config set fund false; \
+  npm config set audit false; \
+  npm config set optional true; \
+  npm config set fetch-retry-mintimeout 20000; \
+  npm config set fetch-retry-maxtimeout 120000; \
+  npm config set fetch-retry-factor 10; \
+  npm config set registry https://registry.npmmirror.com; \
+  install_success=0; \
+  ci_attempted=0; \
+  if [ -f package-lock.json ] && [ "${ci_attempted}" -eq 0 ]; then \
+    npm ci --no-audit --no-fund || true; \
+    if [ -d node_modules ]; then \
+      install_success=1; \
+    fi; \
+    ci_attempted=1; \
+  fi; \
+  if [ "${install_success}" -eq 0 ] && [ ! -d node_modules ]; then \
+    npm install --no-audit --no-fund --legacy-peer-deps; \
+  fi
 
 RUN npm rebuild rollup --force || true
 
-COPY . ./
+COPY . .
 
 RUN npm run build:web
 
