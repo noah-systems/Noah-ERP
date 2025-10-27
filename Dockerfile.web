@@ -1,12 +1,27 @@
-FROM node:20-bookworm-slim AS web-deps
+FROM node:20-bookworm-slim AS build
 WORKDIR /work
-COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* .npmrc* ./
+
+RUN npm config set fund false \
+ && npm config set audit false \
+ && npm config set fetch-retry-mintimeout 20000 \
+ && npm config set fetch-retry-maxtimeout 120000 \
+ && npm config set fetch-retry-factor 10
+
+COPY package*.json ./
+COPY .npmrc ./
+COPY scripts ./scripts
 COPY vendor ./vendor
-RUN npm ci --no-audit --no-fund || npm install --no-audit --no-fund --legacy-peer-deps
-COPY . .
-RUN npm install -D @rollup/rollup-linux-x64-gnu --no-audit --no-fund --legacy-peer-deps \
-    && (npm rebuild rollup || true)
+
+ENV npm_config_optional=true
+
+RUN npm ci --no-audit --no-fund \
+ || npm install --no-audit --no-fund --legacy-peer-deps
+
+RUN npm i -D @rollup/rollup-linux-x64-gnu --no-audit --no-fund || true
+
+COPY . ./
+
 RUN npm run build:web
 
-FROM nginx:alpine AS web-runtime
-COPY --from=web-deps /work/dist /usr/share/nginx/html
+FROM nginx:alpine
+COPY --from=build /work/dist /usr/share/nginx/html
