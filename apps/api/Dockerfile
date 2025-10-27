@@ -24,9 +24,8 @@ RUN set -eux; \
         rm -rf /var/lib/apt/lists/*; \
     fi
 
-# Copiar manifestos e scripts necessários para instalar dependências (cache melhor)
+# Copiar manifestos necessários para instalar dependências (cache melhor)
 COPY apps/api/package*.json ./apps/api/
-COPY apps/api/scripts ./apps/api/scripts
 WORKDIR /app/apps/api
 RUN set -eux; \
     npm config set fund false; \

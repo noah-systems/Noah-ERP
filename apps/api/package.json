@@ -8,8 +8,7 @@
     "prisma:generate": "prisma generate --schema ../prisma/schema.prisma",
     "prisma:migrate": "prisma migrate deploy --schema ../prisma/schema.prisma",
     "prisma:seed": "node ../prisma/seed.js",
-    "seed": "npm run prisma:seed",
-    "postinstall": "node scripts/install-redis-shim.js"
+    "seed": "npm run prisma:seed"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

@@ -47,7 +47,7 @@
     "sonner": "^2.0.3",
     "tailwind-merge": "*",
     "vaul": "^1.1.2",
-    "axios": "file:vendor/axios-1.7.9.tgz"
+    "axios": "1.7.9"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
@@ -69,7 +69,6 @@
     "dev": "vite",
     "build": "vite build",
     "preflight": "node scripts/preflight.mjs",
-    "preinstall": "node scripts/materialize-vendor.mjs",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:degraded": "tsc -p tsconfig.degraded.json --noEmit",

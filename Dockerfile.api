@@ -2,7 +2,7 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 
 COPY .npmrc ./
-COPY apps/api/package*.json apps/api/scripts/ ./apps/api/
+COPY apps/api/package*.json ./apps/api/
 WORKDIR /app/apps/api
 
 ENV npm_config_fund=false \
