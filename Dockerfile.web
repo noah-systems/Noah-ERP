@@ -1,49 +1,12 @@
-FROM node:20-bookworm-slim AS build
-
-ENV ROLLUP_SKIP_NODEJS_NATIVE=true \
-    npm_config_optional=false
-
+FROM node:20-bookworm-slim AS web-deps
 WORKDIR /work
-
 COPY package.json package-lock.json* pnpm-lock.yaml* yarn.lock* .npmrc* ./
 COPY vendor ./vendor
-
-RUN set -eux; \
-    npm config set fund false; \
-    npm config set audit false; \
-    npm config set fetch-retry-mintimeout 20000; \
-    npm config set fetch-retry-maxtimeout 120000; \
-    npm config set fetch-retry-factor 10; \
-    install_success=0; \
-    ci_attempted=0; \
-    for attempt in 1 2 3; do \
-        if [ -f package-lock.json ] && [ "${ci_attempted}" -eq 0 ]; then \
-            if npm ci --no-audit --no-fund; then \
-                install_success=1; \
-                break; \
-            fi; \
-            echo 'npm ci failed; falling back to npm install' >&2; \
-            ci_attempted=1; \
-        fi; \
-        if npm install --no-audit --no-fund --legacy-peer-deps; then \
-            install_success=1; \
-            break; \
-        fi; \
-        if [ "${attempt}" -eq 3 ]; then \
-            break; \
-        fi; \
-        echo "npm install attempt ${attempt} failed, cleaning cache and retrying..." >&2; \
-        npm cache clean --force; \
-        sleep $((attempt * 2)); \
-    done; \
-    if [ "${install_success}" -ne 1 ]; then \
-        echo 'npm dependency installation failed after retries' >&2; \
-        exit 1; \
-    fi
-
+RUN npm ci --no-audit --no-fund || npm install --no-audit --no-fund --legacy-peer-deps
 COPY . .
-
+RUN npm install -D @rollup/rollup-linux-x64-gnu --no-audit --no-fund --legacy-peer-deps \
+    && (npm rebuild rollup || true)
 RUN npm run build:web
 
-FROM nginx:alpine
-COPY --from=build /work/dist /usr/share/nginx/html
+FROM nginx:alpine AS web-runtime
+COPY --from=web-deps /work/dist /usr/share/nginx/html
