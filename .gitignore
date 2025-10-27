@@ -50,6 +50,7 @@ public/brand/*
 *.zip
 *.tar
 *.tgz
+!vendor/*.tgz
 *.gz
 *.webp
 *.mp4
