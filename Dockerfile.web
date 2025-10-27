@@ -7,21 +7,13 @@ COPY vendor ./vendor
 RUN set -eux; \
   npm config set fund false; \
   npm config set audit false; \
-  npm config set optional true; \
   npm config set fetch-retry-mintimeout 20000; \
   npm config set fetch-retry-maxtimeout 120000; \
   npm config set fetch-retry-factor 10; \
-  npm config set registry https://registry.npmmirror.com; \
-  install_success=0; \
-  ci_attempted=0; \
-  if [ -f package-lock.json ] && [ "${ci_attempted}" -eq 0 ]; then \
-    npm ci --no-audit --no-fund || true; \
-    if [ -d node_modules ]; then \
-      install_success=1; \
-    fi; \
-    ci_attempted=1; \
-  fi; \
-  if [ "${install_success}" -eq 0 ] && [ ! -d node_modules ]; then \
+  npm config set registry https://registry.npmjs.org; \
+  if [ -f package-lock.json ]; then \
+    npm ci --no-audit --no-fund || npm install --no-audit --no-fund --legacy-peer-deps; \
+  else \
     npm install --no-audit --no-fund --legacy-peer-deps; \
   fi
 
