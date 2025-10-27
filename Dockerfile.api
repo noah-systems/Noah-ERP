@@ -9,8 +9,8 @@ COPY apps/api/scripts ./scripts
 ENV npm_config_fund=false \
     npm_config_audit=false
 
-RUN npm ci --no-audit --no-fund \
- || npm install --no-audit --no-fund --legacy-peer-deps
+RUN npm ci --no-audit --no-fund --ignore-scripts \
+ || npm install --no-audit --no-fund --legacy-peer-deps --ignore-scripts
 
 WORKDIR /app
 COPY prisma ./prisma
@@ -29,6 +29,7 @@ COPY --from=deps /app/apps/api/node_modules ./node_modules
 COPY --from=deps /app/apps/api/dist        ./dist
 COPY --from=deps /app/prisma               /app/prisma
 COPY --from=deps /app/apps/api/prisma      ./prisma
+RUN if [ -f scripts/install-redis-shim.js ]; then node scripts/install-redis-shim.js; fi
 COPY docker/apps/api/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh \
     && apk add --no-cache bash openssl ca-certificates postgresql16-client \

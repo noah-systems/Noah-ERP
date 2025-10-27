@@ -47,7 +47,10 @@
     "sonner": "^2.0.3",
     "tailwind-merge": "*",
     "vaul": "^1.1.2",
-    "axios": "file:vendor/axios-1.7.9.tgz"
+    "axios": "1.7.9"
+  },
+  "overrides": {
+    "axios": "1.7.9"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
