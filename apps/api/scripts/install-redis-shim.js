@@ -55,7 +55,7 @@ function resolveRedisUrl() {
 
   const host = (process.env.REDIS_HOST || DEFAULT_HOST).trim() || DEFAULT_HOST;
   const port = (process.env.REDIS_PORT || DEFAULT_PORT).trim() || DEFAULT_PORT;
-  return \`redis://\${host}:\${port}\`;
+  return `redis://${host}:${port}`;
 }
 
 const providers = [

@@ -11,6 +11,7 @@ dist
 build
 apps/api/.turbo
 apps/api/.next
+!vendor/
 
 # Git metadata
 .git

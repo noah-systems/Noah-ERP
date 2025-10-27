@@ -1,28 +1,41 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
+
 COPY .npmrc ./
-COPY apps/api/package*.json ./apps/api/
 WORKDIR /app/apps/api
-RUN npm ci --no-audit --no-fund || npm install --no-audit --no-fund --legacy-peer-deps
+COPY apps/api/package*.json ./
+COPY apps/api/scripts ./scripts
+
+ENV npm_config_fund=false \
+    npm_config_audit=false
+
+RUN npm ci --no-audit --no-fund \
+ || npm install --no-audit --no-fund --legacy-peer-deps
+
 WORKDIR /app
 COPY prisma ./prisma
 COPY apps/api ./apps/api
 WORKDIR /app/apps/api
+
 RUN rm -rf prisma && ln -s ../prisma prisma
 RUN npx prisma generate --schema "/app/prisma/schema.prisma"
 RUN npm run build
 
 FROM node:20-alpine AS runtime
 WORKDIR /app/apps/api
+ENV NODE_ENV=production
+
 COPY --from=deps /app/apps/api/node_modules ./node_modules
 COPY --from=deps /app/apps/api/dist        ./dist
 COPY --from=deps /app/prisma               /app/prisma
+COPY --from=deps /app/apps/api/prisma      ./prisma
 COPY docker/apps/api/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh \
     && apk add --no-cache bash openssl ca-certificates postgresql16-client \
     || apk add --no-cache bash openssl ca-certificates postgresql-client
-ENV NODE_ENV=production
+
 ENV PORT=3000
 ENV PRISMA_SCHEMA_PATH=/app/prisma/schema.prisma
 ENV PRISMA_MIGRATE_ON_START=true
-ENTRYPOINT ["/entrypoint.sh"]
+EXPOSE 3000
+CMD ["/entrypoint.sh"]
