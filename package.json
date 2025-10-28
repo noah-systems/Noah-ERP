@@ -47,7 +47,7 @@
     "sonner": "^2.0.3",
     "tailwind-merge": "*",
     "vaul": "^1.1.2",
-    "axios": "1.7.9"
+    "axios": "^1.7.9"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
@@ -63,29 +63,27 @@
     "@rollup/rollup-linux-x64-gnu": "^4.24.0",
     "typescript": "^5.6.3",
     "vite": "6.3.5",
-    "husky": "^9.1.6"
+    "@playwright/test": "^1.49.1"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev:web": "vite",
+    "dev": "npm run dev:web",
+    "build:web": "vite build",
+    "build": "npm run build:web",
     "preflight": "node scripts/preflight.mjs",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "typecheck:degraded": "tsc -p tsconfig.degraded.json --noEmit",
-    "build:web": "vite build",
     "preview:web": "vite preview --port 5173",
-    "build:api": "npm --prefix apps/api run prisma:generate",
+    "build:api": "npm --prefix apps/api run build",
     "ci:probe-npm": "node -e \"require('https').get('https://registry.npmjs.org/@types%2Freact',r=>{process.exit(r.statusCode>=200&&r.statusCode<400?0:1)})\"",
     "ci:full": "npm ci && npm run typecheck && npm run build:api && npm run build:web",
     "ci:degraded": "npm run typecheck:degraded && npm run build:web",
     "api:prisma": "prisma generate --schema prisma/schema.prisma",
-    "prepare": "husky || bash scripts/setup-git-hooks.sh",
-    "qa:smoke": "bash scripts/qa-smoke.sh"
+    "prepare": "true",
+    "qa:smoke": "node scripts/qa-smoke.mjs"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
-  },
-  "overrides": {
-    "axios": "1.7.9"
   }
 }

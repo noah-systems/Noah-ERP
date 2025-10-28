@@ -1,6 +1,6 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { JWT_SECRET_TOKEN } from './jwt.constants';
-import { JwtService } from './jwt.service';
+import { JWT_SECRET_TOKEN } from './jwt.constants.js';
+import { JwtService } from './jwt.service.js';
 
 export interface JwtModuleOptions {
   secret: string;

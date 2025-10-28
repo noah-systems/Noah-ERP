@@ -2,7 +2,7 @@ dev:
 npm run dev
 
 api:
-npm --prefix apps/api run start:prod
+npm --prefix apps/api run start
 
 smoke:
-bash scripts/ci_validate.sh
+npm run qa:smoke

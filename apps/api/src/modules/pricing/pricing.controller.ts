@@ -1,14 +1,14 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
-import { PricingService } from './pricing.service';
+import { PricingService } from './pricing.service.js';
 import {
   CreateDiscountPolicyDto,
   CreatePriceItemDto,
   CreatePriceTierDto,
-} from './pricing.dto';
-import { JwtAuthGuard } from '../auth/jwt.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
-import { Role } from '../auth/roles.enum';
+} from './pricing.dto.js';
+import { JwtAuthGuard } from '../auth/jwt.guard.js';
+import { RolesGuard } from '../auth/roles.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
+import { Role } from '../auth/roles.enum.js';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('pricing')

@@ -44,6 +44,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Install root deps
+        run: npm ci || npm i
       - name: Install API deps
         working-directory: apps/api
         run: npm ci || npm i
@@ -53,13 +55,15 @@ jobs:
           npx prisma generate
           npx prisma migrate deploy
           npm run seed || true
+      - name: Build web
+        run: npm run build:web
       - name: Start API
         working-directory: apps/api
         run: |
-          nohup npm run start:prod >/tmp/api.log 2>&1 &
+          nohup npm run start >/tmp/api.log 2>&1 &
           sleep 8
           curl -fsS http://127.0.0.1:3000/health
       - name: Smoke
-        run: |
-          sudo apt-get update && sudo apt-get install -y jq
-          ADMIN_EMAIL="$ADMIN_EMAIL" ADMIN_PASSWORD="$ADMIN_PASSWORD" API_BASE="http://127.0.0.1:3000" bash scripts/ci_validate.sh
+        env:
+          QA_API_URL: http://127.0.0.1:3000/api
+        run: npm run qa:smoke

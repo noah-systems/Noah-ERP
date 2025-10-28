@@ -4,7 +4,7 @@
     "declaration": false,
     "types": ["node"],
     "lib": ["ES2022"],
-    "moduleResolution": "node",
+    "moduleResolution": "NodeNext",
     "outDir": "./dist"
   },
   "include": ["src/**/*"]

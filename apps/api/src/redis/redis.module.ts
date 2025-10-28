@@ -1,6 +1,6 @@
 import { Global, Module } from '@nestjs/common';
-import Redis from 'ioredis';
-import { resolveRedisUrl } from './redis.config';
+import { Redis } from 'ioredis';
+import { resolveRedisUrl } from './redis.config.js';
 
 export const REDIS_TOKEN = 'REDIS_CLIENT';
 

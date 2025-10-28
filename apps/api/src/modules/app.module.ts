@@ -1,18 +1,18 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { RedisModule } from '../redis/redis.module';
-import { JwtModule } from './jwt/jwt.module';
-import { PrismaService } from '../prisma/prisma.service';
-import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
-import { LeadsModule } from './leads/leads.module';
-import { OppsModule } from './opps/opps.module';
-import { ImplModule } from './impl/impl.module';
-import { PricingModule } from './pricing/pricing.module';
-import { PartnerModule } from './partner/partner.module';
-import { WorkerModule } from './worker/worker.module';
-import { RateLimitGuard } from './auth/rate-limit.guard';
-import { HealthController } from '../health/health.controller';
+import { RedisModule } from '../redis/redis.module.js';
+import { JwtModule } from './jwt/jwt.module.js';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { AuthModule } from './auth/auth.module.js';
+import { UsersModule } from './users/users.module.js';
+import { LeadsModule } from './leads/leads.module.js';
+import { OppsModule } from './opps/opps.module.js';
+import { ImplModule } from './impl/impl.module.js';
+import { PricingModule } from './pricing/pricing.module.js';
+import { PartnerModule } from './partner/partner.module.js';
+import { WorkerModule } from './worker/worker.module.js';
+import { RateLimitGuard } from './auth/rate-limit.guard.js';
+import { HealthController } from '../health/health.controller.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 

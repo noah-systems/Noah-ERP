@@ -1,8 +1,8 @@
 import 'reflect-metadata';
 import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './modules/app.module';
-import { LoggingInterceptor } from './interceptors/logging.interceptor';
+import { AppModule } from './modules/app.module.js';
+import { LoggingInterceptor } from './interceptors/logging.interceptor.js';
 
 type BasicResponse = {
   setHeader(name: string, value: string): void;

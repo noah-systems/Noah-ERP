@@ -1,7 +1,7 @@
 import { Controller, Get, Inject, Logger } from '@nestjs/common';
-import type Redis from 'ioredis';
-import { PrismaService } from '../prisma/prisma.service';
-import { REDIS_TOKEN } from '../redis/redis.module';
+import type { Redis as RedisClient } from 'ioredis';
+import { PrismaService } from '../prisma/prisma.service.js';
+import { REDIS_TOKEN } from '../redis/redis.module.js';
 
 type HealthStatus = 'up' | 'down';
 
@@ -9,7 +9,7 @@ type HealthStatus = 'up' | 'down';
 export class HealthController {
   constructor(
     private readonly prisma: PrismaService,
-    @Inject(REDIS_TOKEN) private readonly redis: Redis,
+    @Inject(REDIS_TOKEN) private readonly redis: RedisClient,
   ) {}
 
   private readonly logger = new Logger(HealthController.name);

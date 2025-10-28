@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import type { Role } from '@prisma/client';
-import { JwtService } from '../jwt/jwt.service';
+import { JwtService } from '../jwt/jwt.service.js';
 
 type HttpRequest = {
   headers?: Record<string, string | string[] | undefined>;

@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ImplStatus, Prisma } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service';
-import { UpdateImplementationDto } from './impl.dto';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { UpdateImplementationDto } from './impl.dto.js';
 
 @Injectable()
 export class ImplService {
