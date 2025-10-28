@@ -23,8 +23,13 @@ export class ApiError extends Error {
   }
 }
 
+const apiBase =
+  (import.meta.env.VITE_API_URL as string | undefined)?.trim() ||
+  (import.meta.env.VITE_API_BASE as string | undefined)?.trim() ||
+  "/api";
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE || "/api",
+  baseURL: apiBase,
   withCredentials: true,
 });
 

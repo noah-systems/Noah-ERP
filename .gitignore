@@ -1,6 +1,7 @@
 # Node/Build
 node_modules/
 dist/
+.pm2/
 build/
 .vite/
 .next/
@@ -12,6 +13,7 @@ coverage/
 .cache/
 
 # Env/Segredos
+.env
 .env.*
 !.env.example
 !.env.production
@@ -24,15 +26,6 @@ logs/
 .idea/
 .vscode/
 Thumbs.db
-
-# Docker/Certbot
-docker/letsencrypt/
-docker/certbot/
-docker/certbot-webroot/*
-!docker/certbot-webroot/.gitkeep
-acme.json
-certbot-webroot/*
-!certbot-webroot/.gitkeep
 
 # Prisma
 prisma/*-journal
@@ -50,7 +43,7 @@ public/brand/*
 *.zip
 *.tar
 *.tgz
-!vendor/*.tgz
+vendor/
 *.gz
 *.webp
 *.mp4

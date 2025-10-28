@@ -127,6 +127,7 @@ log "Preparing frontend .env"
 cd "${REPO_DIR}"
 [ -f ".env" ] || cp -f .env.example .env || true
 set_kv(){ local K="$1" V="$2"; grep -q "^${K}=" .env && sed -i "s|^${K}=.*|${K}=${V}|" .env || echo "${K}=${V}" >> .env; }
+set_kv VITE_API_URL "https://${DOMAIN_API}/api"
 set_kv VITE_API_BASE "https://${DOMAIN_API}/api"
 set_kv VITE_NOAH_FAVICON ""
 set_kv VITE_NOAH_APPLE_TOUCH ""

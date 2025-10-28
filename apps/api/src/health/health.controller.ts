@@ -1,18 +1,52 @@
-import { Controller, Get } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Controller, Get, Inject, Logger } from '@nestjs/common';
+import type Redis from 'ioredis';
+import { PrismaService } from '../prisma/prisma.service';
+import { REDIS_TOKEN } from '../redis/redis.module';
 
-const prisma = new PrismaClient();
+type HealthStatus = 'up' | 'down';
 
-@Controller('health')
+@Controller()
 export class HealthController {
-  @Get()
-  ok() {
-    return { ok: true, ts: new Date().toISOString() };
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject(REDIS_TOKEN) private readonly redis: Redis,
+  ) {}
+
+  private readonly logger = new Logger(HealthController.name);
+
+  @Get(['health', 'api/health'])
+  async getHealth() {
+    const [db, redis] = await Promise.all([this.checkDatabase(), this.checkRedis()]);
+    return {
+      ok: db === 'up' && redis === 'up',
+      api: 'up' as const,
+      db,
+      redis,
+      time: new Date().toISOString(),
+    };
   }
 
-  @Get('db')
-  async db() {
-    await prisma.$queryRaw`SELECT 1`;
-    return { db: 'ok' };
+  private async checkDatabase(): Promise<HealthStatus> {
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      return 'up';
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.warn(`Database check failed: ${error.message}`);
+      }
+      return 'down';
+    }
+  }
+
+  private async checkRedis(): Promise<HealthStatus> {
+    try {
+      await this.redis.ping();
+      return 'up';
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.warn(`Redis check failed: ${error.message}`);
+      }
+      return 'down';
+    }
   }
 }

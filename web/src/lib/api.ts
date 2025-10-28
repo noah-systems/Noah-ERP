@@ -1,4 +1,7 @@
-export const API_BASE = import.meta.env.VITE_API_BASE || '/api';
+export const API_BASE =
+  (import.meta.env.VITE_API_URL as string | undefined)?.trim() ||
+  (import.meta.env.VITE_API_BASE as string | undefined)?.trim() ||
+  '/api';
 const rawMock = import.meta.env.VITE_MOCK;
 export const USE_MOCK =
   rawMock === undefined || rawMock === null
