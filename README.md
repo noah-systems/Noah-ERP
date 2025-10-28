@@ -2,37 +2,42 @@
 
 ERP da Noah Omni com frontend em Vite/React e API em NestJS/Prisma.
 
-## Passo a passo
+## Requisitos
 
-1. Ajuste variáveis de ambiente (exemplos em `.env.example` e `apps/api/.env.example`):
-   - `DATABASE_URL`
-   - `REDIS_URL`
-   - `JWT_SECRET`
-   - `FRONTEND_ORIGIN`
-   - `ADMIN_NAME`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`
-2. Instale as dependências:
+- Node.js >= 20 (recomendado utilizar `nvm` ou pacote oficial do Rocky 9)
+- PostgreSQL 14+ acessível em `localhost:5432`
+- Redis 6+ (opcional, mas recomendado para filas e cache)
+
+## Configuração sem Docker
+
+1. Copie o arquivo `.env.example` para `.env` e ajuste as variáveis obrigatórias (`DATABASE_URL`, `JWT_SECRET`, credenciais do admin e host/porta do Redis).
+2. Instale as dependências do monorepo:
    ```bash
    npm ci
-   npm ci --prefix apps/api
    ```
-3. Gere o client Prisma e aplique migrations:
+3. Gere o client Prisma apontando para o schema em `prisma/schema.prisma`:
    ```bash
-   npx prisma generate
-   npx prisma migrate deploy
-   node prisma/seed.js # opcional (cria usuário admin)
+   npm run prisma:generate
    ```
-4. Build do frontend:
+4. Aplique as migrations no banco configurado (a base pode estar vazia):
+   ```bash
+   npm run prisma:migrate
+   ```
+   Execute `node prisma/seed.js` caso deseje criar o usuário administrador padrão.
+5. Faça o build do frontend e da API:
    ```bash
    npm run build:web
+   npm run build:api
    ```
-5. Build da API:
+6. Suba a API já compilada (idealmente atrás do PM2) e teste o endpoint `/health`:
    ```bash
-   cd apps/api
-   npm run build
+   pm2 start npm --name noah-api -- run start:api
+   curl http://localhost:3001/health
    ```
-6. Smoke test (API deve estar rodando e DATABASE_URL configurada):
-   ```bash
-   npm run qa:smoke
-   ```
+7. O frontend compilado fica em `dist/` e pode ser servido pelo Nginx apontando `/api` para a API Node.
 
-A API sobe com `npm run start` dentro de `apps/api` (utilize PM2 em produção) e o frontend gerado em `dist/` pode ser servido via Nginx apontando `/api` para a API.
+Para validar rapidamente a instalação, utilize o smoke test Playwright (exige API e banco funcionando):
+
+```bash
+npm run qa:smoke
+```
