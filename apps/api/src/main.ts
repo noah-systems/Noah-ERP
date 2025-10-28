@@ -60,12 +60,12 @@ async function bootstrap() {
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
 
-  await app.listen(process.env.PORT || 3000, '0.0.0.0');
+  const rawPort = process.env.API_PORT || process.env.PORT || '3001';
+  const port = Number(rawPort) || 3001;
+
+  await app.listen(port, '0.0.0.0');
 
   logger.log(`CORS origins: ${effectiveOrigins.join(', ') || '(none)'}`);
-  const server = app.getHttpServer();
-  const address = server.address();
-  const port = typeof address === 'object' && address ? address.port : process.env.PORT || 3000;
   logger.log(`API up on :${port}`);
 }
 

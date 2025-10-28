@@ -170,7 +170,7 @@ const raw = {
 };
 
 const theme =
-  env('VITE_NOAH_THEME_COLOR') || env('VITE_THEME_COLOR') || env('NEXT_PUBLIC_THEME_COLOR') || '#C3FF00';
+  env('VITE_NOAH_THEME_COLOR') || env('VITE_THEME_COLOR') || env('NEXT_PUBLIC_THEME_COLOR') || '#0ea5e9';
 
 export const BRAND = {
   ...raw,

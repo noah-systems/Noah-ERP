@@ -8,10 +8,14 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
   async onModuleInit() {
     try {
       await this.$connect();
+      this.logger.log('Connected to the database.');
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
-      this.logger.error(`Failed to connect to the database on startup: ${reason}`);
-      this.logger.warn('Continuing without an active database connection; some features may be unavailable.');
+      this.logger.error('Failed to connect to the database on startup.');
+      this.logger.error(`Check DATABASE_URL and database credentials: ${reason}`);
+      // Throwing the error ensures the NestJS bootstrap fails with exit code 1 so
+      // process managers (PM2/systemd) can restart the service once the database is available.
+      throw error instanceof Error ? error : new Error(reason);
     }
   }
   async enableShutdownHooks(app: INestApplication) {
