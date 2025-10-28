@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { OppsService } from './opps.service';
-import { OppsController } from './opps.controller';
-import { PrismaService } from '../../prisma/prisma.service';
-import { WorkerModule } from '../worker/worker.module';
-import { AuthModule } from '../auth/auth.module';
+import { OppsService } from './opps.service.js';
+import { OppsController } from './opps.controller.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { WorkerModule } from '../worker/worker.module.js';
+import { AuthModule } from '../auth/auth.module.js';
 
 @Module({
   imports: [WorkerModule, AuthModule],

@@ -1,10 +1,10 @@
 import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
-import { ImplService } from './impl.service';
-import { UpdateImplementationDto } from './impl.dto';
-import { JwtAuthGuard } from '../auth/jwt.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
-import { Role } from '../auth/roles.enum';
+import { ImplService } from './impl.service.js';
+import { UpdateImplementationDto } from './impl.dto.js';
+import { JwtAuthGuard } from '../auth/jwt.guard.js';
+import { RolesGuard } from '../auth/roles.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
+import { Role } from '../auth/roles.enum.js';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN_NOAH, Role.SUPPORT_NOAH)

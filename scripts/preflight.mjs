@@ -22,10 +22,19 @@ if (!pkgRaw) {
 } else {
   try {
     const pkg = JSON.parse(pkgRaw);
-    const overrides = pkg.overrides || {};
-    add("Override axios 1.7.9", overrides.axios === "1.7.9", 'Adicione "overrides": { "axios": "1.7.9" }');
+    const dependencies = pkg.dependencies || {};
+    add(
+      'Dependência axios ^1.7.9',
+      typeof dependencies.axios === 'string' && dependencies.axios.startsWith('^1.7.9'),
+      'Defina "axios": "^1.7.9" em dependencies',
+    );
     const scripts = pkg.scripts || {};
-    add("Script qa:smoke", typeof scripts["qa:smoke"] === "string", 'Adicione "qa:smoke": "bash scripts/qa-smoke.sh"');
+    add(
+      'Script qa:smoke Node',
+      scripts['qa:smoke'] === 'node scripts/qa-smoke.mjs',
+      'Adicione "qa:smoke": "node scripts/qa-smoke.mjs"',
+    );
+    add('Script prepare é true', scripts.prepare === 'true', 'Configure "prepare": "true"');
   } catch (error) {
     add("package.json parseável", false, error.message);
   }
@@ -37,8 +46,8 @@ add(".env.production define VITE_API_URL", /VITE_API_URL\s*=/.test(envProd), "De
 
 // PM2 ecosystem
 add(
-  "apps/api/ecosystem.config.js existe",
-  exists(join("apps", "api", "ecosystem.config.js")),
+  "apps/api/ecosystem.config.cjs existe",
+  exists(join("apps", "api", "ecosystem.config.cjs")),
   "Crie o arquivo de configuração do PM2"
 );
 
@@ -48,10 +57,10 @@ add("Health controller expõe /health", /@Get\(\[\'health\'/.test(healthControll
 
 // QA smoke script executável
 try {
-  const stat = fs.statSync(join("scripts", "qa-smoke.sh"));
-  add("scripts/qa-smoke.sh executável", !!(stat.mode & 0o111), "Use chmod +x scripts/qa-smoke.sh");
+  const stat = fs.statSync(join("scripts", "qa-smoke.mjs"));
+  add("scripts/qa-smoke.mjs executável", !!(stat.mode & 0o111), "Use chmod +x scripts/qa-smoke.mjs");
 } catch {
-  add("scripts/qa-smoke.sh presente", false, "Crie o script de smoke test");
+  add("scripts/qa-smoke.mjs presente", false, "Crie o script de smoke test em Node/Playwright");
 }
 
 // Report

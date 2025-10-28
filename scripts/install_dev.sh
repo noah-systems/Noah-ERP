@@ -36,7 +36,7 @@ success "Cliente Prisma gerado."
 
 if [ -n "${DATABASE_URL:-}" ]; then
   info "Aplicando migrations no banco apontado em DATABASE_URL"
-  npm --prefix apps/api run prisma:migrate
+npm --prefix apps/api run prisma:migrate:deploy
   success "Migrations aplicadas."
 else
   warn "DATABASE_URL não definido; pule migrations/seed conforme necessário."
@@ -61,6 +61,6 @@ success "Front compilado."
 cat <<'MSG'
 
 Ambiente pronto! Execute, em terminais separados:
-  npm --prefix apps/api run build && npm --prefix apps/api run start:prod   # API NestJS (http://localhost:3000/api)
-  npm run dev                           # Front (http://localhost:5173)
+  npm --prefix apps/api run build && npm --prefix apps/api run start   # API NestJS (http://localhost:3000/api)
+  npm run dev:web                       # Front (http://localhost:5173)
 MSG

@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Job, JobsOptions, Queue, Worker } from 'bullmq';
-import IORedis from 'ioredis';
-import { resolveRedisUrl } from '../../redis/redis.config';
+import { Redis as IORedis } from 'ioredis';
+import { resolveRedisUrl } from '../../redis/redis.config.js';
 
 type JobName = 'trial-dminus5' | 'trial-end';
 

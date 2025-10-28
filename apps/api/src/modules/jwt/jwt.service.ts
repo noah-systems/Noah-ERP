@@ -1,6 +1,6 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { createHmac, timingSafeEqual } from 'crypto';
-import { JWT_SECRET_TOKEN } from './jwt.constants';
+import { JWT_SECRET_TOKEN } from './jwt.constants.js';
 
 function base64UrlEncode(input: string): string {
   return Buffer.from(input).toString('base64url');

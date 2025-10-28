@@ -1,15 +1,15 @@
 import { Body, Controller, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { PartnerService } from './partner.service';
+import { PartnerService } from './partner.service.js';
 import {
   CreateChangeRequestDto,
   CreatePartnerAccountDto,
   CreatePartnerDto,
   ResolveChangeDto,
-} from './partner.dto';
-import { JwtAuthGuard } from '../auth/jwt.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
-import { Role } from '../auth/roles.enum';
+} from './partner.dto.js';
+import { JwtAuthGuard } from '../auth/jwt.guard.js';
+import { RolesGuard } from '../auth/roles.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
+import { Role } from '../auth/roles.enum.js';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller()

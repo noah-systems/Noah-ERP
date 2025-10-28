@@ -1,13 +1,13 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { LeadsService } from './leads.service';
+import { LeadsService } from './leads.service.js';
 import {
   CreateLeadDto,
   UpdateLeadStatusDto,
-} from './leads.dto';
-import { JwtAuthGuard } from '../auth/jwt.guard';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
-import { Role } from '../auth/roles.enum';
+} from './leads.dto.js';
+import { JwtAuthGuard } from '../auth/jwt.guard.js';
+import { RolesGuard } from '../auth/roles.guard.js';
+import { Roles } from '../auth/roles.decorator.js';
+import { Role } from '../auth/roles.enum.js';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.ADMIN_NOAH, Role.SUPPORT_NOAH, Role.SELLER)

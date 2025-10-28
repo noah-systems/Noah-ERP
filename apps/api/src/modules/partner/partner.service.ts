@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PartnerAccountStatus, Prisma } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service.js';
 import {
   CreateChangeRequestDto,
   CreatePartnerAccountDto,
   CreatePartnerDto,
   ResolveChangeDto,
-} from './partner.dto';
+} from './partner.dto.js';
 
 const toJsonInput = (
   value?: unknown

@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service';
-import { WorkerService } from '../worker/worker.service';
+import { PrismaService } from '../../prisma/prisma.service.js';
+import { WorkerService } from '../worker/worker.service.js';
 import {
   ApplyPricingDto,
   CreateOpportunityDto,
   MarkOpportunityLostDto,
   UpdateOppStageDto,
-} from './opps.dto';
+} from './opps.dto.js';
 
 @Injectable()
 export class OppsService {

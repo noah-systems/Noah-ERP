@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Channel, Prisma } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service.js';
 import {
   CreateDiscountPolicyDto,
   CreatePriceItemDto,
   CreatePriceTierDto,
-} from './pricing.dto';
+} from './pricing.dto.js';
 
 @Injectable()
 export class PricingService {
