@@ -5,11 +5,11 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "start:prod": "node dist/main.js",
-    "prisma:generate": "prisma generate --schema ../prisma/schema.prisma",
-    "prisma:migrate": "prisma migrate deploy --schema ../prisma/schema.prisma",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:push": "prisma db push",
     "prisma:seed": "node ../prisma/seed.js",
-    "seed": "npm run prisma:seed",
-    "postinstall": "node -e \"const fs=require('fs'), cp=require('child_process'); if(fs.existsSync('scripts/install-redis-shim.js')) cp.execSync('node scripts/install-redis-shim.js',{stdio:'inherit'})\""
+    "seed": "npm run prisma:seed"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

@@ -1,4 +1,7 @@
-const base = (import.meta.env.VITE_API_BASE as string) || '/api';
+const base =
+  (import.meta.env.VITE_API_URL as string | undefined)?.trim() ||
+  (import.meta.env.VITE_API_BASE as string | undefined)?.trim() ||
+  '/api';
 export const API_BASE = base.replace(/\/+$/, '');
 
 const rawMock = import.meta.env.VITE_MOCK;

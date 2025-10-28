@@ -1,6 +1,7 @@
 import { existsSync } from 'fs';
 
-const DEFAULT_HOST = 'redis';
+const LOCALHOST = '127.0.0.1';
+const DOCKER_HOST = 'redis';
 const DEFAULT_PORT = '6379';
 const DOCKER_SENTINEL = '/.dockerenv';
 
@@ -25,12 +26,16 @@ function buildRedisUrl(host: string, port: string) {
   return `redis://${host}:${port}`;
 }
 
+function defaultHost() {
+  return isRunningInDocker() ? DOCKER_HOST : LOCALHOST;
+}
+
 export function resolveRedisUrl() {
   const host = process.env.REDIS_HOST;
   const port = process.env.REDIS_PORT;
 
   if (host || port) {
-    const resolvedHost = host || DEFAULT_HOST;
+    const resolvedHost = host || defaultHost();
     const resolvedPort = port || DEFAULT_PORT;
     return buildRedisUrl(resolvedHost, resolvedPort);
   }
@@ -40,7 +45,7 @@ export function resolveRedisUrl() {
     try {
       const parsed = new URL(explicitUrl);
       if (isRunningInDocker() && isLoopback(parsed.hostname)) {
-        return buildRedisUrl(DEFAULT_HOST, parsed.port || DEFAULT_PORT);
+        return buildRedisUrl(DOCKER_HOST, parsed.port || DEFAULT_PORT);
       }
     } catch (_err) {
       // Se a URL for inválida, seguimos para o fallback padrão.
@@ -49,5 +54,5 @@ export function resolveRedisUrl() {
     return explicitUrl;
   }
 
-  return buildRedisUrl(DEFAULT_HOST, DEFAULT_PORT);
+  return buildRedisUrl(defaultHost(), DEFAULT_PORT);
 }

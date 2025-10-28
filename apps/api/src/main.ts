@@ -1,10 +1,8 @@
 import 'reflect-metadata';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './modules/app.module';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
-
-const DEFAULT_ALLOWED_ORIGINS = ['https://erp.noahomni.com.br'];
 
 type BasicResponse = {
   setHeader(name: string, value: string): void;
@@ -36,6 +34,13 @@ async function bootstrap() {
     app.flushLogs();
   }
 
+  app.setGlobalPrefix('api', {
+    exclude: [
+      { path: 'health', method: RequestMethod.ALL },
+      { path: 'api/health', method: RequestMethod.ALL },
+    ],
+  });
+
   const instance = app.getHttpAdapter().getInstance?.();
   if (instance?.disable) {
     instance.disable('x-powered-by');
@@ -45,19 +50,19 @@ async function bootstrap() {
   app.useGlobalInterceptors(new LoggingInterceptor(new Logger('HTTP')));
   await app.enableShutdownHooks();
 
-  const corsEnv = process.env.CORS_ORIGINS || '';
-  const origins = corsEnv
+  const frontendOriginEnv = process.env.FRONTEND_ORIGIN || '';
+  const allowedOrigins = frontendOriginEnv
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
-  const allowedOrigins = origins.length ? origins : DEFAULT_ALLOWED_ORIGINS;
-  app.enableCors({ origin: allowedOrigins, credentials: true });
+  const effectiveOrigins = allowedOrigins.length ? allowedOrigins : ['http://localhost'];
+  app.enableCors({ origin: effectiveOrigins, credentials: true });
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
 
   await app.listen(process.env.PORT || 3000, '0.0.0.0');
 
-  logger.log(`CORS origins: ${allowedOrigins.join(', ') || '(none)'}`);
+  logger.log(`CORS origins: ${effectiveOrigins.join(', ') || '(none)'}`);
   const server = app.getHttpServer();
   const address = server.address();
   const port = typeof address === 'object' && address ? address.port : process.env.PORT || 3000;
