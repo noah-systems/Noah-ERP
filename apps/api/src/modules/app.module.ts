@@ -14,10 +14,21 @@ import { WorkerModule } from './worker/worker.module.js';
 import { RateLimitGuard } from './auth/rate-limit.guard.js';
 import { HealthController } from '../health/health.controller.js';
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const DEFAULT_JWT_SECRET = 'insecure-development-secret';
+
+const JWT_SECRET =
+  process.env.JWT_SECRET ??
+  (process.env.NODE_ENV === 'production' ? undefined : DEFAULT_JWT_SECRET);
 
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required for the API to start.');
+}
+
+if (!process.env.JWT_SECRET) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    'JWT_SECRET environment variable is not defined. Using an insecure development fallback secret.',
+  );
 }
 
 @Module({
