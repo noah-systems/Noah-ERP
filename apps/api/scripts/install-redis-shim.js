@@ -30,7 +30,7 @@ if (shouldWrite) {
   const shimPackage = {
     name: '@liaoliaots/nestjs-redis',
     version: '0.0.0-noah-shim',
-    description: 'Runtime shim gerado automaticamente para Docker',
+    description: 'Runtime shim gerado automaticamente para ambientes sem Docker',
     main: 'index.js',
     typings: 'index.d.ts',
   };
@@ -43,7 +43,7 @@ const indexJs = `'use strict';
 const { Global, Inject, Module } = require('@nestjs/common');
 const Redis = require('ioredis');
 
-const DEFAULT_HOST = 'redis';
+const DEFAULT_HOST = '127.0.0.1';
 const DEFAULT_PORT = '6379';
 const REDIS_TOKEN = 'REDIS_CLIENT';
 
