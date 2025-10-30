@@ -1,0 +1,4 @@
+CREATE DATABASE IF NOT EXISTS noah_erp;
+CREATE USER IF NOT EXISTS 'noah_user'@'localhost' IDENTIFIED BY 'q@9dlyU0AAJ9';
+GRANT ALL PRIVILEGES ON noah_erp.* TO 'noah_user'@'localhost';
+FLUSH PRIVILEGES;
