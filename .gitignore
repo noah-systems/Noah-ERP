@@ -56,5 +56,6 @@ vendor/
 # Legado/compat
 api/.env
 !apps/api/.env
+!apps/web/.env.production
 api/prisma/.env
 prisma/.env
