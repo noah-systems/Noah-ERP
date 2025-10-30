@@ -9,6 +9,7 @@ DB_USER="noah_user"
 DB_PASS="q@9dlyU0AAJ9"
 ADMIN_PASS="D2W3£Qx!0Du#"
 APP_URL="erp.noahomni.com.br"
+DOMAIN="${APP_URL}"
 
 # Instalar dependências do sistema
 apt update && apt upgrade -y
@@ -33,7 +34,6 @@ php composer.phar install --no-dev --optimize-autoloader
 
 # Instalar dependências Node.js
 npm install
-npm run build
 
 # Configurar ambiente
 cp .env.example .env
@@ -83,5 +83,57 @@ use Illuminate\\Support\\Facades\\Hash;
 \$user->email_verified_at = now();
 \$user->save();
 "
+
+# Configurar SSL com Certbot
+echo "Instalando e configurando SSL..."
+apt install -y certbot python3-certbot-nginx
+certbot --nginx -d ${DOMAIN} --non-interactive --agree-tos -m admin@${DOMAIN} --redirect
+
+# Configurar permissões corretas
+echo "Configurando permissões..."
+chown -R www-data:www-data /var/www/${DOMAIN}
+chmod -R 755 /var/www/${DOMAIN}
+chmod -R 775 /var/www/${DOMAIN}/storage
+chmod -R 775 /var/www/${DOMAIN}/bootstrap/cache
+
+# Configurar Cron Jobs
+echo "Configurando agendadores..."
+(crontab -l 2>/dev/null; echo "* * * * * cd /var/www/${DOMAIN} && php artisan schedule:run >> /dev/null 2>&1") | crontab -
+
+# Configurar Supervisor para Queues
+echo "Configurando filas..."
+apt install -y supervisor
+
+cat > /etc/supervisor/conf.d/noah-erp.conf << EOF
+[program:noah-erp-worker]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/${DOMAIN}/artisan queue:work --sleep=3 --tries=3
+autostart=true
+autorestart=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/var/www/${DOMAIN}/storage/logs/worker.log
+EOF
+
+supervisorctl reread
+supervisorctl update
+supervisorctl start all
+
+# Build do Frontend
+echo "Build do frontend..."
+npm run build
+
+# Configurar Redis (se necessário)
+echo "Configurando Redis..."
+apt install -y redis-server
+systemctl enable redis-server
+systemctl start redis-server
+
+# Configurar Firewall
+echo "Configurando firewall..."
+ufw allow ssh
+ufw allow 'Nginx Full'
+ufw --force enable
 
 echo "Instalação concluída! Acesse: https://${APP_URL}"
