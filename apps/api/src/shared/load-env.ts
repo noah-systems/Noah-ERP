@@ -1,28 +1,51 @@
 import path from 'node:path';
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
-const PROJECT_ROOT = process.cwd();
+const THIS_DIR = path.dirname(fileURLToPath(import.meta.url));
+const API_ROOT = path.resolve(THIS_DIR, '..', '..');
+const APPS_DIR = path.dirname(API_ROOT);
+const WORKSPACE_ROOT = path.dirname(APPS_DIR);
 
-const CANDIDATE_ENV_FILES = (() => {
-  const overrides: string[] = [];
-  const explicitPath = process.env.NOAH_ENV_FILE?.trim();
-  if (explicitPath) {
-    overrides.push(explicitPath);
-  }
-
+const DEFAULT_ENV_BASENAMES = (() => {
   const env = process.env.NODE_ENV?.trim();
   if (env === 'production') {
-    overrides.push('.env.production');
+    return ['.env.production', '.env'];
   }
-
-  overrides.push('.env');
-
-  return overrides;
+  return ['.env'];
 })();
 
-function resolveCandidate(file: string) {
-  return path.isAbsolute(file) ? file : path.join(PROJECT_ROOT, file);
+function resolveExplicitPath(value: string) {
+  return path.isAbsolute(value) ? value : path.resolve(process.cwd(), value);
 }
+
+const CANDIDATE_ENV_FILES = (() => {
+  const seen = new Set<string>();
+  const results: string[] = [];
+
+  const explicitPath = process.env.NOAH_ENV_FILE?.trim();
+  if (explicitPath) {
+    const resolved = resolveExplicitPath(explicitPath);
+    results.push(resolved);
+    seen.add(resolved);
+  }
+
+  const searchRoots = [API_ROOT, APPS_DIR, WORKSPACE_ROOT, process.cwd()];
+  for (const root of searchRoots) {
+    if (!root) {
+      continue;
+    }
+    for (const basename of DEFAULT_ENV_BASENAMES) {
+      const candidate = path.resolve(root, basename);
+      if (!seen.has(candidate)) {
+        seen.add(candidate);
+        results.push(candidate);
+      }
+    }
+  }
+
+  return results;
+})();
 
 function stripQuotes(value: string) {
   const trimmed = value.trim();
@@ -65,12 +88,15 @@ function applyEnvLine(line: string) {
 }
 
 function loadEnvFile(file: string) {
-  const resolved = resolveCandidate(file);
-  if (!fs.existsSync(resolved)) {
+  if (!file) {
     return;
   }
 
-  const contents = fs.readFileSync(resolved, 'utf8');
+  if (!fs.existsSync(file)) {
+    return;
+  }
+
+  const contents = fs.readFileSync(file, 'utf8');
   for (const line of contents.split(/\r?\n/)) {
     applyEnvLine(line);
   }
