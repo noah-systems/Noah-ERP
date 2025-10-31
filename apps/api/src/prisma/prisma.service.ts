@@ -18,7 +18,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       throw error instanceof Error ? error : new Error(reason);
     }
   }
-  async enableShutdownHooks(app: INestApplication) {
+  enableShutdownHooks(app: INestApplication): void {
     process.on('beforeExit', async () => {
       await app.close();
     });
