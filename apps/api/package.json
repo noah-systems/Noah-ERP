@@ -4,9 +4,11 @@
   "type": "module",
   "main": "dist/main.js",
   "scripts": {
+    "prebuild": "npm run prisma:generate",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
-    "prisma:generate": "prisma generate",
+    "start:prod": "npm run build && npm run start",
+    "prisma:generate": "node ./scripts/prisma-generate.mjs",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:push": "prisma db push",
     "prisma:seed": "node ../../prisma/seed.js",
