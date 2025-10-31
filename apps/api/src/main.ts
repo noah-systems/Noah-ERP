@@ -1,3 +1,4 @@
+import './shared/load-env.js';
 import 'reflect-metadata';
 import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
