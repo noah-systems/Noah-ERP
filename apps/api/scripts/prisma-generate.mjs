@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, delimiter } from 'node:path';
 import { existsSync } from 'node:fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -12,7 +12,18 @@ const prismaBin = existsSync(join(binDir, binName)) ? join(binDir, binName) : bi
 
 const child = spawn(prismaBin, ['generate'], {
   stdio: 'inherit',
-  env: { ...process.env },
+  env: {
+    ...process.env,
+    PRISMA_GENERATE_SKIP_AUTOINSTALL: 'true',
+    PRISMA_ENGINES_CHECKSUM_IGNORE_MISSING: '1',
+    PRISMA_GENERATE_NO_ENGINE: 'true',
+    NODE_PATH: [
+      join(projectRoot, 'node_modules'),
+      process.env.NODE_PATH,
+    ]
+      .filter(Boolean)
+      .join(delimiter),
+  },
   shell: process.platform === 'win32',
   cwd: projectRoot,
 });
