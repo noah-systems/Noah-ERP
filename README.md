@@ -31,6 +31,17 @@ Para um deploy manual completo (sem Docker) recomenda-se garantir os seguintes c
 6. **Serviços de backend:** inicie a API compilada (ex.: `pm2 start npm --name noah-api -- run start:api`), configure o worker de filas (BullMQ/Redis) e habilite os cron jobs necessários.
 7. **Servidor web:** sirva o diretório `dist/` com Nginx (ou outro servidor de sua preferência) e encaminhe `/api` para a API Node.
 
+### Script rápido para PostgreSQL e Redis
+
+Para provisionar rapidamente o banco PostgreSQL, o usuário `noah_user` e uma instância Redis local, execute o script [`scripts/setup_postgres_redis.sh`](./scripts/setup_postgres_redis.sh) em uma máquina Debian/Ubuntu recém-provisionada. Ele irá:
+
+- Criar o usuário e banco `noah_erp` com permissões completas.
+- Instalar, habilitar e iniciar o serviço Redis via `systemd`.
+- Validar as conexões executando `SELECT 1` no PostgreSQL e `PING` no Redis.
+- Rodar `npx prisma db push` a partir do diretório `/var/www/erp.noahomni.com.br/apps/api` para aplicar o schema Prisma.
+
+> ⚠️ Revise o script antes de rodar em produção e ajuste caminhos ou credenciais caso seu ambiente possua requisitos diferentes.
+
 ## Uso do Docker (opcional)
 
 O projeto foi ajustado para funcionar integralmente em ambientes tradicionais LEMP. Caso prefira executar com Docker, utilize sua stack/containerização de preferência configurando manualmente os serviços de banco de dados, Redis e Node.js. A equipe mantém o foco no deploy bare-metal, portanto valide seus manifests antes de utilizar em produção.
