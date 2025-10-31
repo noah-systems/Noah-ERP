@@ -1,5 +1,5 @@
 #!/bin/bash
-# Script de instalação manual do Noah-ERP
+# Script legado de instalação manual do Noah-ERP (stack PHP). Mantido apenas para referência histórica.
 echo "Instalando Noah-ERP..."
 
 # Configurações
