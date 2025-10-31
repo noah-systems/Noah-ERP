@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
   private readonly logger = new Logger(PrismaService.name);
+  private shutdownHooksRegistered = false;
 
   async onModuleInit() {
     try {
@@ -19,6 +20,12 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     }
   }
   enableShutdownHooks(app: INestApplication): void {
+    if (this.shutdownHooksRegistered) {
+      return;
+    }
+
+    this.shutdownHooksRegistered = true;
+
     process.on('beforeExit', async () => {
       await app.close();
     });
