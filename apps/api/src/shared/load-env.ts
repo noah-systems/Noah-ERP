@@ -123,13 +123,16 @@ function buildDatabaseUrlFromPieces(): string | undefined {
   const host = firstNonEmpty(['DATABASE_HOST', 'DB_HOST', 'POSTGRES_HOST', 'PGHOST'], '127.0.0.1');
   const port = firstNonEmpty(['DATABASE_PORT', 'DB_PORT', 'POSTGRES_PORT', 'PGPORT'], '5432');
   const database = firstNonEmpty(
-    ['DATABASE_NAME', 'DB_NAME', 'POSTGRES_DB', 'PGDATABASE'],
+    ['DATABASE_NAME', 'DB_NAME', 'DB_DATABASE', 'POSTGRES_DB', 'PGDATABASE'],
     'postgres',
   );
-  const user = firstNonEmpty(['DATABASE_USER', 'DB_USER', 'POSTGRES_USER', 'PGUSER'], 'postgres');
-  const password = firstNonEmpty(
-    ['DATABASE_PASSWORD', 'DB_PASSWORD', 'POSTGRES_PASSWORD', 'PGPASSWORD'],
+  const user = firstNonEmpty(
+    ['DATABASE_USER', 'DB_USER', 'DB_USERNAME', 'POSTGRES_USER', 'PGUSER'],
     'postgres',
+  );
+  const password = firstNonEmpty(
+    ['DATABASE_PASSWORD', 'DB_PASSWORD', 'DB_PASS', 'POSTGRES_PASSWORD', 'PGPASSWORD'],
+    '',
   );
   const schema = firstNonEmpty(['DATABASE_SCHEMA', 'DB_SCHEMA'], 'public');
 
