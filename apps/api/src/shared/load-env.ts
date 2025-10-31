@@ -105,3 +105,48 @@ function loadEnvFile(file: string) {
 for (const candidate of CANDIDATE_ENV_FILES) {
   loadEnvFile(candidate);
 }
+
+function firstNonEmpty(keys: string[], fallback: string): string {
+  for (const key of keys) {
+    const value = process.env[key];
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed) {
+        return trimmed;
+      }
+    }
+  }
+  return fallback;
+}
+
+function buildDatabaseUrlFromPieces(): string | undefined {
+  const host = firstNonEmpty(['DATABASE_HOST', 'DB_HOST', 'POSTGRES_HOST', 'PGHOST'], '127.0.0.1');
+  const port = firstNonEmpty(['DATABASE_PORT', 'DB_PORT', 'POSTGRES_PORT', 'PGPORT'], '5432');
+  const database = firstNonEmpty(
+    ['DATABASE_NAME', 'DB_NAME', 'POSTGRES_DB', 'PGDATABASE'],
+    'postgres',
+  );
+  const user = firstNonEmpty(['DATABASE_USER', 'DB_USER', 'POSTGRES_USER', 'PGUSER'], 'postgres');
+  const password = firstNonEmpty(
+    ['DATABASE_PASSWORD', 'DB_PASSWORD', 'POSTGRES_PASSWORD', 'PGPASSWORD'],
+    'postgres',
+  );
+  const schema = firstNonEmpty(['DATABASE_SCHEMA', 'DB_SCHEMA'], 'public');
+
+  if (!user || !database) {
+    return undefined;
+  }
+
+  const encodedUser = encodeURIComponent(user);
+  const encodedPassword = encodeURIComponent(password);
+  const auth = password ? `${encodedUser}:${encodedPassword}` : encodedUser;
+  const baseUrl = `postgresql://${auth}@${host}:${port}/${database}`;
+  return schema ? `${baseUrl}?schema=${encodeURIComponent(schema)}` : baseUrl;
+}
+
+if (!process.env.DATABASE_URL || !process.env.DATABASE_URL.trim()) {
+  const builtUrl = buildDatabaseUrlFromPieces();
+  if (builtUrl) {
+    process.env.DATABASE_URL = builtUrl;
+  }
+}
