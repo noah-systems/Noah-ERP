@@ -72,11 +72,54 @@ declare module '@prisma/client' {
     interface PartnerChangeRequestCreateInput {
       payload?: InputJsonValue | NullableJsonNullValueInput;
     }
+
+    type ImplStatus = 'PENDING_SCHED' | 'SCHEDULED' | 'DONE' | 'NO_SHOW';
+    type Role =
+      | 'ADMIN_NOAH'
+      | 'SUPPORT_NOAH'
+      | 'FINANCE_NOAH'
+      | 'SELLER'
+      | 'PARTNER_MASTER'
+      | 'PARTNER_FINANCE'
+      | 'PARTNER_OPS';
+    type Channel = 'INTERNAL' | 'WHITE_LABEL';
+    type ItemKind = 'PLAN' | 'ADDON' | 'MODULE';
+    type PartnerAccountStatus =
+      | 'PENDING_CREATE'
+      | 'ACTIVE'
+      | 'PENDING_CHANGE'
+      | 'CANCELED';
+
+    interface TransactionClient extends PrismaClient {}
   }
+
+  type Delegate = {
+    findUnique(...args: any[]): Promise<any>;
+    findFirst(...args: any[]): Promise<any>;
+    findMany(...args: any[]): Promise<any>;
+    create(...args: any[]): Promise<any>;
+    update(...args: any[]): Promise<any>;
+    upsert(...args: any[]): Promise<any>;
+  };
 
   export class PrismaClient {
     $connect(): Promise<void>;
     $transaction<T>(fn: (client: PrismaClient) => Promise<T>): Promise<T>;
-    [key: string]: any;
+    $transaction<P extends Promise<any>[]>(operations: [...P]): Promise<any[]>;
+    $queryRaw<T = unknown>(query: TemplateStringsArray | string, ...values: any[]): Promise<T>;
+    $executeRaw<T = unknown>(query: TemplateStringsArray | string, ...values: any[]): Promise<T>;
+    user: Delegate;
+    lead: Delegate;
+    leadStatus: Delegate;
+    opportunity: Delegate;
+    opportunityStage: Delegate;
+    oppHistory: Delegate;
+    implementationTask: Delegate;
+    partner: Delegate;
+    partnerAccount: Delegate;
+    partnerChangeRequest: Delegate;
+    priceItem: Delegate;
+    priceTier: Delegate;
+    discountPolicy: Delegate;
   }
 }
