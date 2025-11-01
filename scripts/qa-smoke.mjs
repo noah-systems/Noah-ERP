@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { request } from '@playwright/test';
 import { PrismaClient } from '@prisma/client';
 import crypto from 'node:crypto';
 
@@ -13,17 +12,32 @@ async function main() {
   }
 
   const prisma = new PrismaClient();
-  const context = await request.newContext({
-    baseURL: API_BASE,
-    extraHTTPHeaders: { 'content-type': 'application/json' },
-  });
+
+  const buildUrl = (path) => {
+    if (/^https?:/i.test(path)) {
+      return path;
+    }
+    const base = API_BASE.endsWith('/') ? API_BASE.slice(0, -1) : API_BASE;
+    const suffix = path.startsWith('/') ? path : `/${path}`;
+    return `${base}${suffix}`;
+  };
+
+  const http = async (path, { method = 'GET', headers = {}, data } = {}) => {
+    const init = { method, headers: { ...headers } };
+    if (data !== undefined) {
+      init.body = JSON.stringify(data);
+      init.headers['content-type'] ??= 'application/json';
+    }
+    const response = await fetch(buildUrl(path), init);
+    return response;
+  };
 
   try {
     console.log(`QA Smoke :: API base ${API_BASE}`);
 
-    const healthResponse = await context.get('/health');
-    if (!healthResponse.ok()) {
-      throw new Error(`Healthcheck falhou: HTTP ${healthResponse.status()}`);
+    const healthResponse = await http('/health');
+    if (!healthResponse.ok) {
+      throw new Error(`Healthcheck falhou: HTTP ${healthResponse.status}`);
     }
     const health = await healthResponse.json();
     if (!health?.ok || health.api !== 'up') {
@@ -31,11 +45,12 @@ async function main() {
     }
     console.log('✓ Healthcheck ok');
 
-    const loginResponse = await context.post('/auth/login', {
+    const loginResponse = await http('/auth/login', {
+      method: 'POST',
       data: { email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
     });
-    if (!loginResponse.ok()) {
-      throw new Error(`Login falhou: HTTP ${loginResponse.status()}`);
+    if (!loginResponse.ok) {
+      throw new Error(`Login falhou: HTTP ${loginResponse.status}`);
     }
     const loginData = await loginResponse.json();
     const token = loginData?.token || loginData?.access_token;
@@ -44,11 +59,11 @@ async function main() {
     }
     console.log('✓ Login ok');
 
-    const meResponse = await context.get('/auth/me', {
+    const meResponse = await http('/auth/me', {
       headers: { Authorization: `Bearer ${token}` },
     });
-    if (!meResponse.ok()) {
-      throw new Error(`/auth/me falhou: HTTP ${meResponse.status()}`);
+    if (!meResponse.ok) {
+      throw new Error(`/auth/me falhou: HTTP ${meResponse.status}`);
     }
     const meData = await meResponse.json();
     const user = meData?.user || meData;
@@ -93,7 +108,6 @@ async function main() {
 
     console.log('Smoke test concluído com sucesso.');
   } finally {
-    await context.dispose();
     await prisma.$disconnect().catch(() => {});
   }
 }
