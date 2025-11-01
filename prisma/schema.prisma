@@ -18,12 +18,6 @@ enum Role {
   PARTNER_OPS
 }
 
-enum LeadSource {
-  GOOGLE
-  META
-  MANUAL
-}
-
 enum ImplStatus {
   PENDING_SCHED
   SCHEDULED
@@ -77,13 +71,14 @@ model LeadStatus {
 model Lead {
   id        String     @id @default(cuid())
   company   String
+  name      String
   segment   String?
   headcount Int?       @default(0)
   contact   String?
   phone     String?
   email     String?
   notes     String?
-  source    LeadSource @default(MANUAL)
+  source    String     @default("MANUAL")
   statusId  String
   status    LeadStatus @relation(fields: [statusId], references: [id])
   ownerId   String

@@ -10,7 +10,9 @@ const binDir = join(projectRoot, 'node_modules', '.bin');
 const binName = process.platform === 'win32' ? 'prisma.cmd' : 'prisma';
 const prismaBin = existsSync(join(binDir, binName)) ? join(binDir, binName) : binName;
 
-const child = spawn(prismaBin, ['generate'], {
+const schemaPath = join(projectRoot, '..', '..', 'prisma', 'schema.prisma');
+
+const child = spawn(prismaBin, ['generate', '--schema', schemaPath], {
   stdio: 'inherit',
   env: {
     ...process.env,

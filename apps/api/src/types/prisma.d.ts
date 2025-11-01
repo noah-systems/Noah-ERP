@@ -17,12 +17,6 @@ declare module '@prisma/client' {
     PARTNER_OPS: Role;
   };
 
-  export type LeadSource = 'GOOGLE' | 'META' | 'MANUAL';
-  export const LeadSource: {
-    GOOGLE: LeadSource;
-    META: LeadSource;
-    MANUAL: LeadSource;
-  };
   export type ImplStatus = 'PENDING_SCHED' | 'SCHEDULED' | 'DONE' | 'NO_SHOW';
   export const ImplStatus: {
     PENDING_SCHED: ImplStatus;

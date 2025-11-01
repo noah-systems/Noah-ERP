@@ -42,6 +42,7 @@ model LeadStatus {
 model Lead {
   id        String     @id @default(cuid())
   company   String
+  name      String
   segment   String?
   headcount Int?       @default(0)
   contact   String?

@@ -1,5 +1,5 @@
 import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
-import nodeProcess from 'node:process';
+import { hrtime as processHrtime } from 'node:process';
 import { Observable } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 
@@ -14,7 +14,9 @@ type BasicResponse = {
 };
 
 function now(): bigint {
-  return typeof nodeProcess.hrtime?.bigint === 'function' ? nodeProcess.hrtime.bigint() : BigInt(Date.now()) * 1_000_000n;
+  return typeof processHrtime?.bigint === 'function'
+    ? processHrtime.bigint()
+    : BigInt(Date.now()) * 1_000_000n;
 }
 
 function durationMs(startedAt: bigint): number {

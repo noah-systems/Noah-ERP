@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { cwd } from 'node:process';
 
 const THIS_DIR = path.dirname(fileURLToPath(import.meta.url));
 const API_ROOT = path.resolve(THIS_DIR, '..', '..');
@@ -16,7 +17,7 @@ const DEFAULT_ENV_BASENAMES = (() => {
 })();
 
 function resolveExplicitPath(value: string) {
-  return path.isAbsolute(value) ? value : path.resolve(process.cwd(), value);
+  return path.isAbsolute(value) ? value : path.resolve(cwd(), value);
 }
 
 const CANDIDATE_ENV_FILES = (() => {
@@ -30,7 +31,7 @@ const CANDIDATE_ENV_FILES = (() => {
     seen.add(resolved);
   }
 
-  const searchRoots = [API_ROOT, APPS_DIR, WORKSPACE_ROOT, process.cwd()];
+  const searchRoots = [API_ROOT, APPS_DIR, WORKSPACE_ROOT, cwd()];
   for (const root of searchRoots) {
     if (!root) {
       continue;
