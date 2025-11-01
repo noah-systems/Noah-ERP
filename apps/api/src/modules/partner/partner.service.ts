@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { PartnerAccountStatus, Prisma } from '@prisma/client';
+import type { Prisma as PrismaTypes } from '@prisma/client';
+import PrismaPkg from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import {
   CreateChangeRequestDto,
@@ -8,13 +9,17 @@ import {
   ResolveChangeDto,
 } from './partner.dto.js';
 
+const { PartnerAccountStatus, Prisma } = PrismaPkg;
+
 const toJsonInput = (
   value?: unknown
-): Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput => {
+):
+  | PrismaTypes.InputJsonValue
+  | PrismaTypes.NullableJsonNullValueInput => {
   if (value === undefined || value === null) {
     return Prisma.JsonNull;
   }
-  return value as Prisma.InputJsonValue;
+  return value as PrismaTypes.InputJsonValue;
 };
 
 @Injectable()

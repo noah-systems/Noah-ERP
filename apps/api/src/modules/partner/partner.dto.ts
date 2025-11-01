@@ -1,5 +1,8 @@
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString, MaxLength } from 'class-validator';
-import { PartnerAccountStatus } from '@prisma/client';
+import type { PartnerAccountStatus as PartnerAccountStatusType } from '@prisma/client';
+import PrismaPkg from '@prisma/client';
+
+const { PartnerAccountStatus } = PrismaPkg;
 
 class ModuleFlagsDto {
   @IsOptional()
@@ -107,7 +110,7 @@ export class CreateChangeRequestDto {
 
 export class ResolveChangeDto {
   @IsEnum(PartnerAccountStatus)
-  status!: PartnerAccountStatus;
+  status!: PartnerAccountStatusType;
 
   @IsOptional()
   @IsString()

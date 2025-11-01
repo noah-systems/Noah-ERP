@@ -1,11 +1,14 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Channel, Prisma } from '@prisma/client';
+import type { Prisma as PrismaTypes } from '@prisma/client';
+import PrismaPkg from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import {
   CreateDiscountPolicyDto,
   CreatePriceItemDto,
   CreatePriceTierDto,
 } from './pricing.dto.js';
+
+const { Channel, Prisma } = PrismaPkg;
 
 @Injectable()
 export class PricingService {
@@ -59,7 +62,7 @@ export class PricingService {
   }
 
   async createDiscountPolicy(dto: CreateDiscountPolicyDto) {
-    const where: Prisma.DiscountPolicyWhereUniqueInput = { role: dto.role };
+    const where: PrismaTypes.DiscountPolicyWhereUniqueInput = { role: dto.role };
     return this.db.discountPolicy.upsert({
       where,
       update: { maxPercent: new Prisma.Decimal(dto.maxPercent.toFixed(2)) },

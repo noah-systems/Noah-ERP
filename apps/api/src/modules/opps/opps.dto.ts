@@ -1,4 +1,5 @@
-import { Channel, Role } from '@prisma/client';
+import type { Channel as ChannelType, Role as RoleType } from '@prisma/client';
+import PrismaPkg from '@prisma/client';
 import {
   IsDateString,
   IsEmail,
@@ -12,6 +13,8 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+
+const { Channel, Role } = PrismaPkg;
 
 class ModuleFlagsDto {
   @IsOptional()
@@ -153,7 +156,7 @@ export class UpdateOppStageDto {
 
 export class ApplyPricingDto {
   @IsEnum(Channel)
-  channel!: Channel;
+  channel!: ChannelType;
 
   @ValidateNested({ each: true })
   @Type(() => PricingItemDto)
@@ -161,7 +164,7 @@ export class ApplyPricingDto {
 
   @IsOptional()
   @IsEnum(Role)
-  role?: Role;
+  role?: RoleType;
 
   @IsOptional()
   @IsNumber()

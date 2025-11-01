@@ -1,4 +1,9 @@
-import { Channel, ItemKind, Role } from '@prisma/client';
+import type {
+  Channel as ChannelType,
+  ItemKind as ItemKindType,
+  Role as RoleType,
+} from '@prisma/client';
+import PrismaPkg from '@prisma/client';
 import {
   IsBoolean,
   IsEnum,
@@ -8,6 +13,8 @@ import {
   IsPositive,
   IsString,
 } from 'class-validator';
+
+const { Channel, ItemKind, Role } = PrismaPkg;
 
 export class CreatePriceItemDto {
   @IsString()
@@ -23,10 +30,10 @@ export class CreatePriceItemDto {
   price!: number;
 
   @IsEnum(Channel)
-  channel!: Channel;
+  channel!: ChannelType;
 
   @IsEnum(ItemKind)
-  kind!: ItemKind;
+  kind!: ItemKindType;
 
   @IsOptional()
   @IsBoolean()
@@ -35,7 +42,7 @@ export class CreatePriceItemDto {
 
 export class CreatePriceTierDto {
   @IsEnum(Channel)
-  channel!: Channel;
+  channel!: ChannelType;
 
   @IsPositive()
   minUsers!: number;
@@ -51,7 +58,7 @@ export class CreatePriceTierDto {
 
 export class CreateDiscountPolicyDto {
   @IsEnum(Role)
-  role!: Role;
+  role!: RoleType;
 
   @IsNumber()
   @IsPositive()
