@@ -7,7 +7,7 @@ export class LeadsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateLeadDto) {
-    const [status, owner] = await this.prisma.$transaction([
+    const [status, owner] = await Promise.all([
       this.prisma.leadStatus.findUnique({ where: { id: dto.statusId } }),
       this.prisma.user.findUnique({ where: { id: dto.ownerId } }),
     ]);
