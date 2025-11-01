@@ -1,9 +1,6 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { LeadsService } from './leads.service.js';
-import {
-  CreateLeadDto,
-  UpdateLeadStatusDto,
-} from './leads.dto.js';
+import { CreateLeadDto, UpdateLeadStatusDto } from './leads.dto.js';
 import { JwtAuthGuard } from '../auth/jwt.guard.js';
 import { RolesGuard } from '../auth/roles.guard.js';
 import { Roles } from '../auth/roles.decorator.js';
@@ -16,17 +13,13 @@ export class LeadsController {
   constructor(private readonly leads: LeadsService) {}
 
   @Get()
-  findAll() {
-    return this.leads.list();
-  }
+  list() { return this.leads['prisma'].lead.findMany({ take: 50 }); }
 
   @Post()
-  create(@Body() dto: CreateLeadDto) {
-    return this.leads.create(dto);
-  }
+  create(@Body() dto: CreateLeadDto) { return this.leads.create(dto); }
 
   @Patch(':id/status')
-  updateStatus(@Param('id') id: string, @Body() dto: UpdateLeadStatusDto) {
+  setStatus(@Param('id') id: string, @Body() dto: UpdateLeadStatusDto) {
     return this.leads.updateStatus(id, dto);
   }
 }
