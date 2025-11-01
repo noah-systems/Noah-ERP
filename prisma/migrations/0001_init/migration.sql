@@ -2,9 +2,6 @@
 CREATE TYPE "Role" AS ENUM ('ADMIN_NOAH', 'SUPPORT_NOAH', 'FINANCE_NOAH', 'SELLER', 'PARTNER_MASTER', 'PARTNER_FINANCE', 'PARTNER_OPS');
 
 -- CreateEnum
-CREATE TYPE "LeadSource" AS ENUM ('GOOGLE', 'META', 'MANUAL');
-
--- CreateEnum
 CREATE TYPE "ImplStatus" AS ENUM ('PENDING_SCHED', 'SCHEDULED', 'DONE', 'NO_SHOW');
 
 -- CreateEnum
@@ -46,13 +43,14 @@ CREATE TABLE "LeadStatus" (
 CREATE TABLE "Lead" (
     "id" TEXT NOT NULL,
     "company" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
     "segment" TEXT,
     "headcount" INTEGER DEFAULT 0,
     "contact" TEXT,
     "phone" TEXT,
     "email" TEXT,
     "notes" TEXT,
-    "source" "LeadSource" NOT NULL DEFAULT 'MANUAL',
+    "source" TEXT NOT NULL DEFAULT 'MANUAL',
     "statusId" TEXT NOT NULL,
     "ownerId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
