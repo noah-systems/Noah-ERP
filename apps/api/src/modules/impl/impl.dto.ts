@@ -1,4 +1,5 @@
-import { ImplStatus } from '@prisma/client';
+import type { Prisma as PrismaTypes } from '@prisma/client';
+import PrismaPkg from '@prisma/client';
 import {
   IsDateString,
   IsEnum,
@@ -8,10 +9,12 @@ import {
   MaxLength,
 } from 'class-validator';
 
+const { ImplStatus } = PrismaPkg;
+
 export class UpdateImplementationDto {
   @IsOptional()
   @IsEnum(ImplStatus)
-  status?: ImplStatus;
+  status?: PrismaTypes.ImplStatus;
 
   @IsOptional()
   @IsDateString()

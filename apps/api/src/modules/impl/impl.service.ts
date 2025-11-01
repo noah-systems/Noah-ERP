@@ -1,7 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { ImplStatus, Prisma } from '@prisma/client';
+import type { Prisma as PrismaTypes } from '@prisma/client';
+import PrismaPkg from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { UpdateImplementationDto } from './impl.dto.js';
+
+const { ImplStatus, Prisma } = PrismaPkg;
 
 @Injectable()
 export class ImplService {
@@ -31,7 +34,7 @@ export class ImplService {
       if (dto.status === ImplStatus.SCHEDULED && !dto.schedule) {
         throw new BadRequestException('schedule required to set status scheduled');
       }
-      const data: Prisma.ImplementationTaskUpdateInput = {};
+      const data: PrismaTypes.ImplementationTaskUpdateInput = {};
       if (dto.status) {
         data.status = dto.status;
       }

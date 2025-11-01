@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import type { Prisma as PrismaTypes } from '@prisma/client';
+import PrismaPkg from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { WorkerService } from '../worker/worker.service.js';
 import {
@@ -8,6 +9,8 @@ import {
   MarkOpportunityLostDto,
   UpdateOppStageDto,
 } from './opps.dto.js';
+
+const { Prisma } = PrismaPkg;
 
 @Injectable()
 export class OppsService {
@@ -39,7 +42,7 @@ export class OppsService {
       trialStart: dto.trialStart ? new Date(dto.trialStart) : null,
       activation: dto.activation ? new Date(dto.activation) : null,
       billingBaseDay: dto.billingBaseDay ?? null,
-    } satisfies Prisma.OpportunityUncheckedCreateInput;
+    } satisfies PrismaTypes.OpportunityUncheckedCreateInput;
 
     const opportunity = await this.prisma.opportunity.create({
       data,
