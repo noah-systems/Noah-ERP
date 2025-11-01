@@ -1,5 +1,4 @@
-import { Prisma } from '@prisma/client';
-const { LeadSource } = Prisma;
+import { LeadSource } from '@prisma/client';
 import {
   IsEmail,
   IsEnum,
@@ -34,7 +33,7 @@ export class CreateLeadDto {
   notes?: string | null;
 
   @IsOptional() @IsEnum(LeadSource)
-  source?: Prisma.LeadSource;
+  source?: LeadSource;
 
   @IsUUID() @IsNotEmpty()
   statusId!: string;
