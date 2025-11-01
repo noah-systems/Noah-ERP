@@ -3,65 +3,50 @@ const { LeadSource } = Prisma;
 import {
   IsEmail,
   IsEnum,
-  IsInt,
   IsNotEmpty,
   IsOptional,
-  IsPhoneNumber,
-  IsPositive,
   IsString,
-  MaxLength,
+  IsUUID,
+  IsInt,
+  Min,
 } from 'class-validator';
 
 export class CreateLeadDto {
-  @IsString()
-  @IsNotEmpty()
+  @IsString() @IsNotEmpty()
   company!: string;
 
-  @IsOptional()
-  @IsString()
-  segment?: string;
+  @IsOptional() @IsString()
+  segment?: string | null;
 
-  @IsOptional()
-  @IsInt()
-  @IsPositive()
+  @IsOptional() @IsInt() @Min(1)
   headcount?: number;
 
-  @IsOptional()
-  @IsString()
-  contact?: string;
+  @IsOptional() @IsString()
+  contact?: string | null;
 
-  @IsOptional()
-  @IsPhoneNumber('BR')
-  phone?: string;
+  @IsOptional() @IsString()
+  phone?: string | null;
 
-  @IsOptional()
-  @IsEmail()
-  email?: string;
+  @IsOptional() @IsEmail()
+  email?: string | null;
 
-  @IsOptional()
-  @IsString()
-  notes?: string;
+  @IsOptional() @IsString()
+  notes?: string | null;
 
-  @IsOptional()
-  @IsEnum(LeadSource)
+  @IsOptional() @IsEnum(LeadSource)
   source?: Prisma.LeadSource;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsUUID() @IsNotEmpty()
   statusId!: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsUUID() @IsNotEmpty()
   ownerId!: string;
 }
 
 export class UpdateLeadStatusDto {
-  @IsString()
-  @IsNotEmpty()
+  @IsUUID() @IsNotEmpty()
   statusId!: string;
 
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  tmkReason?: string;
+  @IsOptional() @IsString()
+  notes?: string | null;
 }

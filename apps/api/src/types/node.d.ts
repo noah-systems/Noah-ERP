@@ -18,8 +18,3 @@ declare module 'crypto' {
 }
 
 declare type BeforeExitListener = () => void;
-
-declare const process: {
-  env: Record<string, string | undefined>;
-  on(event: 'beforeExit', listener: BeforeExitListener): void;
-};
