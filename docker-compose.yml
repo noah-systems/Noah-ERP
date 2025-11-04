@@ -1,0 +1,69 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: noah-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-noah_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-q@9dlyU0AAJ9}
+      POSTGRES_DB: ${POSTGRES_DB:-noah_erp}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database-setup.sql:/docker-entrypoint-initdb.d/0000_setup.sql:ro
+      - ./prisma/migrations/0001_init/migration.sql:/docker-entrypoint-initdb.d/0001_init.sql:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-noah_user}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: noah-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: noah-api
+    environment:
+      NODE_ENV: production
+      API_PORT: 3000
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-noah_user}:${POSTGRES_PASSWORD:-q@9dlyU0AAJ9}@db:5432/${POSTGRES_DB:-noah_erp}?schema=public
+      REDIS_URL: redis://redis:6379
+      FRONTEND_ORIGIN: http://localhost:8080
+      JWT_SECRET: ${JWT_SECRET:-dev-insecure-secret}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: noah-web
+    environment:
+      VITE_API_BASE: /api
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "8080:80"
+
+volumes:
+  pgdata:
