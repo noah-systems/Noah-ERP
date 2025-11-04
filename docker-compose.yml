@@ -42,7 +42,7 @@ services:
       PORT: 3000
       DATABASE_URL: postgresql://${POSTGRES_USER:-noah_user}:${POSTGRES_PASSWORD:-q@9dlyU0AAJ9}@db:5432/${POSTGRES_DB:-noah_erp}?schema=public
       REDIS_URL: redis://redis:6379
-      FRONTEND_ORIGIN: http://localhost:8080
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8080}
       JWT_SECRET: ${JWT_SECRET:-dev-insecure-secret}
     depends_on:
       db:
@@ -56,9 +56,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.web
+      args:
+        VITE_API_BASE: ${VITE_API_BASE:-/api}
     container_name: noah-web
     environment:
-      VITE_API_BASE: /api
+      VITE_API_BASE: ${VITE_API_BASE:-/api}
     depends_on:
       api:
         condition: service_started
