@@ -17,8 +17,8 @@ async function upsertAdmin({ name, email, password }) {
     const idResult = await client.query('SELECT "id" FROM "User" WHERE "email" = $1 LIMIT 1', [email]);
     const userId = idResult.rows[0]?.id || crypto.randomUUID();
     await client.query(
-      `INSERT INTO "User" ("id", "name", "email", "passwordHash", "role")
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO "User" ("id", "name", "email", "passwordHash", "role", "updatedAt")
+       VALUES ($1, $2, $3, $4, $5, NOW())
        ON CONFLICT ("email") DO UPDATE
        SET "name" = EXCLUDED."name",
            "passwordHash" = EXCLUDED."passwordHash",

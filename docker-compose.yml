@@ -67,5 +67,21 @@ services:
     ports:
       - "8080:80"
 
+  seed:
+    image: node:20-alpine
+    container_name: noah-seed
+    working_dir: /app
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-noah_user}:${POSTGRES_PASSWORD:-q@9dlyU0AAJ9}@db:5432/${POSTGRES_DB:-noah_erp}?schema=public
+      ADMIN_NAME: ${ADMIN_NAME:-Admin Noah}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@noahomni.com.br}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-D2W3£Qx!0Du#}
+    volumes:
+      - ./:/app:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["node", "prisma/seed.js"]
+
 volumes:
   pgdata:
