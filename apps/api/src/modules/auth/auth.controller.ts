@@ -26,6 +26,6 @@ export class AuthController {
       throw new UnauthorizedException();
     }
     const token = authHeader.slice('Bearer '.length);
-    return this.s.me(token);
+    return this.s.me(token).then((user) => ({ user }));
   }
 }
