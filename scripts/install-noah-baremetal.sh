@@ -217,17 +217,14 @@ npm ci --no-audit --no-fund --include=dev || npm i --no-audit --no-fund --legacy
 log "Ensuring Postgres role/database for user 'noah'"
 ensure_noah_db
 
-# (h) Run Prisma strictly in order; abort if any step fails
-log "Running Prisma generate/migrate/seed"
-if ! ( cd "${API_DIR}" && \
-    npx prisma generate && \
-    npx prisma migrate deploy && \
-    node prisma/seed.js ); then
-  err "[FATAL] Prisma pipeline failed"
+# (h) Execute seed to garantir conta administrativa
+log "Executando seed padrão do banco"
+if ! ( cd "${API_DIR}" && node prisma/seed.js ); then
+  err "[FATAL] Seed inicial falhou"
   exit 1
 fi
 
-ok "Prisma pipeline OK"
+ok "Seed executado"
 
 npm run build || true
 

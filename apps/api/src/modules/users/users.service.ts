@@ -1,20 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import { DatabaseService } from '../../database/database.service.js';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly db: PrismaService) {}
+  constructor(private readonly db: DatabaseService) {}
 
   list() {
-    return this.db.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    });
+    return this.db.user.findAll({
+      attributes: ['id', 'name', 'email', 'role', 'createdAt', 'updatedAt'],
+    }).then((users) => users.map((user) => user.toJSON()));
   }
 }

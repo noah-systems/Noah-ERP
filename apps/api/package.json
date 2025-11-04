@@ -4,33 +4,30 @@
   "type": "module",
   "main": "dist/main.js",
   "scripts": {
-    "prebuild": "npm run prisma:generate",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
     "start:prod": "npm run build && npm run start",
-    "prisma:generate": "node ./scripts/prisma-generate.mjs",
-    "prisma:migrate:deploy": "prisma migrate deploy",
-    "prisma:push": "prisma db push",
-    "prisma:seed": "node ../../prisma/seed.js",
-    "seed": "npm run prisma:seed"
+    "db:seed": "node ./scripts/db-seed.mjs",
+    "seed": "npm run db:seed"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
-    "@prisma/client": "6.18.0",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.8.2",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "ioredis": "^5.4.1",
+    "pg": "^8.13.1",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "sequelize": "^6.37.3"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.2",
     "@types/node": "^20.11.0",
-    "prisma": "6.18.0",
+    "@types/pg": "^8.11.10",
     "typescript": "^5.5.4"
   }
 }

@@ -13,7 +13,9 @@ export class LeadsController {
   constructor(private readonly leads: LeadsService) {}
 
   @Get()
-  list() { return this.leads['prisma'].lead.findMany({ take: 50 }); }
+  list() {
+    return this.leads.list();
+  }
 
   @Post()
   create(@Body() dto: CreateLeadDto) { return this.leads.create(dto); }

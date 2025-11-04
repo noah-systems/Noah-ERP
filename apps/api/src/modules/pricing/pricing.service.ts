@@ -1,75 +1,81 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import type { Prisma as PrismaTypes } from '@prisma/client';
-import PrismaPkg from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import { DatabaseService } from '../../database/database.service.js';
+import { Channel } from '../../database/enums.js';
 import {
   CreateDiscountPolicyDto,
   CreatePriceItemDto,
   CreatePriceTierDto,
 } from './pricing.dto.js';
 
-const { Channel, Prisma } = PrismaPkg;
-
 @Injectable()
 export class PricingService {
-  constructor(private readonly db: PrismaService) {}
+  constructor(private readonly db: DatabaseService) {}
 
   listItems() {
-    return this.db.priceItem.findMany({ orderBy: { name: 'asc' } });
+    return this.db.priceItem
+      .findAll({ order: [['name', 'ASC']] })
+      .then((items) => items.map((item) => item.toJSON()));
   }
 
   async createItem(dto: CreatePriceItemDto) {
-    return this.db.priceItem.upsert({
-      where: { sku: dto.sku },
-      update: {
-        name: dto.name,
-        price: new Prisma.Decimal(dto.price.toFixed(2)),
-        channel: dto.channel,
-        kind: dto.kind,
-        active: dto.active ?? true,
-      },
-      create: {
-        sku: dto.sku,
-        name: dto.name,
-        price: new Prisma.Decimal(dto.price.toFixed(2)),
-        channel: dto.channel,
-        kind: dto.kind,
-        active: dto.active ?? true,
-      },
-    });
+    const payload = {
+      name: dto.name,
+      price: Number.isFinite(dto.price) ? dto.price.toFixed(2) : '0.00',
+      channel: dto.channel,
+      kind: dto.kind,
+      active: dto.active ?? true,
+    };
+
+    const existing = await this.db.priceItem.findOne({ where: { sku: dto.sku } });
+    if (existing) {
+      await existing.update(payload);
+      return existing.toJSON();
+    }
+
+    const created = await this.db.priceItem.create({ sku: dto.sku, ...payload });
+    return created.toJSON();
   }
 
   listTiers() {
-    return this.db.priceTier.findMany({ orderBy: { minUsers: 'asc' } });
+    return this.db.priceTier
+      .findAll({ order: [['minUsers', 'ASC']] })
+      .then((items) => items.map((item) => item.toJSON()));
   }
 
   async createTier(dto: CreatePriceTierDto) {
     if (dto.channel !== Channel.WHITE_LABEL) {
       throw new BadRequestException('Tiers are only available for white label channel');
     }
-    return this.db.priceTier.create({
-      data: {
-        channel: dto.channel,
-        minUsers: dto.minUsers,
-        maxUsers: dto.maxUsers ?? null,
-        pricePerUser: new Prisma.Decimal(dto.pricePerUser.toFixed(2)),
-      },
+    const created = await this.db.priceTier.create({
+      channel: dto.channel,
+      minUsers: dto.minUsers,
+      maxUsers: dto.maxUsers ?? null,
+      pricePerUser: Number.isFinite(dto.pricePerUser)
+        ? dto.pricePerUser.toFixed(2)
+        : '0.00',
     });
+    return created.toJSON();
   }
 
   listDiscountPolicies() {
-    return this.db.discountPolicy.findMany({ orderBy: { role: 'asc' } });
+    return this.db.discountPolicy
+      .findAll({ order: [['role', 'ASC']] })
+      .then((items) => items.map((item) => item.toJSON()));
   }
 
   async createDiscountPolicy(dto: CreateDiscountPolicyDto) {
-    const where: PrismaTypes.DiscountPolicyWhereUniqueInput = { role: dto.role };
-    return this.db.discountPolicy.upsert({
-      where,
-      update: { maxPercent: new Prisma.Decimal(dto.maxPercent.toFixed(2)) },
-      create: {
-        role: dto.role,
-        maxPercent: new Prisma.Decimal(dto.maxPercent.toFixed(2)),
-      },
-    });
+    const payload = {
+      role: dto.role,
+      maxPercent: Number.isFinite(dto.maxPercent) ? dto.maxPercent.toFixed(2) : '0.00',
+    };
+
+    const existing = await this.db.discountPolicy.findOne({ where: { role: dto.role } });
+    if (existing) {
+      await existing.update({ maxPercent: payload.maxPercent });
+      return existing.toJSON();
+    }
+
+    const created = await this.db.discountPolicy.create(payload);
+    return created.toJSON();
   }
 }

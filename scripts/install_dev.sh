@@ -30,21 +30,15 @@ info "Instalando dependências da API Nest"
 npm --prefix apps/api install
 success "Dependências da API instaladas."
 
-info "Gerando cliente Prisma"
-npm --prefix apps/api run prisma:generate
-success "Cliente Prisma gerado."
-
 if [ -n "${DATABASE_URL:-}" ]; then
-  info "Aplicando migrations no banco apontado em DATABASE_URL"
-npm --prefix apps/api run prisma:migrate:deploy
-  success "Migrations aplicadas."
+  info "DATABASE_URL detectado. Garanta que o schema esteja aplicado (via migrations SQL)."
 else
-  warn "DATABASE_URL não definido; pule migrations/seed conforme necessário."
+  warn "DATABASE_URL não definido; configure o banco antes de rodar a API."
 fi
 
 if [ -n "${ADMIN_EMAIL:-}" ] || [ -n "${ADMIN_PASSWORD:-}" ]; then
   info "Executando seed com ADMIN_* do ambiente"
-  npm --prefix apps/api run prisma:seed
+  npm --prefix apps/api run db:seed
   success "Seed executado."
 else
   warn "ADMIN_EMAIL/ADMIN_PASSWORD não definidos; seed não foi executado automaticamente."
