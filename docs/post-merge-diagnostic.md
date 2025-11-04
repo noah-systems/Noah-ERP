@@ -12,24 +12,14 @@ Este roteiro documenta o estado esperado do ambiente de produção após um merg
   - `POST /api/auth/login`, `GET /api/auth/me`.
   - `GET`/`POST /api/leads`, `POST /api/leads/:id/move`, `DELETE /api/leads/:id`.
   - `GET`/`POST /api/opps`, `POST /api/opps/:id/move`, `DELETE /api/opps/:id`.
-- **Prisma**: client já gerado; não há migrações pendentes e o Postgres (`127.0.0.1:5432`) responde.
+- **Banco**: conexões Sequelize funcionando; Postgres (`127.0.0.1:5432`) responde e o schema está atualizado.
 - **Redis/Valkey**: porta `6379` ativa para sessões e rate limiting (quando habilitado).
 - **Seed obrigatório**: sem o usuário administrador seedado, o login falha com `401`. Garanta que `npm --prefix apps/api run seed` foi executado (sobrescreva credenciais com `SEED_ADMIN_*` se necessário), ou insira o admin diretamente no banco.
 
 ## Banco de dados
 
 - **Conexão**: `DATABASE_URL=postgresql://noah...@127.0.0.1:5432/noah?schema=public` está funcional.
-- **Prisma seed formal**: mantenha o bloco a seguir em `apps/api/package.json` para que `npm --prefix apps/api run seed` execute `prisma/seed.js`.
-
-  ```json
-  {
-    "prisma": {
-      "seed": "node prisma/seed.js"
-    }
-  }
-  ```
-
-  Isso evita esquecimento do administrador durante reinstalações.
+- **Seed formal**: utilize `npm --prefix apps/api run db:seed` (que executa `prisma/seed.js`) para garantir o usuário administrador padrão em reinstalações.
 
 ## Front / branding / UX
 
@@ -50,7 +40,7 @@ Este roteiro documenta o estado esperado do ambiente de produção após um merg
 
 ## Checklist rápido para 100% funcional
 
-1. Seed de administrador criado (manual ou via `prisma/seed.js`).
+1. Seed de administrador criado (manual ou via `npm --prefix apps/api run db:seed`).
 2. Front build publicado em `dist/` na raiz.
 3. Nginx configurado com proxy reverso único (HTTPS) apontando para:
    - `location / { proxy_pass http://web:80; }`

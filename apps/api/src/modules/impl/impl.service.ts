@@ -1,40 +1,41 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import type { Prisma as PrismaTypes } from '@prisma/client';
-import PrismaPkg from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import { Transaction } from 'sequelize';
+import { DatabaseService } from '../../database/database.service.js';
+import { ImplStatus } from '../../database/enums.js';
 import { UpdateImplementationDto } from './impl.dto.js';
-
-const { ImplStatus, Prisma } = PrismaPkg;
 
 @Injectable()
 export class ImplService {
-  constructor(private readonly db: PrismaService) {}
+  constructor(private readonly db: DatabaseService) {}
 
   list() {
-    return this.db.implementationTask.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        opp: {
-          include: {
-            stage: true,
-            owner: { select: { id: true, name: true, email: true, role: true } },
+    return this.db.implementationTask
+      .findAll({
+        order: [['createdAt', 'DESC']],
+        include: [
+          {
+            association: 'opp',
+            include: [
+              { association: 'stage' },
+              { association: 'owner', attributes: ['id', 'name', 'email', 'role'] },
+            ],
           },
-        },
-      },
-    });
+        ],
+      })
+      .then((items) => items.map((item) => item.toJSON()));
   }
 
   async update(id: string, dto: UpdateImplementationDto) {
-    return this.db.$transaction(async (tx) => {
-      const task = await tx.implementationTask.findUnique({
-        where: { id },
-        include: { opp: true },
+    const result = await this.db.transaction(async (transaction: Transaction) => {
+      const task = await this.db.implementationTask.findByPk(id, {
+        include: [{ association: 'opp' }],
+        transaction,
       });
       if (!task) throw new NotFoundException('implementation');
       if (dto.status === ImplStatus.SCHEDULED && !dto.schedule) {
         throw new BadRequestException('schedule required to set status scheduled');
       }
-      const data: PrismaTypes.ImplementationTaskUpdateInput = {};
+      const data: Record<string, unknown> = {};
       if (dto.status) {
         data.status = dto.status;
       }
@@ -44,39 +45,59 @@ export class ImplService {
       if (dto.schedule !== undefined) {
         data.schedule = dto.schedule ? new Date(dto.schedule) : null;
       }
-      const updated = await tx.implementationTask.update({
-        where: { id },
-        data,
-      });
+      await task.update(data, { transaction });
 
       if (dto.status === ImplStatus.DONE || dto.status === ImplStatus.NO_SHOW) {
         const targetStageName =
           dto.status === ImplStatus.DONE ? 'Venda Ganha' : 'Vencimento Trial';
-        const stage = await tx.opportunityStage.findFirst({ where: { name: targetStageName } });
+        const stage = await this.db.opportunityStage.findOne({
+          where: { name: targetStageName },
+          transaction,
+        });
         if (stage) {
-          await tx.opportunity.update({
-            where: { id: task.oppId },
-            data: {
-              stageId: stage.id,
-              activation: dto.status === ImplStatus.DONE ? new Date() : task.opp.activation,
-            },
-          });
-          await tx.oppHistory.create({
-            data: {
-              oppId: task.oppId,
+          const oppId = task.get('oppId') as string;
+          const opp = await this.db.opportunity.findByPk(oppId, { transaction });
+          const oppData = task.get('opp') as { stageId?: string; activation?: Date } | undefined;
+          if (opp) {
+            await opp.update(
+              {
+                stageId: stage.get('id'),
+                activation:
+                  dto.status === ImplStatus.DONE ? new Date() : opp.get('activation'),
+              },
+              { transaction },
+            );
+          }
+          await this.db.oppHistory.create(
+            {
+              oppId,
               actorId: dto.actorId,
-              fromStageId: task.opp.stageId,
-              toStageId: stage.id,
+              fromStageId: oppData?.stageId ?? null,
+              toStageId: stage.get('id') as string,
               note:
                 dto.status === ImplStatus.DONE
                   ? 'Implementation completed'
                   : 'Implementation no-show',
             },
-          });
+            { transaction },
+          );
         }
       }
 
-      return updated;
+      return this.db.implementationTask.findByPk(id, {
+        include: [
+          {
+            association: 'opp',
+            include: [
+              { association: 'stage' },
+              { association: 'owner', attributes: ['id', 'name', 'email', 'role'] },
+            ],
+          },
+        ],
+        transaction,
+      });
     });
+
+    return result ? result.toJSON() : null;
   }
 }

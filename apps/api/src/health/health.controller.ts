@@ -1,6 +1,6 @@
 import { Controller, Get, Inject, Logger } from '@nestjs/common';
 import type { Redis as RedisClient } from 'ioredis';
-import { PrismaService } from '../prisma/prisma.service.js';
+import { DatabaseService } from '../database/database.service.js';
 import { REDIS_TOKEN } from '../redis/redis.module.js';
 
 type HealthStatus = 'up' | 'down';
@@ -8,7 +8,7 @@ type HealthStatus = 'up' | 'down';
 @Controller()
 export class HealthController {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly database: DatabaseService,
     @Inject(REDIS_TOKEN) private readonly redis: RedisClient,
   ) {}
 
@@ -28,7 +28,7 @@ export class HealthController {
 
   private async checkDatabase(): Promise<HealthStatus> {
     try {
-      await this.prisma.$queryRaw`SELECT 1`;
+      await this.database.queryRaw('SELECT 1');
       return 'up';
     } catch (error) {
       if (error instanceof Error) {

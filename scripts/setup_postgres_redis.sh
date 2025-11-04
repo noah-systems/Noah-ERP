@@ -17,6 +17,5 @@ sudo systemctl enable --now redis-server
 psql -U noah_user -d noah_erp -h localhost -c "SELECT 1;"
 redis-cli ping
 
-# 4. Executar migrações
-cd /var/www/erp.noahomni.com.br/apps/api
-npx prisma db push
+# 4. Aplicar schema (ajuste conforme seu fluxo de migrations SQL)
+echo "Aplicar o schema do banco manualmente (via scripts SQL ou ferramenta preferida)."

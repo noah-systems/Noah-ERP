@@ -1,97 +1,183 @@
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../../ui/dialog';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
+import type { OpportunityPayload, OpportunityStage } from '@/types/api';
+import { opportunityStageLabels } from '@/hooks/useOpportunities';
+
+type LeadOption = {
+  id: string;
+  label: string;
+};
 
 interface CreateOpportunityModalProps {
   open: boolean;
   onClose: () => void;
+  onSubmit: (payload: OpportunityPayload) => Promise<unknown> | unknown;
+  leads: LeadOption[];
 }
 
-export function CreateOpportunityModal({ open, onClose }: CreateOpportunityModalProps) {
+type OpportunityFormValues = {
+  title: string;
+  leadId: string;
+  value?: number;
+  stage: OpportunityStage;
+  expectedClose?: string;
+};
+
+const stageOrder: OpportunityStage[] = [
+  'NEGOCIACAO',
+  'APRESENTACAO',
+  'PROPOSTA',
+  'TRIAL',
+  'VENC_TRIAL',
+  'VENDAS',
+];
+
+const stageOptions: Array<{ value: OpportunityStage; label: string }> = stageOrder.map((value) => ({
+  value,
+  label: opportunityStageLabels[value],
+}));
+
+const defaultValues: OpportunityFormValues = {
+  title: '',
+  leadId: '',
+  value: undefined,
+  stage: 'NEGOCIACAO',
+  expectedClose: '',
+};
+
+export function CreateOpportunityModal({ open, onClose, onSubmit, leads }: CreateOpportunityModalProps) {
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    formState: { isSubmitting },
+  } = useForm<OpportunityFormValues>({
+    defaultValues,
+  });
+
+  const selectedLeadId = watch('leadId');
+  const selectedStage = watch('stage');
+
+  useEffect(() => {
+    if (!open) {
+      reset({ ...defaultValues });
+    }
+  }, [open, reset]);
+
+  const submit = handleSubmit(async (values) => {
+    await onSubmit({
+      title: values.title.trim(),
+      leadId: values.leadId,
+      stage: values.stage,
+      value: Number.isFinite(values.value) ? values.value : undefined,
+      expectedClose: values.expectedClose?.trim() || undefined,
+    });
+    reset({ ...defaultValues });
+  });
+
+  const leadIdRegister = register('leadId', { required: true });
+  const stageRegister = register('stage', { required: true });
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Criar Nova Oportunidade</DialogTitle>
         </DialogHeader>
-        
-        <div className="grid grid-cols-2 gap-4">
+
+        <form className="grid grid-cols-2 gap-4" onSubmit={submit}>
           <div className="col-span-2 space-y-2">
-            <Label htmlFor="company">
-              Razão Social <span className="text-red-500">*</span>
-            </Label>
-            <Input id="company" placeholder="Nome da empresa" />
+            <Label htmlFor="opportunity-title">Título *</Label>
+            <Input
+              id="opportunity-title"
+              placeholder="Descreva a oportunidade"
+              {...register('title', { required: true })}
+            />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="cnpj">CNPJ</Label>
-            <Input id="cnpj" placeholder="00.000.000/0000-00" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="contactName">
-              Nome do Contato <span className="text-red-500">*</span>
-            </Label>
-            <Input id="contactName" placeholder="Nome completo" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">
-              E-mail Contato <span className="text-red-500">*</span>
-            </Label>
-            <Input id="email" type="email" placeholder="contato@empresa.com" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Telefone Contato</Label>
-            <Input id="phone" placeholder="(00) 00000-0000" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="emailFinancial">E-mail Financeiro</Label>
-            <Input id="emailFinancial" type="email" placeholder="financeiro@empresa.com" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phoneFinancial">Telefone Financeiro</Label>
-            <Input id="phoneFinancial" placeholder="(00) 00000-0000" />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="owner">Responsável (Owner)</Label>
-            <Select>
-              <SelectTrigger id="owner">
-                <SelectValue placeholder="Selecione" />
+          <div className="col-span-2 space-y-2">
+            <Label htmlFor="opportunity-lead">Lead *</Label>
+            <input type="hidden" value={selectedLeadId ?? ''} {...leadIdRegister} />
+            <Select
+              value={selectedLeadId ?? undefined}
+              onValueChange={(value) => {
+                setValue('leadId', value, { shouldValidate: true, shouldDirty: true });
+              }}
+            >
+              <SelectTrigger id="opportunity-lead" disabled={leads.length === 0}>
+                <SelectValue placeholder="Selecione um lead" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="maria">Maria Santos</SelectItem>
-                <SelectItem value="carlos">Carlos Oliveira</SelectItem>
-                <SelectItem value="joana">Joana Pereira</SelectItem>
+                {leads.length === 0 ? (
+                  <SelectItem value="" disabled>
+                    Nenhum lead disponível
+                  </SelectItem>
+                ) : (
+                  leads.map((lead) => (
+                    <SelectItem key={lead.id} value={lead.id}>
+                      {lead.label}
+                    </SelectItem>
+                  ))
+                )}
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="stage">Etapa Inicial</Label>
-            <Select defaultValue="negociacao">
-              <SelectTrigger id="stage">
+            <Label htmlFor="opportunity-value">Valor estimado (R$)</Label>
+            <Input
+              id="opportunity-value"
+              type="number"
+              step="0.01"
+              min={0}
+              {...register('value', { valueAsNumber: true })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="opportunity-expected-close">Previsão de fechamento</Label>
+            <Input id="opportunity-expected-close" type="date" {...register('expectedClose')} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="opportunity-stage">Etapa inicial</Label>
+            <input type="hidden" value={selectedStage} {...stageRegister} />
+            <Select
+              value={selectedStage ?? undefined}
+              onValueChange={(value) => {
+                setValue('stage', value as OpportunityStage, { shouldValidate: true, shouldDirty: true });
+              }}
+            >
+              <SelectTrigger id="opportunity-stage">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="negociacao">Negociação</SelectItem>
-                <SelectItem value="apresentacao">Apresentação Agendada</SelectItem>
-                <SelectItem value="proposta">Proposta Enviada</SelectItem>
+                {stageOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
-        </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancelar</Button>
-          <Button onClick={onClose}>Criar Oportunidade</Button>
-        </DialogFooter>
+          <DialogFooter className="col-span-2 mt-4 flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isSubmitting || leads.length === 0}>
+              {isSubmitting ? 'Salvando…' : 'Criar oportunidade'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

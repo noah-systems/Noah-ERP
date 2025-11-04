@@ -31,15 +31,14 @@ Este guia descreve como provisionar o Noah-ERP em um servidor LEMP sem depender 
 1. Instale as dependências Node.js e gere os artefatos front-end e back-end:
    ```bash
    npm install
-   npm run prisma:generate
-   npm run prisma:migrate
+   npm --prefix apps/api install
    npm run build:web
    npm run build:api
    ```
 
 ## 5. Preparar a aplicação
 
-1. Execute a seed para criar o usuário administrador padrão, caso necessário:
+1. Execute a seed para criar o usuário administrador padrão, caso necessário (após aplicar o schema do banco via SQL/migrations):
    ```bash
    node prisma/seed.js
    ```

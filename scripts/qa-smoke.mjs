@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { PrismaClient } from '@prisma/client';
+import { Pool } from 'pg';
 import crypto from 'node:crypto';
 
 const API_BASE = process.env.QA_API_URL || process.env.API_BASE || 'http://localhost:3000/api';
@@ -11,7 +11,7 @@ async function main() {
     throw new Error('DATABASE_URL precisa estar definido para executar o QA smoke.');
   }
 
-  const prisma = new PrismaClient();
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
   const buildUrl = (path) => {
     if (/^https?:/i.test(path)) {
@@ -72,43 +72,50 @@ async function main() {
     }
     console.log('✓ Token validado com /auth/me');
 
-    const dbUser = await prisma.user.findUnique({ where: { email: ADMIN_EMAIL } });
-    if (!dbUser) {
-      throw new Error(`Usuário ${ADMIN_EMAIL} não encontrado no banco.`);
+    const client = await pool.connect();
+    try {
+      const { rows: userRows } = await client.query(
+        'SELECT "id" FROM "User" WHERE "email" = $1 LIMIT 1',
+        [ADMIN_EMAIL],
+      );
+      const dbUser = userRows[0];
+      if (!dbUser) {
+        throw new Error(`Usuário ${ADMIN_EMAIL} não encontrado no banco.`);
+      }
+
+      const statusId = crypto.randomUUID();
+      const statusName = `QA Smoke ${Date.now()}`;
+      await client.query(
+        'INSERT INTO "LeadStatus" ("id", "name", "color") VALUES ($1, $2, $3)',
+        [statusId, statusName, '#ff7043'],
+      );
+
+      const leadId = crypto.randomUUID();
+      const companyName = `QA Smoke ${crypto.randomUUID().slice(0, 8)}`;
+      await client.query(
+        'INSERT INTO "Lead" ("id", "company", "name", "statusId", "ownerId") VALUES ($1, $2, $3, $4, $5)',
+        [leadId, companyName, companyName, statusId, dbUser.id],
+      );
+
+      const { rows: fetchedRows } = await client.query(
+        'SELECT "id", "company", "statusId" FROM "Lead" WHERE "id" = $1',
+        [leadId],
+      );
+      if (!fetchedRows[0]) {
+        throw new Error('Lead recém-criado não foi encontrado.');
+      }
+
+      console.log('✓ Escrita e leitura no banco bem-sucedidas');
+
+      await client.query('DELETE FROM "Lead" WHERE "id" = $1', [leadId]);
+      await client.query('DELETE FROM "LeadStatus" WHERE "id" = $1', [statusId]);
+    } finally {
+      client.release();
     }
-
-    const status = await prisma.leadStatus.create({
-      data: {
-        name: `QA Smoke ${Date.now()}`,
-        color: '#ff7043',
-      },
-    });
-
-    const lead = await prisma.lead.create({
-      data: {
-        company: `QA Smoke ${crypto.randomUUID().slice(0, 8)}`,
-        statusId: status.id,
-        ownerId: dbUser.id,
-      },
-    });
-
-    const fetched = await prisma.lead.findUnique({
-      where: { id: lead.id },
-      select: { id: true, company: true, statusId: true },
-    });
-
-    if (!fetched) {
-      throw new Error('Lead recém-criado não foi encontrado.');
-    }
-
-    console.log('✓ Escrita e leitura no banco bem-sucedidas');
-
-    await prisma.lead.delete({ where: { id: lead.id } }).catch(() => {});
-    await prisma.leadStatus.delete({ where: { id: status.id } }).catch(() => {});
 
     console.log('Smoke test concluído com sucesso.');
   } finally {
-    await prisma.$disconnect().catch(() => {});
+    await pool.end().catch(() => {});
   }
 }
 

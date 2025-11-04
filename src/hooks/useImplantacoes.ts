@@ -16,7 +16,7 @@ export function useImplantacoes() {
   const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.get<Implementation[]>('/implants');
+      const { data } = await api.get<Implementation[]>('/implants');
       setItems(sortImplementations(data));
       setError(null);
     } catch (err) {
@@ -33,18 +33,18 @@ export function useImplantacoes() {
 
   const schedule = useCallback(
     async (payload: ImplementationPayload) => {
-      const created = await api.post<Implementation>('/implants', payload);
-      setItems((prev) => sortImplementations([...prev, created]));
-      return created;
+      const { data } = await api.post<Implementation>('/implants', payload);
+      setItems((prev) => sortImplementations([...prev, data]));
+      return data;
     },
     []
   );
 
   const update = useCallback(
     async (id: string, payload: ImplementationUpdatePayload) => {
-      const updated = await api.put<Implementation>(`/implants/${id}`, payload);
-      setItems((prev) => sortImplementations(prev.map((item) => (item.id === id ? updated : item))));
-      return updated;
+      const { data } = await api.put<Implementation>(`/implants/${id}`, payload);
+      setItems((prev) => sortImplementations(prev.map((item) => (item.id === id ? data : item))));
+      return data;
     },
     []
   );

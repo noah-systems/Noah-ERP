@@ -1,5 +1,5 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
-import type { Role } from '@prisma/client';
+import type { Role } from '../../database/enums.js';
 import { JwtService } from '../jwt/jwt.service.js';
 
 type HttpRequest = {

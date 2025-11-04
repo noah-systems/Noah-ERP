@@ -22,14 +22,8 @@ run npm cache clean --force
 log "Installing root dependencies"
 run npm install --legacy-peer-deps --force
 
-log "Ensuring Prisma 6.18.0 is installed"
-run npm install -D prisma@6.18.0 @prisma/client@6.18.0 --force
-
 log "Installing API specific dependencies"
 run npm --prefix apps/api install --legacy-peer-deps --force
-
-log "Generating Prisma client"
-run npx prisma generate --schema=./prisma/schema.prisma
 
 log "Building API"
 run npm run build:api

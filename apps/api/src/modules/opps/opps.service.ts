@@ -1,7 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import type { Prisma as PrismaTypes } from '@prisma/client';
-import PrismaPkg from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service.js';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { DatabaseService } from '../../database/database.service.js';
 import { WorkerService } from '../worker/worker.service.js';
 import {
   ApplyPricingDto,
@@ -10,17 +8,22 @@ import {
   UpdateOppStageDto,
 } from './opps.dto.js';
 
-const { Prisma } = PrismaPkg;
-
 @Injectable()
 export class OppsService {
-  constructor(private readonly prisma: PrismaService, private readonly worker: WorkerService) {}
+  constructor(private readonly db: DatabaseService, private readonly worker: WorkerService) {}
 
   list() {
-    return this.prisma.opportunity.findMany({
-      include: { owner: true, stage: true, lead: true, hosting: true },
-      orderBy: { createdAt: 'desc' },
-    });
+    return this.db.opportunity
+      .findAll({
+        include: [
+          { association: 'owner' },
+          { association: 'stage' },
+          { association: 'lead' },
+          { association: 'hosting' },
+        ],
+        order: [['createdAt', 'DESC']],
+      })
+      .then((items) => items.map((item) => item.toJSON()));
   }
 
   async create(dto: CreateOpportunityDto) {
@@ -42,36 +45,60 @@ export class OppsService {
       trialStart: dto.trialStart ? new Date(dto.trialStart) : null,
       activation: dto.activation ? new Date(dto.activation) : null,
       billingBaseDay: dto.billingBaseDay ?? null,
-    } satisfies PrismaTypes.OpportunityUncheckedCreateInput;
+    };
 
-    const opportunity = await this.prisma.opportunity.create({
-      data,
-      include: { owner: true, stage: true, lead: true, hosting: true },
+    const created = await this.db.opportunity.create(data);
+    const opportunity = await this.db.opportunity.findByPk(created.get('id') as string, {
+      include: [
+        { association: 'owner' },
+        { association: 'stage' },
+        { association: 'lead' },
+        { association: 'hosting' },
+      ],
     });
 
-    if (dto.trialStart) {
-      await this.scheduleTrialJobs(opportunity.id, dto.trialStart);
+    if (dto.trialStart && opportunity) {
+      await this.scheduleTrialJobs(opportunity.get('id') as string, dto.trialStart);
     }
 
-    return opportunity;
+    if (!opportunity) {
+      throw new NotFoundException('opportunity');
+    }
+
+    return opportunity.toJSON();
   }
 
   async updateStage(id: string, dto: UpdateOppStageDto) {
-    const opportunity = await this.prisma.opportunity.update({
-      where: { id },
-      data: { stageId: dto.stageId },
-      include: { owner: true, stage: true, lead: true, hosting: true },
+    const opportunity = await this.db.opportunity.findByPk(id, {
+      include: [
+        { association: 'owner' },
+        { association: 'stage' },
+        { association: 'lead' },
+        { association: 'hosting' },
+      ],
+    });
+    if (!opportunity) {
+      throw new NotFoundException('opportunity');
+    }
+
+    await opportunity.update({ stageId: dto.stageId });
+    await opportunity.reload({
+      include: [
+        { association: 'owner' },
+        { association: 'stage' },
+        { association: 'lead' },
+        { association: 'hosting' },
+      ],
     });
 
-    await this.prisma.oppHistory.create({
-      data: {
-        oppId: id,
-        actorId: dto.actorId,
-        note: dto.note ?? `Stage changed to ${opportunity.stage.name}`,
-      },
+    const stage = opportunity.get('stage') as { name?: string } | undefined;
+    await this.db.oppHistory.create({
+      oppId: id,
+      actorId: dto.actorId,
+      note: dto.note ?? `Stage changed to ${stage?.name ?? ''}`,
     });
 
-    return opportunity;
+    return opportunity.toJSON();
   }
 
   async applyPricing(id: string, dto: ApplyPricingDto) {
@@ -81,44 +108,72 @@ export class OppsService {
       return acc + price * quantity;
     }, 0);
 
-    const opportunity = await this.prisma.opportunity.update({
-      where: { id },
-      data: { priceTotal: new Prisma.Decimal(total) },
-      include: { owner: true, stage: true, lead: true, hosting: true },
+    const opportunity = await this.db.opportunity.findByPk(id, {
+      include: [
+        { association: 'owner' },
+        { association: 'stage' },
+        { association: 'lead' },
+        { association: 'hosting' },
+      ],
+    });
+    if (!opportunity) {
+      throw new NotFoundException('opportunity');
+    }
+
+    await opportunity.update({ priceTotal: total.toFixed(2) });
+    await opportunity.reload({
+      include: [
+        { association: 'owner' },
+        { association: 'stage' },
+        { association: 'lead' },
+        { association: 'hosting' },
+      ],
     });
 
-    await this.prisma.oppHistory.create({
-      data: {
-        oppId: id,
-        actorId: opportunity.ownerId,
-        note: `Pricing applied: total ${total.toFixed(2)}`,
-      },
+    await this.db.oppHistory.create({
+      oppId: id,
+      actorId: opportunity.get('ownerId') as string,
+      note: `Pricing applied: total ${total.toFixed(2)}`,
     });
 
-    return opportunity;
+    return opportunity.toJSON();
   }
 
   async markLost(id: string, dto: MarkOpportunityLostDto) {
-    const lostStage = await this.prisma.opportunityStage.findFirst({
+    const lostStage = await this.db.opportunityStage.findOne({
       where: { lostReasonRequired: true },
-      orderBy: { order: 'desc' },
+      order: [['order', 'DESC']],
     });
 
-    const opportunity = await this.prisma.opportunity.update({
-      where: { id },
-      data: { stageId: lostStage?.id },
-      include: { owner: true, stage: true, lead: true, hosting: true },
+    const opportunity = await this.db.opportunity.findByPk(id, {
+      include: [
+        { association: 'owner' },
+        { association: 'stage' },
+        { association: 'lead' },
+        { association: 'hosting' },
+      ],
+    });
+    if (!opportunity) {
+      throw new NotFoundException('opportunity');
+    }
+
+    await opportunity.update({ stageId: lostStage?.get('id') ?? null });
+    await opportunity.reload({
+      include: [
+        { association: 'owner' },
+        { association: 'stage' },
+        { association: 'lead' },
+        { association: 'hosting' },
+      ],
     });
 
-    await this.prisma.oppHistory.create({
-      data: {
-        oppId: id,
-        actorId: dto.actorId,
-        note: `Venda perdida: ${dto.reason}${dto.summary ? ` - ${dto.summary}` : ''}`,
-      },
+    await this.db.oppHistory.create({
+      oppId: id,
+      actorId: dto.actorId,
+      note: `Venda perdida: ${dto.reason}${dto.summary ? ` - ${dto.summary}` : ''}`,
     });
 
-    return opportunity;
+    return opportunity.toJSON();
   }
 
   private async scheduleTrialJobs(oppId: string, trialStartISO: string) {

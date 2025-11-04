@@ -11,7 +11,7 @@ export function useCancellations() {
   const fetchItems = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.get<Cancellation[]>('/cancellations');
+      const { data } = await api.get<Cancellation[]>('/cancellations');
       setItems(data);
       setError(null);
     } catch (err) {
@@ -28,9 +28,9 @@ export function useCancellations() {
 
   const createCancellation = useCallback(
     async (payload: CancellationPayload) => {
-      const created = await api.post<Cancellation>('/cancellations', payload);
-      setItems((prev) => [created, ...prev]);
-      return created;
+      const { data } = await api.post<Cancellation>('/cancellations', payload);
+      setItems((prev) => [data, ...prev]);
+      return data;
     },
     []
   );

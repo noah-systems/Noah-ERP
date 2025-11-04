@@ -1,0 +1,34 @@
+export enum Role {
+  ADMIN_NOAH = 'ADMIN_NOAH',
+  SUPPORT_NOAH = 'SUPPORT_NOAH',
+  FINANCE_NOAH = 'FINANCE_NOAH',
+  SELLER = 'SELLER',
+  PARTNER_MASTER = 'PARTNER_MASTER',
+  PARTNER_FINANCE = 'PARTNER_FINANCE',
+  PARTNER_OPS = 'PARTNER_OPS',
+}
+
+export enum ImplStatus {
+  PENDING_SCHED = 'PENDING_SCHED',
+  SCHEDULED = 'SCHEDULED',
+  DONE = 'DONE',
+  NO_SHOW = 'NO_SHOW',
+}
+
+export enum Channel {
+  INTERNAL = 'INTERNAL',
+  WHITE_LABEL = 'WHITE_LABEL',
+}
+
+export enum ItemKind {
+  PLAN = 'PLAN',
+  ADDON = 'ADDON',
+  MODULE = 'MODULE',
+}
+
+export enum PartnerAccountStatus {
+  PENDING_CREATE = 'PENDING_CREATE',
+  ACTIVE = 'ACTIVE',
+  PENDING_CHANGE = 'PENDING_CHANGE',
+  CANCELED = 'CANCELED',
+}

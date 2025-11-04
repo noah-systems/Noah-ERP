@@ -1,6 +1,6 @@
 # Noah ERP
 
-ERP da Noah Omni com frontend em Vite/React e API em NestJS/Prisma.
+ERP da Noah Omni com frontend em Vite/React e API em NestJS/Sequelize.
 
 ## Requisitos de Sistema
 
@@ -19,10 +19,9 @@ Para um deploy manual completo (sem Docker) recomenda-se garantir os seguintes c
 4. **Dependências do projeto:**
    ```bash
    npm ci
-   npm run prisma:generate
-   npm run prisma:migrate
+   npm --prefix apps/api install
    ```
-   Execute `node prisma/seed.js` caso deseje criar o usuário administrador padrão.
+   Execute `node prisma/seed.js` caso deseje criar o usuário administrador padrão após aplicar o schema do banco.
 5. **Build de produção:**
    ```bash
    npm run build:web
@@ -38,7 +37,7 @@ Para provisionar rapidamente o banco PostgreSQL, o usuário `noah_user` e uma in
 - Criar o usuário e banco `noah_erp` com permissões completas.
 - Instalar, habilitar e iniciar o serviço Redis via `systemd`.
 - Validar as conexões executando `SELECT 1` no PostgreSQL e `PING` no Redis.
-- Rodar `npx prisma db push` a partir do diretório `/var/www/erp.noahomni.com.br/apps/api` para aplicar o schema Prisma.
+- Aplicar o schema do banco manualmente (via scripts SQL ou ferramenta de migrations de sua escolha).
 
 > ⚠️ Revise o script antes de rodar em produção e ajuste caminhos ou credenciais caso seu ambiente possua requisitos diferentes.
 

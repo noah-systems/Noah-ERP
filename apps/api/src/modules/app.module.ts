@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { RedisModule } from '../redis/redis.module.js';
 import { JwtModule } from './jwt/jwt.module.js';
-import { PrismaService } from '../prisma/prisma.service.js';
+import { DatabaseService } from '../database/database.service.js';
 import { AuthModule } from './auth/auth.module.js';
 import { UsersModule } from './users/users.module.js';
 import { LeadsModule } from './leads/leads.module.js';
@@ -45,6 +45,6 @@ if (!process.env.JWT_SECRET) {
     WorkerModule,
   ],
   controllers: [HealthController],
-  providers: [PrismaService, { provide: APP_GUARD, useClass: RateLimitGuard }],
+  providers: [DatabaseService, { provide: APP_GUARD, useClass: RateLimitGuard }],
 })
 export class AppModule {}

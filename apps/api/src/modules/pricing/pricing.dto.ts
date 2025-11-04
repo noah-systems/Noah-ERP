@@ -1,9 +1,4 @@
-import type {
-  Channel as ChannelType,
-  ItemKind as ItemKindType,
-  Role as RoleType,
-} from '@prisma/client';
-import PrismaPkg from '@prisma/client';
+import { Channel, ItemKind, Role } from '../../database/enums.js';
 import {
   IsBoolean,
   IsEnum,
@@ -13,8 +8,6 @@ import {
   IsPositive,
   IsString,
 } from 'class-validator';
-
-const { Channel, ItemKind, Role } = PrismaPkg;
 
 export class CreatePriceItemDto {
   @IsString()
@@ -30,10 +23,10 @@ export class CreatePriceItemDto {
   price!: number;
 
   @IsEnum(Channel)
-  channel!: ChannelType;
+  channel!: Channel;
 
   @IsEnum(ItemKind)
-  kind!: ItemKindType;
+  kind!: ItemKind;
 
   @IsOptional()
   @IsBoolean()
@@ -42,7 +35,7 @@ export class CreatePriceItemDto {
 
 export class CreatePriceTierDto {
   @IsEnum(Channel)
-  channel!: ChannelType;
+  channel!: Channel;
 
   @IsPositive()
   minUsers!: number;
@@ -58,7 +51,7 @@ export class CreatePriceTierDto {
 
 export class CreateDiscountPolicyDto {
   @IsEnum(Role)
-  role!: RoleType;
+  role!: Role;
 
   @IsNumber()
   @IsPositive()

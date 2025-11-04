@@ -1,4 +1,4 @@
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError, AxiosHeaders } from "axios";
 
 export type Role = "ADMIN" | "USER";
 
@@ -37,10 +37,13 @@ api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const token = window.localStorage.getItem(TOKEN_KEY);
     if (token) {
-      config.headers = {
-        ...(config.headers ?? {}),
-        Authorization: `Bearer ${token}`,
-      };
+      const headers = config.headers ?? new AxiosHeaders();
+      if (headers instanceof AxiosHeaders) {
+        headers.set("Authorization", `Bearer ${token}`);
+      } else {
+        (headers as Record<string, string>).Authorization = `Bearer ${token}`;
+      }
+      config.headers = headers;
     }
   }
   return config;
