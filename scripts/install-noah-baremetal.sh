@@ -43,15 +43,6 @@ detect_api_dir(){
     echo "${REPO_DIR}/apps/api"
     return
   fi
-  local s; s="$(find "${REPO_DIR}" -maxdepth 3 -type f -path '*/prisma/schema.prisma' 2>/dev/null | head -n1 || true)"
-  if [ -n "$s" ]; then
-    local repo_root
-    repo_root="$(dirname "$(dirname "$s")")"
-    if [ -d "${repo_root}/apps/api" ]; then
-      echo "${repo_root}/apps/api"
-      return
-    fi
-  fi
   echo ""
 }
 
@@ -151,7 +142,7 @@ semanage fcontext -a -t httpd_sys_content_t "${WEB_DEPLOY}(/.*)?" >/dev/null 2>&
 restorecon -Rv "${WEB_DEPLOY}" >/dev/null 2>&1 || true
 ok "Frontend published"
 
-### ========= API PREP (PRISMA + SERVICE) =========
+### ========= API PREP (SERVICE) =========
 log "Locating API directory"
 API_DIR_DISCOVERED="$(detect_api_dir)"
 API_DIR="${API_DIR:-/opt/noah-erp/Noah-ERP/apps/api}"
@@ -163,8 +154,6 @@ fi
 [ -d "${API_DIR}" ] || { err "API directory not found (expected apps/api)."; exit 1; }
 ok "API at ${API_DIR}"
 
-PRISMA_DIR="${REPO_DIR}/prisma"
-
 log "Preparing API environment"
 cd "${API_DIR}"
 
@@ -173,10 +162,7 @@ id -u noah >/dev/null 2>&1 || useradd --system --home "${INSTALL_DIR}" --shell /
 
 API_ENV_FILE="/etc/noah-erp/api.env"
 
-# (a) Remove prisma/.env if present (it causes collisions)
-rm -f "${PRISMA_DIR}/.env"
-
-# (b) Ensure runtime env exists and contains DATABASE_URL for user "noah"
+# Ensure runtime env exists and contains DATABASE_URL for user "noah"
 install -d /etc/noah-erp
 if [ ! -s "${API_ENV_FILE}" ]; then
   [ -n "${ADMIN_EMAIL}" ] || { err "ADMIN_EMAIL must be set (export ADMIN_EMAIL=admin@example.com)"; exit 1; }
@@ -185,7 +171,7 @@ if [ ! -s "${API_ENV_FILE}" ]; then
   cat >"${API_ENV_FILE}" <<ENV
 NODE_ENV=production
 PORT=3000
-DATABASE_URL=postgresql://noah:${DB_PASS_ENC}@127.0.0.1:5432/noah?schema=public
+DATABASE_URL=postgresql://noah:${DB_PASS_ENC}@127.0.0.1:5432/noah
 REDIS_URL=redis://127.0.0.1:6379
 JWT_SECRET=__FILL_ME__
 ADMIN_NAME=${ADMIN_NAME}
@@ -196,19 +182,19 @@ ENV
   sed -i "s|^JWT_SECRET=__FILL_ME__|JWT_SECRET=$(openssl rand -hex 32)|" "${API_ENV_FILE}" || true
 fi
 
-# (c) Force correct DATABASE_URL (in case file existed but had wrong user)
+# Force correct DATABASE_URL (in case file existed but had wrong user)
 sed -i '/^DATABASE_URL=/d' "${API_ENV_FILE}"
 DB_PASS_ENC="$(urlencode "$DB_PASS")"
-echo "DATABASE_URL=postgresql://noah:${DB_PASS_ENC}@127.0.0.1:5432/noah?schema=public" >>"${API_ENV_FILE}"
+echo "DATABASE_URL=postgresql://noah:${DB_PASS_ENC}@127.0.0.1:5432/noah" >>"${API_ENV_FILE}"
 
 # (d) Link apps/api/.env to the runtime env and export vars to current shell
 ln -snf "${API_ENV_FILE}" "${API_DIR}/.env"
 set -a; . "${API_ENV_FILE}"; set +a
 
-# (e) Guardrails: fail fast if DATABASE_URL is missing
+# Guardrails: fail fast if DATABASE_URL is missing
 grep -q '^DATABASE_URL=' "${API_ENV_FILE}" || { err '[FATAL] DATABASE_URL missing in /etc/noah-erp/api.env'; exit 1; }
 
-# (f) (Optional) Log which DB URL is being used (mask password)
+# (Optional) Log which DB URL is being used (mask password)
 echo "DATABASE_URL ativa: $(echo "$DATABASE_URL" | sed 's#://\([^:]*\):[^@]*@#://\1:***@#')"
 
 log "Installing API deps"
@@ -217,9 +203,9 @@ npm ci --no-audit --no-fund --include=dev || npm i --no-audit --no-fund --legacy
 log "Ensuring Postgres role/database for user 'noah'"
 ensure_noah_db
 
-# (h) Execute seed to garantir conta administrativa
+# Execute seed to garantir conta administrativa
 log "Executando seed padrão do banco"
-if ! ( cd "${API_DIR}" && node prisma/seed.js ); then
+if ! ( cd "${API_DIR}" && npm run db:seed ); then
   err "[FATAL] Seed inicial falhou"
   exit 1
 fi

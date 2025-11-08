@@ -7,7 +7,7 @@ import {
   Sequelize,
   Transaction,
 } from 'sequelize';
-import { Channel, ImplStatus, ItemKind, PartnerAccountStatus, Role } from './enums.js';
+import { Channel, ItemKind, PartnerAccountStatus, Role } from './enums.js';
 
 const TRUTHY_STRINGS = new Set(['1', 'true', 'yes', 'y', 'on']);
 const FALSY_STRINGS = new Set(['0', 'false', 'no', 'n', 'off']);
@@ -54,7 +54,6 @@ type ModelDictionary = {
   hostingProvider: ModelStatic<Model>;
   opportunity: ModelStatic<Model>;
   oppHistory: ModelStatic<Model>;
-  implementationTask: ModelStatic<Model>;
   canceledSale: ModelStatic<Model>;
   partner: ModelStatic<Model>;
   partnerAccount: ModelStatic<Model>;
@@ -119,10 +118,6 @@ export class DatabaseService implements OnModuleInit {
 
   get oppHistory() {
     return this.models.oppHistory;
-  }
-
-  get implementationTask() {
-    return this.models.implementationTask;
   }
 
   get partner() {
@@ -308,20 +303,6 @@ export class DatabaseService implements OnModuleInit {
       { tableName: 'OppHistory', freezeTableName: true, timestamps: false },
     );
 
-    const implementationTask = this.sequelize.define(
-      'ImplementationTask',
-      {
-        id: { type: DataTypes.STRING, primaryKey: true, defaultValue: DataTypes.UUIDV4 },
-        oppId: { type: DataTypes.STRING, allowNull: false },
-        status: { type: DataTypes.ENUM(...Object.values(ImplStatus)), allowNull: false, defaultValue: ImplStatus.PENDING_SCHED },
-        schedule: { type: DataTypes.DATE, allowNull: true },
-        note: { type: DataTypes.TEXT, allowNull: true },
-        createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
-        updatedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
-      },
-      { tableName: 'ImplementationTask', freezeTableName: true, timestamps: true },
-    );
-
     const canceledSale = this.sequelize.define(
       'CanceledSale',
       {
@@ -436,7 +417,6 @@ export class DatabaseService implements OnModuleInit {
       hostingProvider,
       opportunity,
       oppHistory,
-      implementationTask,
       canceledSale,
       partner,
       partnerAccount,
@@ -456,7 +436,6 @@ export class DatabaseService implements OnModuleInit {
       hostingProvider,
       opportunity,
       oppHistory,
-      implementationTask,
       partner,
       partnerAccount,
       partnerChangeRequest,
@@ -491,9 +470,6 @@ export class DatabaseService implements OnModuleInit {
 
     opportunityStage.hasMany(oppHistory, { as: 'historyTo', foreignKey: 'toStageId' });
     oppHistory.belongsTo(opportunityStage, { as: 'toStage', foreignKey: 'toStageId' });
-
-    opportunity.hasMany(implementationTask, { as: 'implTasks', foreignKey: 'oppId' });
-    implementationTask.belongsTo(opportunity, { as: 'opp', foreignKey: 'oppId' });
 
     partner.hasMany(partnerAccount, { as: 'accounts', foreignKey: 'partnerId' });
     partnerAccount.belongsTo(partner, { as: 'partner', foreignKey: 'partnerId' });

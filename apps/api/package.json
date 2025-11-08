@@ -7,9 +7,9 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
     "start:prod": "npm run build && npm run start",
-    "db:seed": "node ./scripts/db-seed.mjs",
-    "migrate": "sequelize --config sequelize.config.js db:migrate",
-    "seed": "sequelize --config sequelize.config.js db:seed:all"
+    "db:migrate": "sequelize --config sequelize.config.js db:migrate",
+    "db:seed": "sequelize --config sequelize.config.js db:seed:all",
+    "db:reset": "sequelize --config sequelize.config.js db:migrate:undo:all && npm run db:migrate && npm run db:seed"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

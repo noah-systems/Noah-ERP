@@ -40,7 +40,7 @@ Este guia descreve como provisionar o Noah-ERP em um servidor LEMP sem depender 
 
 1. Execute a seed para criar o usuário administrador padrão, caso necessário (após aplicar o schema do banco via SQL/migrations):
    ```bash
-   node prisma/seed.js
+   npm --prefix apps/api run db:seed
    ```
 
 ## 6. Configurar o Nginx

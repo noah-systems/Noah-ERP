@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from '../auth/auth.module.js';
 import { UsersService } from './users.service.js';
 import { UsersController } from './users.controller.js';
-import { DatabaseService } from '../../database/database.service.js';
-import { AuthModule } from '../auth/auth.module.js';
+import { NoahSequelizeModule } from '../../database/sequelize.module.js';
+import { usersProviders } from './users.providers.js';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, NoahSequelizeModule],
   controllers: [UsersController],
-  providers: [UsersService, DatabaseService],
+  providers: [...usersProviders, UsersService],
   exports: [UsersService],
 })
 export class UsersModule {}

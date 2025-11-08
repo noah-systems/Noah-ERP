@@ -28,7 +28,6 @@ logs/
 Thumbs.db
 
 # Prisma
-prisma/*-journal
 
 # Assets binários: mantenha fora do repo (use SVG ou data URI)
 public/brand/*
@@ -56,5 +55,3 @@ vendor/
 # Legado/compat
 api/.env
 !apps/api/.env
-api/prisma/.env
-prisma/.env

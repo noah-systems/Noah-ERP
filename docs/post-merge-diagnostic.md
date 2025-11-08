@@ -14,12 +14,12 @@ Este roteiro documenta o estado esperado do ambiente de produção após um merg
   - `GET`/`POST /api/opps`, `POST /api/opps/:id/move`, `DELETE /api/opps/:id`.
 - **Banco**: conexões Sequelize funcionando; Postgres (`127.0.0.1:5432`) responde e o schema está atualizado.
 - **Redis/Valkey**: porta `6379` ativa para sessões e rate limiting (quando habilitado).
-- **Seed obrigatório**: sem o usuário administrador seedado, o login falha com `401`. Garanta que `npm --prefix apps/api run seed` foi executado (sobrescreva credenciais com `SEED_ADMIN_*` se necessário), ou insira o admin diretamente no banco.
+- **Seed obrigatório**: sem o usuário administrador seedado, o login falha com `401`. Garanta que `npm --prefix apps/api run db:seed` foi executado (sobrescreva credenciais com `ADMIN_*` se necessário), ou insira o admin diretamente no banco.
 
 ## Banco de dados
 
-- **Conexão**: `DATABASE_URL=postgresql://noah...@127.0.0.1:5432/noah?schema=public` está funcional.
-- **Seed formal**: utilize `npm --prefix apps/api run db:seed` (que executa `prisma/seed.js`) para garantir o usuário administrador padrão em reinstalações.
+- **Conexão**: `DATABASE_URL=postgresql://noah...@127.0.0.1:5432/noah` está funcional.
+- **Seed formal**: utilize `npm --prefix apps/api run db:seed` para garantir o usuário administrador padrão em reinstalações.
 
 ## Front / branding / UX
 
