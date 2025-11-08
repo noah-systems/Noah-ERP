@@ -1,11 +1,12 @@
 export type LeadStatus = 'NURTURING' | 'QUALIFIED' | 'DISQUALIFIED';
 export type OpportunityStage =
-  | 'NEGOCIACAO'
-  | 'APRESENTACAO'
-  | 'PROPOSTA'
+  | 'NEGOTIATION'
+  | 'PRESENTATION'
+  | 'PROPOSAL'
   | 'TRIAL'
-  | 'VENC_TRIAL'
-  | 'VENDAS';
+  | 'TRIAL_EXPIRING'
+  | 'WON'
+  | 'LOST';
 export type ImplementationStatus = 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
 
 export interface Lead {
@@ -42,29 +43,52 @@ export interface LeadGroupedResponse {
 
 export interface Opportunity {
   id: string;
-  title: string;
-  value?: string | null;
+  companyName: string;
+  cnpj: string | null;
+  contactName: string;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  financeEmail: string | null;
+  financePhone: string | null;
+  subdomain: string | null;
+  amount: number;
   stage: OpportunityStage;
-  order: number;
-  leadId: string;
-  ownerId?: string | null;
-  expectedClose?: string | null;
+  trialEndsAt: string | null;
+  ownerId: string;
+  tags: string[];
+  lostReason: string | null;
   createdAt: string;
   updatedAt: string;
-  lead?: {
-    id: string;
-    name: string;
-    company?: string | null;
-    email?: string | null;
-  } | null;
 }
 
-export interface OpportunityPayload {
-  title: string;
-  leadId: string;
-  value?: number;
+export interface CreateOpportunityPayload {
+  companyName: string;
+  cnpj?: string;
+  contactName: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  financeEmail?: string;
+  financePhone?: string;
+  subdomain?: string;
+  amount: number;
   stage?: OpportunityStage;
-  expectedClose?: string;
+  trialEndsAt?: string;
+  ownerId: string;
+  tags?: string[];
+}
+
+export interface UpdateOpportunityPayload extends Partial<CreateOpportunityPayload> {}
+
+export interface MoveOpportunityPayload {
+  stage: OpportunityStage;
+}
+
+export interface MarkOpportunityLostPayload {
+  reason?: string;
+}
+
+export interface OpportunityGroupedResponse {
+  grouped: Record<OpportunityStage, Opportunity[]>;
 }
 
 export interface Implementation {
