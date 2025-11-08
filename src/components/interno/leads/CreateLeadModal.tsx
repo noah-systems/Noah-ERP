@@ -7,88 +7,102 @@ import { Input } from '../../ui/input';
 import { Label } from '../../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
 import { Textarea } from '../../ui/textarea';
-import type { LeadPayload, LeadStage } from '@/types/api';
+import type { LeadPayload } from '@/types/api';
+
+const SOURCE_OPTIONS = ['Inbound', 'Manual', 'Evento', 'Parceria', 'Indicação'];
 
 type CreateLeadModalProps = {
   open: boolean;
   onClose: () => void;
   onSubmit: (payload: LeadPayload) => Promise<unknown> | unknown;
+  defaultOwnerId?: string;
 };
 
 type LeadFormValues = {
-  name: string;
-  company?: string;
-  email?: string;
+  companyName: string;
+  segment?: string;
+  employeesCount?: number;
+  contactName?: string;
   phone?: string;
+  email?: string;
   source?: string;
+  ownerId?: string;
   notes?: string;
-  stage: LeadStage;
-  value?: number;
 };
 
-const stageOptions: Array<{ value: LeadStage; label: string }> = [
-  { value: 'NUTRICAO', label: 'Nutrição' },
-  { value: 'QUALIFICADO', label: 'Qualificado' },
-  { value: 'NAO_QUALIFICADO', label: 'Não Qualificado' },
-];
-
-export function CreateLeadModal({ open, onClose, onSubmit }: CreateLeadModalProps) {
+export function CreateLeadModal({ open, onClose, onSubmit, defaultOwnerId }: CreateLeadModalProps) {
   const {
     register,
     handleSubmit,
     reset,
     setValue,
+    watch,
     formState: { isSubmitting },
   } = useForm<LeadFormValues>({
     defaultValues: {
-      stage: 'NUTRICAO',
+      ownerId: defaultOwnerId,
     },
   });
 
+  const sourceValue = watch('source');
+
   useEffect(() => {
-    if (!open) {
-      reset({ stage: 'NUTRICAO' });
+    if (open) {
+      reset({ ownerId: defaultOwnerId });
     }
-  }, [open, reset]);
+  }, [open, defaultOwnerId, reset]);
 
   const submit = handleSubmit(async (values) => {
     await onSubmit({
-      name: values.name,
-      company: values.company?.trim() || undefined,
-      email: values.email?.trim() || undefined,
+      companyName: values.companyName.trim(),
+      segment: values.segment?.trim() || undefined,
+      employeesCount: values.employeesCount ? Number(values.employeesCount) : undefined,
+      contactName: values.contactName?.trim() || undefined,
       phone: values.phone?.trim() || undefined,
+      email: values.email?.trim() || undefined,
       source: values.source?.trim() || undefined,
-      stage: values.stage,
-      value: values.value ? Number(values.value) : undefined,
+      ownerId: values.ownerId?.trim() || undefined,
+      notes: values.notes?.trim() || undefined,
     });
-    reset({ stage: 'NUTRICAO' });
+    reset({ ownerId: defaultOwnerId });
   });
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+    <Dialog open={open} onOpenChange={(value) => (!value ? onClose() : undefined)}>
+      <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Novo lead</DialogTitle>
+          <DialogTitle>Criar novo lead</DialogTitle>
         </DialogHeader>
 
         <form className="grid grid-cols-2 gap-4" onSubmit={submit}>
           <div className="col-span-2 space-y-2">
-            <Label htmlFor="lead-name">Nome do contato *</Label>
+            <Label htmlFor="lead-company">Nome da empresa *</Label>
             <Input
-              id="lead-name"
-              placeholder="Nome completo"
-              {...register('name', { required: true })}
+              id="lead-company"
+              placeholder="Ex.: Empresa ABC Ltda"
+              {...register('companyName', { required: true })}
             />
           </div>
 
-          <div className="col-span-2 space-y-2">
-            <Label htmlFor="lead-company">Empresa</Label>
-            <Input id="lead-company" placeholder="Razão social" {...register('company')} />
+          <div className="space-y-2">
+            <Label htmlFor="lead-segment">Segmento</Label>
+            <Input id="lead-segment" placeholder="Tecnologia, Serviços..." {...register('segment')} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="lead-email">E-mail</Label>
-            <Input id="lead-email" type="email" placeholder="contato@empresa.com" {...register('email')} />
+            <Label htmlFor="lead-employees">Qtd. de funcionários</Label>
+            <Input
+              id="lead-employees"
+              type="number"
+              min={0}
+              step={1}
+              {...register('employeesCount', { valueAsNumber: true })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="lead-contact">Nome do contato</Label>
+            <Input id="lead-contact" placeholder="Nome e sobrenome" {...register('contactName')} />
           </div>
 
           <div className="space-y-2">
@@ -97,53 +111,54 @@ export function CreateLeadModal({ open, onClose, onSubmit }: CreateLeadModalProp
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="lead-source">Origem</Label>
-            <Input id="lead-source" placeholder="Inbound, Evento..." {...register('source')} />
+            <Label htmlFor="lead-email">E-mail</Label>
+            <Input id="lead-email" type="email" placeholder="contato@empresa.com" {...register('email')} />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="lead-value">Valor estimado (R$)</Label>
-            <Input id="lead-value" type="number" step="0.01" min={0} {...register('value', { valueAsNumber: true })} />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Estágio</Label>
+            <Label>Origem</Label>
+            <input type="hidden" {...register('source')} />
             <Select
-              defaultValue="NUTRICAO"
-              onValueChange={(value) => {
-                setValue('stage', value as LeadStage);
-              }}
+              value={(sourceValue ?? undefined) as string | undefined}
+              onValueChange={(value) => setValue('source', value, { shouldDirty: true })}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Selecione" />
               </SelectTrigger>
               <SelectContent>
-                {stageOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
+                {SOURCE_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="lead-owner">Responsável</Label>
+            <Input id="lead-owner" placeholder="ID do responsável" {...register('ownerId')} />
+          </div>
+
           <div className="col-span-2 space-y-2">
             <Label htmlFor="lead-notes">Observações</Label>
             <Textarea
               id="lead-notes"
-              rows={3}
-              placeholder="Informações relevantes, objeções, contexto"
+              rows={4}
+              placeholder="Adicione observações importantes sobre o lead"
               {...register('notes')}
             />
           </div>
 
-          <DialogFooter className="col-span-2 mt-4 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Salvando…' : 'Criar lead'}
-            </Button>
+          <DialogFooter className="col-span-2 mt-4">
+            <div className="flex w-full justify-end gap-2">
+              <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Criando…' : 'Criar lead'}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>

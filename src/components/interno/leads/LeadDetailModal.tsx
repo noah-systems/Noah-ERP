@@ -3,20 +3,7 @@ import { Button } from '../../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../ui/tabs';
 import { Badge } from '../../ui/badge';
 import { CheckCircle, XCircle, FileText, Paperclip } from 'lucide-react';
-
-interface Lead {
-  id: string;
-  company: string;
-  segment: string;
-  employees: number;
-  contactName: string;
-  phone: string;
-  email: string;
-  origin: string;
-  owner: string;
-  createdAt: string;
-  notes?: string;
-}
+import type { Lead } from '@/types/api';
 
 interface LeadDetailModalProps {
   lead: Lead | null;
@@ -29,8 +16,8 @@ export function LeadDetailModal({ lead, open, onClose }: LeadDetailModalProps) {
 
   const activities = [
     { type: 'created', user: 'Sistema', action: 'Lead criado', date: lead.createdAt, time: '14:30' },
-    { type: 'note', user: lead.owner, action: 'Adicionou nota: "Cliente interessado em módulo CRM"', date: lead.createdAt, time: '15:45' },
-    { type: 'moved', user: lead.owner, action: 'Moveu de Nutrição para Qualificado', date: lead.createdAt, time: '16:20' },
+    { type: 'note', user: lead.ownerId ?? 'Responsável não definido', action: 'Adicionou nota: "Cliente interessado em módulo CRM"', date: lead.createdAt, time: '15:45' },
+    { type: 'moved', user: lead.ownerId ?? 'Responsável não definido', action: 'Moveu de Nutrição para Qualificado', date: lead.createdAt, time: '16:20' },
   ];
 
   return (
@@ -39,8 +26,10 @@ export function LeadDetailModal({ lead, open, onClose }: LeadDetailModalProps) {
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div>
-              <DialogTitle>{lead.company}</DialogTitle>
-              <p className="text-sm text-gray-500 mt-1">{lead.segment} • {lead.employees} funcionários</p>
+              <DialogTitle>{lead.companyName}</DialogTitle>
+              <p className="text-sm text-gray-500 mt-1">
+                {lead.segment ?? 'Segmento não informado'} • {lead.employeesCount ?? 0} funcionários
+              </p>
             </div>
             <div className="flex gap-2">
               <Button size="sm" variant="outline">
@@ -69,15 +58,15 @@ export function LeadDetailModal({ lead, open, onClose }: LeadDetailModalProps) {
                 <div className="space-y-3">
                   <div>
                     <span className="text-xs text-gray-500">Razão Social</span>
-                    <p className="text-sm">{lead.company}</p>
+                    <p className="text-sm">{lead.companyName}</p>
                   </div>
                   <div>
                     <span className="text-xs text-gray-500">Segmento</span>
-                    <p className="text-sm">{lead.segment}</p>
+                    <p className="text-sm">{lead.segment ?? '—'}</p>
                   </div>
                   <div>
                     <span className="text-xs text-gray-500">Quantidade de Funcionários</span>
-                    <p className="text-sm">{lead.employees}</p>
+                    <p className="text-sm">{lead.employeesCount ?? '—'}</p>
                   </div>
                 </div>
               </div>
@@ -87,15 +76,15 @@ export function LeadDetailModal({ lead, open, onClose }: LeadDetailModalProps) {
                 <div className="space-y-3">
                   <div>
                     <span className="text-xs text-gray-500">Nome</span>
-                    <p className="text-sm">{lead.contactName}</p>
+                    <p className="text-sm">{lead.contactName ?? '—'}</p>
                   </div>
                   <div>
                     <span className="text-xs text-gray-500">Telefone</span>
-                    <p className="text-sm">{lead.phone}</p>
+                    <p className="text-sm">{lead.phone ?? '—'}</p>
                   </div>
                   <div>
                     <span className="text-xs text-gray-500">E-mail</span>
-                    <p className="text-sm">{lead.email}</p>
+                    <p className="text-sm">{lead.email ?? '—'}</p>
                   </div>
                 </div>
               </div>
@@ -106,12 +95,12 @@ export function LeadDetailModal({ lead, open, onClose }: LeadDetailModalProps) {
                   <div>
                     <span className="text-xs text-gray-500">Origem</span>
                     <p className="text-sm">
-                      <Badge variant="secondary">{lead.origin}</Badge>
+                      <Badge variant="secondary">{lead.source ?? '—'}</Badge>
                     </p>
                   </div>
                   <div>
                     <span className="text-xs text-gray-500">Responsável</span>
-                    <p className="text-sm">{lead.owner}</p>
+                    <p className="text-sm">{lead.ownerId ?? '—'}</p>
                   </div>
                   <div>
                     <span className="text-xs text-gray-500">Criado em</span>

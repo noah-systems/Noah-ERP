@@ -9,7 +9,7 @@ export type AuthUser = {
   role?: Role;
 };
 
-const TOKEN_KEY = "noah_token";
+export const TOKEN_KEY = "noah_token";
 
 export class ApiError extends Error {
   status: number;
@@ -79,13 +79,6 @@ export async function me() {
   const { data } = await api.get<{ user?: AuthUser }>("/auth/me");
   return data.user ?? null;
 }
-
-export const Leads = {
-  list: async () => (await api.get("/leads")).data,
-  create: async (payload: any) => (await api.post("/leads", payload)).data,
-  move: async (id: string, stage: string) =>
-    (await api.put(`/leads/${id}/move`, { stage })).data,
-};
 
 export const Opportunities = {
   list: async () => (await api.get("/opportunities")).data,

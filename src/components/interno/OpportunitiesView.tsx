@@ -20,7 +20,7 @@ export function OpportunitiesView() {
     () =>
       leads.map((lead) => ({
         id: lead.id,
-        label: lead.company || lead.name,
+        label: lead.companyName,
       })),
     [leads]
   );
