@@ -14,6 +14,7 @@ export default function App() {
           <NavLink to="/" end className="btn ghost">Dashboard</NavLink>
           <NavLink to="/leads" className="btn ghost">Leads</NavLink>
           <NavLink to="/opps" className="btn ghost">Oportunidades</NavLink>
+          <NavLink to="/implantacao" className="btn ghost">Implantação</NavLink>
           <NavLink to="/pricing" className="btn ghost">Pricing</NavLink>
         </nav>
         <div style={{ marginTop: 'auto', fontSize: 12, color: 'var(--color-muted)' }}>

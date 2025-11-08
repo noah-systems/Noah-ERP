@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Leads from './pages/Leads';
 import Opps from './pages/Opps';
 import Pricing from './pages/Pricing';
+import Implantacao from './pages/Implantacao';
 
 const router = createBrowserRouter([
   { path: '/login', element: <Login /> },
@@ -18,6 +19,7 @@ const router = createBrowserRouter([
       { index: true, element: <Dashboard /> },
       { path: 'leads', element: <Leads /> },
       { path: 'opps', element: <Opps /> },
+      { path: 'implantacao', element: <Implantacao /> },
       { path: 'pricing', element: <Pricing /> },
     ],
   },

@@ -16,12 +16,13 @@ Para um deploy manual completo (sem Docker) recomenda-se garantir os seguintes c
 1. **Provisionamento opcional:** utilize o script [`install.sh`](./install.sh) apenas como referência histórica. Ele cobre o stack legado em PHP e não deve ser executado em ambientes novos.
 2. **Instalação guiada:** siga o guia detalhado em [`deploy-manual.md`](./deploy-manual.md) para provisionar banco de dados PostgreSQL, Redis e serviços Node.
 3. **Configurar ambiente:** copie `.env.example` para `.env`, ajuste credenciais (`DATABASE_URL`, `JWT_SECRET`, dados do administrador e URLs) e confirme que `REDIS_HOST` ou `REDIS_URL` apontam para `127.0.0.1`.
+   > ℹ️  Os assets de branding (`logo`, `favicon`, fundos de login, etc.) devem ser copiados manualmente para `public/brand/`. O diretório contém apenas um `.keep` no repositório porque os arquivos binários não são versionados.
 4. **Dependências do projeto:**
    ```bash
    npm ci
    npm --prefix apps/api install
    ```
-   Execute `node prisma/seed.js` caso deseje criar o usuário administrador padrão após aplicar o schema do banco.
+   Execute `npm --prefix apps/api run db:seed` caso deseje criar o usuário administrador padrão e dados de exemplo após aplicar as migrations do banco.
 5. **Build de produção:**
    ```bash
    npm run build:web

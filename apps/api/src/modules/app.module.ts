@@ -3,11 +3,12 @@ import { APP_GUARD } from '@nestjs/core';
 import { RedisModule } from '../redis/redis.module.js';
 import { JwtModule } from './jwt/jwt.module.js';
 import { DatabaseService } from '../database/database.service.js';
+import { NoahSequelizeModule } from '../database/sequelize.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { UsersModule } from './users/users.module.js';
 import { LeadsModule } from '../leads/leads.module.js';
 import { OppsModule } from './opps/opps.module.js';
-import { ImplModule } from './impl/impl.module.js';
+import { ImplementationModule } from './implementation/implementation.module.js';
 import { PricingModule } from './pricing/pricing.module.js';
 import { PartnerModule } from './partner/partner.module.js';
 import { WorkerModule } from './worker/worker.module.js';
@@ -34,12 +35,13 @@ if (!process.env.JWT_SECRET) {
 @Module({
   imports: [
     RedisModule,
+    NoahSequelizeModule,
     JwtModule.register({ global: true, secret: JWT_SECRET }),
     AuthModule,
     UsersModule,
     LeadsModule,
     OppsModule,
-    ImplModule,
+    ImplementationModule,
     PricingModule,
     PartnerModule,
     WorkerModule,

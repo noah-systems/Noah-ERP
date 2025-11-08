@@ -13,7 +13,6 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./database-setup.sql:/docker-entrypoint-initdb.d/0000_setup.sql:ro
-      - ./prisma/migrations/0001_init/migration.sql:/docker-entrypoint-initdb.d/0001_init.sql:ro
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-noah_user}"]
       interval: 5s
@@ -40,7 +39,7 @@ services:
       NODE_ENV: production
       API_PORT: 3000
       PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-noah_user}:${POSTGRES_PASSWORD:-q@9dlyU0AAJ9}@db:5432/${POSTGRES_DB:-noah_erp}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-noah_user}:${POSTGRES_PASSWORD:-q@9dlyU0AAJ9}@db:5432/${POSTGRES_DB:-noah_erp}
       REDIS_URL: redis://redis:6379
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8080}
       JWT_SECRET: ${JWT_SECRET:-dev-insecure-secret}
@@ -72,7 +71,7 @@ services:
     container_name: noah-seed
     working_dir: /app
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-noah_user}:${POSTGRES_PASSWORD:-q@9dlyU0AAJ9}@db:5432/${POSTGRES_DB:-noah_erp}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-noah_user}:${POSTGRES_PASSWORD:-q@9dlyU0AAJ9}@db:5432/${POSTGRES_DB:-noah_erp}
       ADMIN_NAME: ${ADMIN_NAME:-Admin Noah}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@noahomni.com.br}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-D2W3£Qx!0Du#}
@@ -81,7 +80,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: ["node", "prisma/seed.js"]
+    command: ["npm", "--prefix", "apps/api", "run", "db:seed"]
 
 volumes:
   pgdata:
