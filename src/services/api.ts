@@ -80,9 +80,4 @@ export async function me() {
   return data.user ?? null;
 }
 
-export const Opportunities = {
-  list: async () => (await api.get("/opportunities")).data,
-  create: async (payload: any) => (await api.post("/opportunities", payload)).data,
-};
-
 export default api;

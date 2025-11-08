@@ -1,116 +1,148 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { api, ApiError } from '@/services/api';
-import type { Opportunity, OpportunityPayload, OpportunityStage } from '@/types/api';
+import {
+  createOpp,
+  getOpps,
+  markOppLost,
+  moveOpp,
+  updateOpp,
+} from '@/lib/api';
+import type {
+  CreateOpportunityPayload,
+  Opportunity,
+  OpportunityGroupedResponse,
+  OpportunityStage,
+  UpdateOpportunityPayload,
+} from '@/types/api';
 
-const OPPORTUNITY_STAGE_ORDER: OpportunityStage[] = [
-  'NEGOCIACAO',
-  'APRESENTACAO',
-  'PROPOSTA',
+export const OPPORTUNITY_STAGE_ORDER: OpportunityStage[] = [
+  'NEGOTIATION',
+  'PRESENTATION',
+  'PROPOSAL',
   'TRIAL',
-  'VENC_TRIAL',
-  'VENDAS',
+  'TRIAL_EXPIRING',
+  'WON',
+  'LOST',
 ];
 
-function sortOpportunities(list: Opportunity[]): Opportunity[] {
+export const opportunityStageLabels: Record<OpportunityStage, string> = {
+  NEGOTIATION: 'Negociação',
+  PRESENTATION: 'Apresentação',
+  PROPOSAL: 'Proposta',
+  TRIAL: 'Trial',
+  TRIAL_EXPIRING: 'Venc. Trial',
+  WON: 'Efetivada',
+  LOST: 'Perdida',
+};
+
+export type GroupedOpportunities = Record<OpportunityStage, Opportunity[]>;
+
+function createEmptyGrouped(): GroupedOpportunities {
+  return OPPORTUNITY_STAGE_ORDER.reduce((acc, stage) => {
+    acc[stage] = [];
+    return acc;
+  }, {} as GroupedOpportunities);
+}
+
+function sortStage(list: Opportunity[]): Opportunity[] {
   return [...list].sort((a, b) => {
-    const stageDiff = OPPORTUNITY_STAGE_ORDER.indexOf(a.stage) - OPPORTUNITY_STAGE_ORDER.indexOf(b.stage);
-    if (stageDiff !== 0) return stageDiff;
-    if (a.order !== b.order) return a.order - b.order;
-    return a.createdAt.localeCompare(b.createdAt);
+    const aTime = new Date(a.updatedAt).getTime();
+    const bTime = new Date(b.updatedAt).getTime();
+    return bTime - aTime;
   });
 }
 
-export function useOpportunities() {
-  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+function normalizeGrouped(data: OpportunityGroupedResponse['grouped']): GroupedOpportunities {
+  const grouped = createEmptyGrouped();
+  for (const stage of OPPORTUNITY_STAGE_ORDER) {
+    const items = Array.isArray(data?.[stage]) ? data[stage] : [];
+    grouped[stage] = sortStage(items);
+  }
+  return grouped;
+}
+
+function applyOpportunity(grouped: GroupedOpportunities, opportunity: Opportunity): GroupedOpportunities {
+  const next = createEmptyGrouped();
+  for (const stage of OPPORTUNITY_STAGE_ORDER) {
+    next[stage] = grouped[stage].filter((item) => item.id !== opportunity.id);
+  }
+  next[opportunity.stage] = sortStage([...next[opportunity.stage], opportunity]);
+  return next;
+}
+
+export function useOpportunities(search?: string) {
+  const [grouped, setGrouped] = useState<GroupedOpportunities>(() => createEmptyGrouped());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchOpportunities = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await api.get<Opportunity[]>('/opportunities');
-      setOpportunities(sortOpportunities(data));
+      const response = await getOpps(search);
+      setGrouped(normalizeGrouped(response.grouped));
       setError(null);
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Não foi possível carregar as oportunidades.';
+      const message = err instanceof Error ? err.message : 'Não foi possível carregar as oportunidades.';
       setError(message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [search]);
 
   useEffect(() => {
     void fetchOpportunities();
   }, [fetchOpportunities]);
 
+  const opportunities = useMemo(
+    () => OPPORTUNITY_STAGE_ORDER.flatMap((stage) => grouped[stage] ?? []),
+    [grouped],
+  );
+
   const createOpportunity = useCallback(
-    async (payload: OpportunityPayload) => {
-      const { data } = await api.post<Opportunity>('/opportunities', payload);
-      setOpportunities((prev) => sortOpportunities([...prev, data]));
-      return data;
+    async (payload: CreateOpportunityPayload) => {
+      const created = await createOpp(payload);
+      setGrouped((prev) => applyOpportunity(prev, created));
+      return created;
     },
-    []
+    [],
   );
 
   const updateOpportunity = useCallback(
-    async (id: string, payload: Partial<OpportunityPayload>) => {
-      const { data } = await api.put<Opportunity>(`/opportunities/${id}`, payload);
-      setOpportunities((prev) => sortOpportunities(prev.map((item) => (item.id === id ? data : item))));
-      return data;
+    async (id: string, payload: UpdateOpportunityPayload) => {
+      const updated = await updateOpp(id, payload);
+      setGrouped((prev) => applyOpportunity(prev, updated));
+      return updated;
     },
-    []
+    [],
   );
-
-  const deleteOpportunity = useCallback(async (id: string) => {
-    await api.delete(`/opportunities/${id}`);
-    setOpportunities((prev) => prev.filter((item) => item.id !== id));
-  }, []);
 
   const moveOpportunity = useCallback(
-    async (id: string, stage: OpportunityStage, position = 0) => {
-      const { data } = await api.put<Opportunity>(`/opportunities/${id}/move`, { stage, position });
-      setOpportunities((prev) => sortOpportunities([...prev.filter((item) => item.id !== id), data]));
-      return data;
+    async (id: string, stage: OpportunityStage) => {
+      const updated = await moveOpp(id, stage);
+      setGrouped((prev) => applyOpportunity(prev, updated));
+      return updated;
     },
-    []
+    [],
   );
 
-  const grouped = useMemo(() => {
-    return OPPORTUNITY_STAGE_ORDER.reduce<Record<OpportunityStage, Opportunity[]>>(
-      (acc, stage) => {
-        acc[stage] = opportunities.filter((item) => item.stage === stage);
-        return acc;
-      },
-      {
-        NEGOCIACAO: [],
-        APRESENTACAO: [],
-        PROPOSTA: [],
-        TRIAL: [],
-        VENC_TRIAL: [],
-        VENDAS: [],
-      }
-    );
-  }, [opportunities]);
+  const markOpportunityLost = useCallback(
+    async (id: string, reason?: string) => {
+      const updated = await markOppLost(id, { reason });
+      setGrouped((prev) => applyOpportunity(prev, updated));
+      return updated;
+    },
+    [],
+  );
 
   return {
-    opportunities,
     grouped,
+    opportunities,
     loading,
     error,
     refetch: fetchOpportunities,
     createOpportunity,
     updateOpportunity,
-    deleteOpportunity,
     moveOpportunity,
+    markOpportunityLost,
   };
 }
-
-export const opportunityStageLabels: Record<OpportunityStage, string> = {
-  NEGOCIACAO: 'Negociação',
-  APRESENTACAO: 'Apresentação',
-  PROPOSTA: 'Proposta',
-  TRIAL: 'Trial',
-  VENC_TRIAL: 'Venc. Trial',
-  VENDAS: 'Vendas',
-};

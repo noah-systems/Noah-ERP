@@ -1,5 +1,16 @@
 import { TOKEN_KEY } from '@/services/api';
-import type { Lead, LeadPayload, LeadStatus, LeadGroupedResponse } from '@/types/api';
+import type {
+  Lead,
+  LeadPayload,
+  LeadStatus,
+  LeadGroupedResponse,
+  Opportunity,
+  OpportunityGroupedResponse,
+  CreateOpportunityPayload,
+  UpdateOpportunityPayload,
+  OpportunityStage,
+  MarkOpportunityLostPayload,
+} from '@/types/api';
 
 const base =
   (import.meta.env.VITE_API_URL as string | undefined)?.trim() ||
@@ -78,5 +89,38 @@ export async function moveLead(id: string, status: LeadStatus) {
   return api<Lead>(`/leads/${id}/status`, {
     method: 'PATCH',
     body: JSON.stringify({ status }),
+  });
+}
+
+export async function getOpps(q?: string) {
+  const query = buildQuery({ q });
+  return api<OpportunityGroupedResponse>(`/opps${query}`);
+}
+
+export async function createOpp(payload: CreateOpportunityPayload) {
+  return api<Opportunity>('/opps', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateOpp(id: string, payload: UpdateOpportunityPayload) {
+  return api<Opportunity>(`/opps/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function moveOpp(id: string, stage: OpportunityStage) {
+  return api<Opportunity>(`/opps/${id}/stage`, {
+    method: 'PATCH',
+    body: JSON.stringify({ stage }),
+  });
+}
+
+export async function markOppLost(id: string, payload: MarkOpportunityLostPayload) {
+  return api<Opportunity>(`/opps/${id}/lost`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
   });
 }
