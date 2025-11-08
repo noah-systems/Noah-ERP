@@ -5,7 +5,7 @@ import { JwtModule } from './jwt/jwt.module.js';
 import { DatabaseService } from '../database/database.service.js';
 import { AuthModule } from './auth/auth.module.js';
 import { UsersModule } from './users/users.module.js';
-import { LeadsModule } from './leads/leads.module.js';
+import { LeadsModule } from '../leads/leads.module.js';
 import { OppsModule } from './opps/opps.module.js';
 import { ImplModule } from './impl/impl.module.js';
 import { PricingModule } from './pricing/pricing.module.js';

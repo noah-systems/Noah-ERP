@@ -1,103 +1,100 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createLead as apiCreateLead, getLeads, moveLead as apiMoveLead, updateLead as apiUpdateLead } from '@/lib/api';
+import type { Lead, LeadPayload, LeadStatus } from '@/types/api';
 
-import { api, ApiError } from '@/services/api';
-import type { Lead, LeadPayload, LeadStage } from '@/types/api';
+const ORDER: LeadStatus[] = ['NURTURING', 'QUALIFIED', 'DISQUALIFIED'];
 
-const LEAD_STAGE_ORDER: LeadStage[] = ['NUTRICAO', 'QUALIFICADO', 'NAO_QUALIFICADO'];
-
-function sortLeads(list: Lead[]): Lead[] {
-  return [...list].sort((a, b) => {
-    const stageDiff = LEAD_STAGE_ORDER.indexOf(a.stage) - LEAD_STAGE_ORDER.indexOf(b.stage);
-    if (stageDiff !== 0) return stageDiff;
-    if (a.order !== b.order) return a.order - b.order;
-    return a.createdAt.localeCompare(b.createdAt);
-  });
+function emptyGrouped(): Record<LeadStatus, Lead[]> {
+  return {
+    NURTURING: [],
+    QUALIFIED: [],
+    DISQUALIFIED: [],
+  };
 }
 
-export function useLeads() {
-  const [leads, setLeads] = useState<Lead[]>([]);
+export function useLeads(search?: string) {
+  const [grouped, setGrouped] = useState<Record<LeadStatus, Lead[]>>(emptyGrouped);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await api.get<Lead[]>('/leads');
-      setLeads(sortLeads(data));
+      const { grouped: response } = await getLeads(search?.trim() || undefined);
+      setGrouped({
+        NURTURING: response.NURTURING ?? [],
+        QUALIFIED: response.QUALIFIED ?? [],
+        DISQUALIFIED: response.DISQUALIFIED ?? [],
+      });
       setError(null);
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Não foi possível carregar os leads.';
+      const message = err instanceof Error ? err.message : 'Não foi possível carregar os leads.';
       setError(message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [search]);
 
   useEffect(() => {
     void fetchLeads();
   }, [fetchLeads]);
 
-  const createLead = useCallback(
-    async (payload: LeadPayload) => {
-      const { data } = await api.post<Lead>('/leads', payload);
-      setLeads((prev) => sortLeads([...prev, data]));
-      return data;
-    },
-    []
-  );
+  const leads = useMemo(() => ORDER.flatMap((status) => grouped[status] ?? []), [grouped]);
 
-  const updateLead = useCallback(
-    async (id: string, payload: Partial<LeadPayload>) => {
-      const { data } = await api.put<Lead>(`/leads/${id}`, payload);
-      setLeads((prev) => sortLeads(prev.map((lead) => (lead.id === id ? data : lead))));
-      return data;
-    },
-    []
-  );
-
-  const deleteLead = useCallback(async (id: string) => {
-    await api.delete(`/leads/${id}`);
-    setLeads((prev) => prev.filter((lead) => lead.id !== id));
+  const createLead = useCallback(async (payload: LeadPayload) => {
+    const lead = await apiCreateLead(payload);
+    setGrouped((prev) => ({
+      ...prev,
+      NURTURING: [lead, ...prev.NURTURING],
+    }));
+    return lead;
   }, []);
 
-  const moveLead = useCallback(
-    async (id: string, stage: LeadStage, position = 0) => {
-      const { data } = await api.put<Lead>(`/leads/${id}/move`, { stage, position });
-      setLeads((prev) => sortLeads([...prev.filter((lead) => lead.id !== id), data]));
-      return data;
-    },
-    []
-  );
-
-  const grouped = useMemo(() => {
-    return LEAD_STAGE_ORDER.reduce<Record<LeadStage, Lead[]>>(
-      (acc, stage) => {
-        acc[stage] = leads.filter((lead) => lead.stage === stage);
-        return acc;
-      },
-      {
-        NUTRICAO: [],
-        QUALIFICADO: [],
-        NAO_QUALIFICADO: [],
+  const updateLead = useCallback(async (id: string, payload: Partial<LeadPayload>) => {
+    const lead = await apiUpdateLead(id, payload);
+    setGrouped((prev) => {
+      const next = emptyGrouped();
+      for (const status of ORDER) {
+        next[status] = prev[status].map((item) => (item.id === id ? lead : item));
       }
-    );
-  }, [leads]);
+      return next;
+    });
+    return lead;
+  }, []);
+
+  const moveLead = useCallback(async (id: string, status: LeadStatus) => {
+    const lead = await apiMoveLead(id, status);
+    setGrouped((prev) => {
+      const next = emptyGrouped();
+      for (const stage of ORDER) {
+        const list = prev[stage];
+        if (stage === status) {
+          next[stage] = [lead, ...list.filter((item) => item.id !== id)];
+        } else {
+          next[stage] = list.filter((item) => item.id !== id);
+        }
+      }
+      return next;
+    });
+    return lead;
+  }, []);
+
+  const refetch = useCallback(() => fetchLeads(), [fetchLeads]);
 
   return {
     leads,
     grouped,
     loading,
     error,
-    refetch: fetchLeads,
+    refetch,
     createLead,
     updateLead,
-    deleteLead,
     moveLead,
   };
 }
 
-export const leadStageLabels: Record<LeadStage, string> = {
-  NUTRICAO: 'Nutrição',
-  QUALIFICADO: 'Qualificado',
-  NAO_QUALIFICADO: 'Não Qualificado',
+export const leadStatusLabels: Record<LeadStatus, string> = {
+  NURTURING: 'Nutrição',
+  QUALIFIED: 'Qualificado',
+  DISQUALIFIED: 'Não Qualificado',
 };

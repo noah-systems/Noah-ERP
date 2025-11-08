@@ -1,4 +1,4 @@
-export type LeadStage = 'NUTRICAO' | 'QUALIFICADO' | 'NAO_QUALIFICADO';
+export type LeadStatus = 'NURTURING' | 'QUALIFIED' | 'DISQUALIFIED';
 export type OpportunityStage =
   | 'NEGOCIACAO'
   | 'APRESENTACAO'
@@ -10,27 +10,34 @@ export type ImplementationStatus = 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
 
 export interface Lead {
   id: string;
-  name: string;
-  email?: string | null;
-  phone?: string | null;
-  company?: string | null;
-  stage: LeadStage;
-  order: number;
-  value?: string | null;
-  source?: string | null;
-  ownerId?: string | null;
+  companyName: string;
+  segment: string | null;
+  employeesCount: number | null;
+  contactName: string | null;
+  phone: string | null;
+  email: string | null;
+  source: string | null;
+  status: LeadStatus;
+  ownerId: string | null;
+  notes: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface LeadPayload {
-  name: string;
-  email?: string;
+  companyName: string;
+  segment?: string;
+  employeesCount?: number;
+  contactName?: string;
   phone?: string;
-  company?: string;
+  email?: string;
   source?: string;
-  value?: number;
-  stage?: LeadStage;
+  ownerId?: string;
+  notes?: string;
+}
+
+export interface LeadGroupedResponse {
+  grouped: Record<LeadStatus, Lead[]>;
 }
 
 export interface Opportunity {
