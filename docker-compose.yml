@@ -4,16 +4,16 @@ services:
   noah-db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-noah_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-q@9dlyU0AAJ9}
       POSTGRES_DB: ${POSTGRES_DB:-noah_erp}
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./database-setup.sql:/docker-entrypoint-initdb.d/0000_setup.sql:ro
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-postgres}"]
+      healthcheck:
+        test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-noah_user}"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -36,7 +36,7 @@ services:
       NODE_ENV: production
       API_PORT: 3000
       PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@noah-db:5432/${POSTGRES_DB:-noah_erp}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-noah_user}:${POSTGRES_PASSWORD:-q@9dlyU0AAJ9}@noah-db:5432/${POSTGRES_DB:-noah_erp}
       REDIS_URL: redis://noah-redis:6379
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8080}
       JWT_SECRET: ${JWT_SECRET:-dev-insecure-secret}
@@ -49,9 +49,9 @@ services:
       - "3000:3000"
     command: >
       sh -c "
-        until nc -z noah-db 5432; do sleep 2; done &&
-        npx sequelize-cli db:migrate --config src/database/config.cjs --migrations-path src/database/migrations &&
-        npx sequelize-cli db:seed:all --config src/database/config.cjs --seeders-path src/database/seeders &&
+        until pg_isready -h noah-db -U ${POSTGRES_USER:-noah_user}; do sleep 2; done &&
+        npx sequelize-cli db:migrate --migrations-path apps/api/src/database/migrations --config apps/api/src/database/config/config.js &&
+        npx sequelize-cli db:seed:all --seeders-path apps/api/src/database/seeders --config apps/api/src/database/config/config.js &&
         npm run start:prod
       "
 

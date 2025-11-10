@@ -7,9 +7,9 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
     "start:prod": "node dist/main.js",
-    "db:migrate": "sequelize db:migrate --config src/database/config.cjs --migrations-path src/database/migrations",
-    "db:seed": "sequelize db:seed:all --config src/database/config.cjs --seeders-path src/database/seeders",
-    "db:reset": "sequelize db:migrate:undo:all --config src/database/config.cjs --migrations-path src/database/migrations && npm run db:migrate && npm run db:seed"
+    "db:migrate": "sequelize db:migrate --config src/database/config/config.js --migrations-path src/database/migrations",
+    "db:seed": "sequelize db:seed:all --config src/database/config/config.js --seeders-path src/database/seeders",
+    "db:reset": "sequelize db:migrate:undo:all --config src/database/config/config.js --migrations-path src/database/migrations && npm run db:migrate && npm run db:seed"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -28,7 +28,7 @@
     "rxjs": "^7.8.1",
     "sequelize": "^6.37.3",
     "sequelize-cli": "^6.6.2",
-    "sequelize-typescript": "file:../../libs/sequelize-typescript",
+    "sequelize-typescript": "^2.1.6",
     "umzug": "^3.8.1"
   },
   "devDependencies": {

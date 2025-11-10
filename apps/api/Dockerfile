@@ -18,7 +18,7 @@ RUN npm prune --omit=dev && npm cache clean --force
 
 # Runtime stage
 FROM node:20-alpine AS runtime
-RUN apk add --no-cache netcat-openbsd
+RUN apk add --no-cache netcat-openbsd postgresql-client
 WORKDIR /app
 ENV NODE_ENV=production
 ENV API_PORT=3000

@@ -28,7 +28,7 @@ Para um deploy manual completo (sem Docker) recomenda-se garantir os seguintes c
    npm run build:web
    npm run build:api
    ```
-6. **Serviços de backend:** inicie a API compilada (ex.: `pm2 start npm --name noah-api -- run start:api`), configure o worker de filas (BullMQ/Redis) e habilite os cron jobs necessários.
+6. **Serviços de backend:** execute a API compilada como serviço (ex.: via systemd), configure o worker de filas (BullMQ/Redis) e habilite os cron jobs necessários.
 7. **Servidor web:** sirva o diretório `dist/` com Nginx (ou outro servidor de sua preferência) e encaminhe `/api` para a API Node.
 
 ### Script rápido para PostgreSQL e Redis

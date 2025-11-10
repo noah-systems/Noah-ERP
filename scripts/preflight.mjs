@@ -44,13 +44,6 @@ if (!pkgRaw) {
 const envProd = read(join(".env.production"));
 add(".env.production define VITE_API_URL", /VITE_API_URL\s*=/.test(envProd), "Defina VITE_API_URL=/api");
 
-// PM2 ecosystem
-add(
-  "apps/api/ecosystem.config.cjs existe",
-  exists(join("apps", "api", "ecosystem.config.cjs")),
-  "Crie o arquivo de configuração do PM2"
-);
-
 // Health controller
 const healthController = read(join("apps", "api", "src", "health", "health.controller.ts"));
 add("Health controller expõe /health", /@Get\(\[\'health\'/.test(healthController), "Garanta rota GET /health");
