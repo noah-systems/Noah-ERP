@@ -1,6 +1,8 @@
 import { Type } from 'class-transformer';
 import { IsEmail, IsEnum, IsOptional, IsString, IsUUID, IsNumber, IsNotEmpty } from 'class-validator';
-import type { LeadStatus } from './lead.model.js';
+import { LeadStatusValue } from '../database/models/lead.model.js';
+
+type LeadStatusType = typeof LeadStatusValue[keyof typeof LeadStatusValue];
 
 export class LeadsQueryDto {
   @IsOptional()
@@ -87,6 +89,6 @@ export class UpdateLeadDto {
 }
 
 export class MoveLeadDto {
-  @IsEnum(['NURTURING', 'QUALIFIED', 'DISQUALIFIED'])
-  status!: LeadStatus;
+  @IsEnum(LeadStatusValue)
+  status!: LeadStatusType;
 }

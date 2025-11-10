@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
-import type { Role } from '../../database/enums.js';
+import { Role } from '../../database/enums.js';
+type RoleType = typeof Role[keyof typeof Role];
 import { JwtService } from '../jwt/jwt.service.js';
 
 type HttpRequest = {
@@ -22,7 +23,7 @@ export class JwtAuthGuard implements CanActivate {
     if (!token) {
       throw new UnauthorizedException();
     }
-    const payload = await this.jwt.verifyAsync<{ sub: string; role?: Role }>(token);
+    const payload = await this.jwt.verifyAsync<{ sub: string; role?: RoleType }>(token);
     if (!payload?.sub) {
       throw new UnauthorizedException();
     }

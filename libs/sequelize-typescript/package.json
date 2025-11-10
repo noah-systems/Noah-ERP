@@ -1,0 +1,8 @@
+{
+  "name": "sequelize-typescript",
+  "version": "2.1.6-noah",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "license": "MIT"
+}

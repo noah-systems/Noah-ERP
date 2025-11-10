@@ -10,7 +10,9 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { ImplementationTaskStatus } from '../models/implementation-task.model.js';
+import { ImplementationTaskStatus } from '../../../database/models/implementation-task.model.js';
+
+type ImplementationTaskStatusType = typeof ImplementationTaskStatus[keyof typeof ImplementationTaskStatus];
 
 function toNumber(value: unknown, defaultValue: number): number {
   const parsed = Number(value);
@@ -33,7 +35,7 @@ export class ListImplementationTasksDto {
 
   @IsOptional()
   @IsEnum(ImplementationTaskStatus)
-  status?: ImplementationTaskStatus;
+  status?: ImplementationTaskStatusType;
 
   @IsOptional()
   @IsString()

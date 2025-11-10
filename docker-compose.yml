@@ -1,12 +1,11 @@
 version: "3.9"
 
 services:
-  db:
+  noah-db:
     image: postgres:15-alpine
-    container_name: noah-db
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-noah_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-q@9dlyU0AAJ9}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       POSTGRES_DB: ${POSTGRES_DB:-noah_erp}
     ports:
       - "5432:5432"
@@ -14,14 +13,13 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./database-setup.sql:/docker-entrypoint-initdb.d/0000_setup.sql:ro
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-noah_user}"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-postgres}"]
       interval: 5s
       timeout: 3s
       retries: 20
 
-  redis:
+  noah-redis:
     image: redis:7-alpine
-    container_name: noah-redis
     ports:
       - "6379:6379"
     healthcheck:
@@ -30,26 +28,32 @@ services:
       timeout: 3s
       retries: 20
 
-  api:
+  noah-api:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
-    container_name: noah-api
     environment:
       NODE_ENV: production
       API_PORT: 3000
       PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-noah_user}:${POSTGRES_PASSWORD:-q@9dlyU0AAJ9}@db:5432/${POSTGRES_DB:-noah_erp}
-      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@noah-db:5432/${POSTGRES_DB:-noah_erp}
+      REDIS_URL: redis://noah-redis:6379
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8080}
       JWT_SECRET: ${JWT_SECRET:-dev-insecure-secret}
     depends_on:
-      db:
+      noah-db:
         condition: service_healthy
-      redis:
+      noah-redis:
         condition: service_healthy
     ports:
       - "3000:3000"
+    command: >
+      sh -c "
+        until nc -z noah-db 5432; do sleep 2; done &&
+        npx sequelize-cli db:migrate --config src/database/config.cjs --migrations-path src/database/migrations &&
+        npx sequelize-cli db:seed:all --config src/database/config.cjs --seeders-path src/database/seeders &&
+        npm run start:prod
+      "
 
   web:
     build:
@@ -61,26 +65,10 @@ services:
     environment:
       VITE_API_BASE: ${VITE_API_BASE:-/api}
     depends_on:
-      api:
+      noah-api:
         condition: service_started
     ports:
       - "8080:80"
-
-  seed:
-    image: node:20-alpine
-    container_name: noah-seed
-    working_dir: /app
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-noah_user}:${POSTGRES_PASSWORD:-q@9dlyU0AAJ9}@db:5432/${POSTGRES_DB:-noah_erp}
-      ADMIN_NAME: ${ADMIN_NAME:-Admin Noah}
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@noahomni.com.br}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-D2W3£Qx!0Du#}
-    volumes:
-      - ./:/app:ro
-    depends_on:
-      db:
-        condition: service_healthy
-    command: ["npm", "--prefix", "apps/api", "run", "db:seed"]
 
 volumes:
   pgdata:

@@ -6,32 +6,35 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/main.js",
-    "start:prod": "npm run build && npm run start",
-    "db:migrate": "sequelize --config sequelize.config.js db:migrate",
-    "db:seed": "sequelize --config sequelize.config.js db:seed:all",
-    "db:reset": "sequelize --config sequelize.config.js db:migrate:undo:all && npm run db:migrate && npm run db:seed"
+    "start:prod": "node dist/main.js",
+    "db:migrate": "sequelize db:migrate --config src/database/config.cjs --migrations-path src/database/migrations",
+    "db:seed": "sequelize db:seed:all --config src/database/config.cjs --seeders-path src/database/seeders",
+    "db:reset": "sequelize db:migrate:undo:all --config src/database/config.cjs --migrations-path src/database/migrations && npm run db:migrate && npm run db:seed"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
+    "@nestjs/sequelize": "file:../../libs/nestjs-sequelize",
     "bcryptjs": "^2.4.3",
     "bullmq": "^5.8.2",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "dotenv": "^16.4.5",
     "ioredis": "^5.4.1",
-    "pg": "^8.13.1",
+    "pg": "^8.12.0",
     "pg-hstore": "^2.3.4",
-    "reflect-metadata": "^0.1.13",
+    "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "sequelize": "^6.37.3"
+    "sequelize": "^6.37.3",
+    "sequelize-cli": "^6.6.2",
+    "sequelize-typescript": "file:../../libs/sequelize-typescript",
+    "umzug": "^3.8.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.2",
     "@types/node": "^20.11.0",
     "@types/pg": "^8.11.10",
-    "sequelize-cli": "^6.6.2",
     "typescript": "^5.5.4"
   }
 }

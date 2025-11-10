@@ -1,15 +1,32 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/sequelize';
 import { Op } from 'sequelize';
-import { OPPORTUNITY_REPOSITORY } from '../../database/database.module.js';
+import { Opportunity } from '../../database/models/opportunity.model.js';
 import {
-  Opportunity,
-  OpportunityAttributes,
-  OpportunityCreationAttributes,
-  OpportunityJSON,
-  toOpportunityJSON,
-} from './opportunity.model.js';
+  OpportunityStageValue,
+} from '../../database/models/opportunity.model.js';
 import { CreateOpportunityDto, UpdateOpportunityDto } from './opps.dto.js';
 import { OPPORTUNITY_STAGES, type OpportunityStage } from './opportunity.types.js';
+
+type OpportunityJSON = {
+  id: string;
+  companyName: string;
+  cnpj: string | null;
+  contactName: string;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  financeEmail: string | null;
+  financePhone: string | null;
+  subdomain: string | null;
+  amount: number;
+  stage: OpportunityStageValue;
+  trialEndsAt: string | null;
+  ownerId: string;
+  tags: string[];
+  lostReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
 
 type GroupedOpportunities = Record<OpportunityStage, OpportunityJSON[]>;
 
@@ -50,7 +67,7 @@ function toDate(value?: string): Date | null {
 
 @Injectable()
 export class OppsService {
-  constructor(@Inject(OPPORTUNITY_REPOSITORY) private readonly model: typeof Opportunity) {}
+  constructor(@InjectModel(Opportunity) private readonly model: typeof Opportunity) {}
 
   async listGrouped(q?: string): Promise<{ grouped: GroupedOpportunities }> {
     const where = q
@@ -76,7 +93,7 @@ export class OppsService {
   }
 
   async create(dto: CreateOpportunityDto): Promise<OpportunityJSON> {
-    const payload: OpportunityCreationAttributes = {
+    const payload = {
       companyName: dto.companyName,
       cnpj: dto.cnpj ?? null,
       contactName: dto.contactName,
@@ -85,8 +102,8 @@ export class OppsService {
       financeEmail: dto.financeEmail ?? null,
       financePhone: dto.financePhone ?? null,
       subdomain: dto.subdomain ?? null,
-      amount: dto.amount,
-      stage: dto.stage ?? 'NEGOTIATION',
+      amount: Number.isFinite(dto.amount) ? dto.amount.toFixed(2) : '0.00',
+      stage: (dto.stage ?? 'NEGOTIATION') as OpportunityStageValue,
       trialEndsAt: toDate(dto.trialEndsAt),
       ownerId: dto.ownerId,
       tags: sanitizeTags(dto.tags),
@@ -103,7 +120,7 @@ export class OppsService {
       throw new NotFoundException('Oportunidade não encontrada');
     }
 
-    const updates: Partial<OpportunityAttributes> = {};
+    const updates: Partial<Opportunity> = {};
     if (dto.companyName !== undefined) updates.companyName = dto.companyName;
     if (dto.cnpj !== undefined) updates.cnpj = dto.cnpj ?? null;
     if (dto.contactName !== undefined) updates.contactName = dto.contactName;
@@ -112,7 +129,9 @@ export class OppsService {
     if (dto.financeEmail !== undefined) updates.financeEmail = dto.financeEmail ?? null;
     if (dto.financePhone !== undefined) updates.financePhone = dto.financePhone ?? null;
     if (dto.subdomain !== undefined) updates.subdomain = dto.subdomain ?? null;
-    if (dto.amount !== undefined) updates.amount = dto.amount;
+    if (dto.amount !== undefined) {
+      updates.amount = Number.isFinite(dto.amount) ? dto.amount.toFixed(2) : '0.00';
+    }
     if (dto.trialEndsAt !== undefined) updates.trialEndsAt = toDate(dto.trialEndsAt);
     if (dto.ownerId !== undefined) updates.ownerId = dto.ownerId;
     if (dto.tags !== undefined) updates.tags = sanitizeTags(dto.tags);
@@ -128,7 +147,7 @@ export class OppsService {
       throw new NotFoundException('Oportunidade não encontrada');
     }
 
-    const update: Partial<OpportunityAttributes> = { stage };
+    const update: Partial<Opportunity> = { stage: stage as OpportunityStageValue };
     if (stage !== 'LOST') {
       update.lostReason = null;
     }
@@ -144,8 +163,32 @@ export class OppsService {
       throw new NotFoundException('Oportunidade não encontrada');
     }
 
-    await opportunity.update({ stage: 'LOST', lostReason: reason?.trim() || null });
+    await opportunity.update({ stage: OpportunityStageValue.LOST, lostReason: reason?.trim() || null });
     await opportunity.reload();
     return toOpportunityJSON(opportunity);
   }
+}
+
+function toOpportunityJSON(model: Opportunity): OpportunityJSON {
+  const plain = model.get({ plain: true }) as Record<string, any>;
+  const amountValue = typeof plain.amount === 'string' ? Number.parseFloat(plain.amount) : plain.amount;
+  return {
+    id: plain.id,
+    companyName: plain.companyName,
+    cnpj: plain.cnpj ?? null,
+    contactName: plain.contactName,
+    contactEmail: plain.contactEmail ?? null,
+    contactPhone: plain.contactPhone ?? null,
+    financeEmail: plain.financeEmail ?? null,
+    financePhone: plain.financePhone ?? null,
+    subdomain: plain.subdomain ?? null,
+    amount: Number.isFinite(amountValue) ? Number(amountValue) : 0,
+    stage: plain.stage,
+    trialEndsAt: plain.trialEndsAt ? plain.trialEndsAt.toISOString() : null,
+    ownerId: plain.ownerId,
+    tags: Array.isArray(plain.tags) ? plain.tags.filter((tag): tag is string => typeof tag === 'string') : [],
+    lostReason: plain.lostReason ?? null,
+    createdAt: plain.createdAt.toISOString(),
+    updatedAt: plain.updatedAt.toISOString(),
+  };
 }

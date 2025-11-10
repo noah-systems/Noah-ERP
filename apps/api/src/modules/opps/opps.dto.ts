@@ -5,7 +5,7 @@ import {
   IsArray,
   IsDateString,
   IsEmail,
-  IsEnum,
+  IsIn,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -55,7 +55,7 @@ export class CreateOpportunityDto {
   amount!: number;
 
   @IsOptional()
-  @IsEnum(OPPORTUNITY_STAGES)
+  @IsIn(OPPORTUNITY_STAGES)
   stage?: OpportunityStage;
 
   @IsOptional()
@@ -129,7 +129,7 @@ export class UpdateOpportunityDto {
 }
 
 export class UpdateOppStageDto {
-  @IsEnum(OPPORTUNITY_STAGES)
+  @IsIn(OPPORTUNITY_STAGES)
   stage!: OpportunityStage;
 }
 

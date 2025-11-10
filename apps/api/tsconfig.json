@@ -4,6 +4,10 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "baseUrl": "./",
+    "paths": {
+      "sequelize-typescript": ["./src/shims.d.ts"],
+      "@nestjs/sequelize": ["./src/shims.d.ts"]
+    },
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,

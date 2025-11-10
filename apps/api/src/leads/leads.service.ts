@@ -1,14 +1,31 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/sequelize';
 import { Op } from 'sequelize';
-import { LEAD_REPOSITORY } from '../database/database.module.js';
-import { Lead, LeadAttributes, LeadCreationAttributes, LeadStatus, LEAD_STATUSES, toLeadJSON } from './lead.model.js';
+import { Lead } from '../database/models/lead.model.js';
+import { LeadStatusValue, LEAD_STATUSES } from '../database/models/lead.model.js';
 import { CreateLeadDto, UpdateLeadDto } from './leads.dto.js';
 
-type GroupedLeads = Record<LeadStatus, LeadAttributes[]>;
+type LeadAttributes = {
+  id: string;
+  companyName: string;
+  segment: string | null;
+  employeesCount: number | null;
+  contactName: string | null;
+  phone: string | null;
+  email: string | null;
+  source: string | null;
+  status: LeadStatusValue;
+  ownerId: string | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+type GroupedLeads = Record<LeadStatusValue, LeadAttributes[]>;
 
 @Injectable()
 export class LeadsService {
-  constructor(@Inject(LEAD_REPOSITORY) private readonly model: typeof Lead) {}
+  constructor(@InjectModel(Lead) private readonly model: typeof Lead) {}
 
   async findAll(query: { q?: string }): Promise<{ grouped: GroupedLeads }> {
     const where = query.q
@@ -34,15 +51,15 @@ export class LeadsService {
     };
 
     for (const lead of leads) {
-      const status = lead.status ?? 'NURTURING';
-      grouped[status].push(toLeadJSON(lead));
+      const status = lead.status ?? LeadStatusValue.NURTURING;
+      grouped[status].push(lead.get({ plain: true }) as LeadAttributes);
     }
 
     return { grouped };
   }
 
   async create(dto: CreateLeadDto): Promise<LeadAttributes> {
-    const payload: LeadCreationAttributes = {
+    const payload = {
       companyName: dto.companyName,
       segment: dto.segment ?? null,
       employeesCount: dto.employeesCount ?? null,
@@ -50,13 +67,13 @@ export class LeadsService {
       phone: dto.phone ?? null,
       email: dto.email ?? null,
       source: dto.source ?? null,
-      status: 'NURTURING' as LeadStatus,
+      status: LeadStatusValue.NURTURING,
       ownerId: dto.ownerId ?? null,
       notes: dto.notes ?? null,
     };
 
     const lead = await this.model.create(payload);
-    return toLeadJSON(lead);
+    return lead.get({ plain: true }) as LeadAttributes;
   }
 
   async update(id: string, dto: UpdateLeadDto): Promise<LeadAttributes> {
@@ -77,10 +94,10 @@ export class LeadsService {
     if (dto.notes !== undefined) fields.notes = dto.notes;
 
     await lead.update(fields);
-    return toLeadJSON(lead);
+    return lead.get({ plain: true }) as LeadAttributes;
   }
 
-  async move(id: string, status: LeadStatus): Promise<LeadAttributes> {
+  async move(id: string, status: LeadStatusValue): Promise<LeadAttributes> {
     if (!LEAD_STATUSES.includes(status)) {
       throw new BadRequestException('Status inválido');
     }
@@ -91,7 +108,7 @@ export class LeadsService {
     }
 
     await lead.update({ status });
-    return toLeadJSON(lead);
+    return lead.get({ plain: true }) as LeadAttributes;
   }
 
   async remove(id: string): Promise<void> {

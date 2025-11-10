@@ -33,7 +33,7 @@
     "@radix-ui/react-toggle-group": "^1.1.2",
     "@radix-ui/react-tooltip": "^1.1.8",
     "sequelize": "^6.37.3",
-    "pg": "^8.13.1",
+    "pg": "^8.12.0",
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "*",

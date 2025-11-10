@@ -1,9 +1,1 @@
-export enum Role {
-  ADMIN_NOAH = 'ADMIN_NOAH',
-  SUPPORT_NOAH = 'SUPPORT_NOAH',
-  FINANCE_NOAH = 'FINANCE_NOAH',
-  SELLER = 'SELLER',
-  PARTNER_MASTER = 'PARTNER_MASTER',
-  PARTNER_OPS = 'PARTNER_OPS',
-  PARTNER_FINANCE = 'PARTNER_FINANCE',
-}
+export { Role } from '../../database/enums.js';

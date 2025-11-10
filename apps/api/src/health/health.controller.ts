@@ -1,14 +1,26 @@
 import { Controller, Get, Inject, Logger } from '@nestjs/common';
+import { InjectConnection } from '@nestjs/sequelize';
+import { Sequelize } from 'sequelize-typescript';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { Redis as RedisClient } from 'ioredis';
-import { DatabaseService } from '../database/database.service.js';
 import { REDIS_TOKEN } from '../redis/redis.module.js';
 
-type HealthStatus = 'up' | 'down';
+type HealthStatus = 'ok' | 'down';
+
+const packageJsonPath = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  'package.json',
+);
+const { version: packageVersion } = JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as { version: string };
 
 @Controller()
 export class HealthController {
   constructor(
-    private readonly database: DatabaseService,
+    @InjectConnection() private readonly sequelize: Sequelize,
     @Inject(REDIS_TOKEN) private readonly redis: RedisClient,
   ) {}
 
@@ -18,18 +30,19 @@ export class HealthController {
   async getHealth() {
     const [db, redis] = await Promise.all([this.checkDatabase(), this.checkRedis()]);
     return {
-      ok: db === 'up' && redis === 'up',
-      api: 'up' as const,
+      ok: db === 'ok' && redis === 'ok',
+      api: 'ok' as const,
       db,
       redis,
+      version: packageVersion,
       time: new Date().toISOString(),
     };
   }
 
   private async checkDatabase(): Promise<HealthStatus> {
     try {
-      await this.database.queryRaw('SELECT 1');
-      return 'up';
+      await this.sequelize.query('SELECT 1');
+      return 'ok';
     } catch (error) {
       if (error instanceof Error) {
         this.logger.warn(`Database check failed: ${error.message}`);
@@ -41,7 +54,7 @@ export class HealthController {
   private async checkRedis(): Promise<HealthStatus> {
     try {
       await this.redis.ping();
-      return 'up';
+      return 'ok';
     } catch (error) {
       if (error instanceof Error) {
         this.logger.warn(`Redis check failed: ${error.message}`);
