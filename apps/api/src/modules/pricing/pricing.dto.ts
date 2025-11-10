@@ -1,4 +1,8 @@
 import { Channel, ItemKind, Role } from '../../database/enums.js';
+
+type ChannelType = typeof Channel[keyof typeof Channel];
+type ItemKindType = typeof ItemKind[keyof typeof ItemKind];
+type RoleType = typeof Role[keyof typeof Role];
 import {
   IsBoolean,
   IsEnum,
@@ -23,10 +27,10 @@ export class CreatePriceItemDto {
   price!: number;
 
   @IsEnum(Channel)
-  channel!: Channel;
+  channel!: ChannelType;
 
   @IsEnum(ItemKind)
-  kind!: ItemKind;
+  kind!: ItemKindType;
 
   @IsOptional()
   @IsBoolean()
@@ -35,7 +39,7 @@ export class CreatePriceItemDto {
 
 export class CreatePriceTierDto {
   @IsEnum(Channel)
-  channel!: Channel;
+  channel!: ChannelType;
 
   @IsPositive()
   minUsers!: number;
@@ -51,7 +55,7 @@ export class CreatePriceTierDto {
 
 export class CreateDiscountPolicyDto {
   @IsEnum(Role)
-  role!: Role;
+  role!: RoleType;
 
   @IsNumber()
   @IsPositive()

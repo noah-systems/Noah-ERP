@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
-import { NoahSequelizeModule } from '../../database/sequelize.module.js';
+import { SequelizeModule } from '@nestjs/sequelize';
 import { ImplementationController } from './implementation.controller.js';
 import { ImplementationService } from './implementation.service.js';
-import { implementationProviders } from './implementation.providers.js';
+import { ImplementationTask } from '../../database/models/implementation-task.model.js';
+import { ImplementationEvent } from '../../database/models/implementation-event.model.js';
 
 @Module({
-  imports: [NoahSequelizeModule],
+  imports: [SequelizeModule.forFeature([ImplementationTask, ImplementationEvent])],
   controllers: [ImplementationController],
-  providers: [...implementationProviders, ImplementationService],
+  providers: [ImplementationService],
 })
 export class ImplementationModule {}

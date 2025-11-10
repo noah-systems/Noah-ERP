@@ -1,6 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service.js';
+import { InjectModel } from '@nestjs/sequelize';
 import { Channel } from '../../database/enums.js';
+import { DiscountPolicy } from '../../database/models/discount-policy.model.js';
+import { PriceItem } from '../../database/models/price-item.model.js';
+import { PriceTier } from '../../database/models/price-tier.model.js';
 import {
   CreateDiscountPolicyDto,
   CreatePriceItemDto,
@@ -9,12 +12,15 @@ import {
 
 @Injectable()
 export class PricingService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    @InjectModel(PriceItem) private readonly priceItems: typeof PriceItem,
+    @InjectModel(PriceTier) private readonly priceTiers: typeof PriceTier,
+    @InjectModel(DiscountPolicy) private readonly discountPolicies: typeof DiscountPolicy,
+  ) {}
 
-  listItems() {
-    return this.db.priceItem
-      .findAll({ order: [['name', 'ASC']] })
-      .then((items) => items.map((item) => item.toJSON()));
+  async listItems() {
+    const items = await this.priceItems.findAll({ order: [['name', 'ASC']] });
+    return items.map((item) => item.toJSON());
   }
 
   async createItem(dto: CreatePriceItemDto) {
@@ -26,27 +32,26 @@ export class PricingService {
       active: dto.active ?? true,
     };
 
-    const existing = await this.db.priceItem.findOne({ where: { sku: dto.sku } });
+    const existing = await this.priceItems.findOne({ where: { sku: dto.sku } });
     if (existing) {
       await existing.update(payload);
       return existing.toJSON();
     }
 
-    const created = await this.db.priceItem.create({ sku: dto.sku, ...payload });
+    const created = await this.priceItems.create({ sku: dto.sku, ...payload });
     return created.toJSON();
   }
 
-  listTiers() {
-    return this.db.priceTier
-      .findAll({ order: [['minUsers', 'ASC']] })
-      .then((items) => items.map((item) => item.toJSON()));
+  async listTiers() {
+    const items = await this.priceTiers.findAll({ order: [['minUsers', 'ASC']] });
+    return items.map((item) => item.toJSON());
   }
 
   async createTier(dto: CreatePriceTierDto) {
     if (dto.channel !== Channel.WHITE_LABEL) {
       throw new BadRequestException('Tiers are only available for white label channel');
     }
-    const created = await this.db.priceTier.create({
+    const created = await this.priceTiers.create({
       channel: dto.channel,
       minUsers: dto.minUsers,
       maxUsers: dto.maxUsers ?? null,
@@ -57,10 +62,9 @@ export class PricingService {
     return created.toJSON();
   }
 
-  listDiscountPolicies() {
-    return this.db.discountPolicy
-      .findAll({ order: [['role', 'ASC']] })
-      .then((items) => items.map((item) => item.toJSON()));
+  async listDiscountPolicies() {
+    const items = await this.discountPolicies.findAll({ order: [['role', 'ASC']] });
+    return items.map((item) => item.toJSON());
   }
 
   async createDiscountPolicy(dto: CreateDiscountPolicyDto) {
@@ -69,13 +73,13 @@ export class PricingService {
       maxPercent: Number.isFinite(dto.maxPercent) ? dto.maxPercent.toFixed(2) : '0.00',
     };
 
-    const existing = await this.db.discountPolicy.findOne({ where: { role: dto.role } });
+    const existing = await this.discountPolicies.findOne({ where: { role: dto.role } });
     if (existing) {
       await existing.update({ maxPercent: payload.maxPercent });
       return existing.toJSON();
     }
 
-    const created = await this.db.discountPolicy.create(payload);
+    const created = await this.discountPolicies.create(payload);
     return created.toJSON();
   }
 }

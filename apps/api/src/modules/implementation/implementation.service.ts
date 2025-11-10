@@ -1,31 +1,21 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { ModelStatic, Op, Sequelize, Transaction } from 'sequelize';
-import { SEQUELIZE } from '../../database/sequelize.module.js';
-import type { ImplementationEventAttributesUnsafe } from './models/implementation-event.model.js';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel, InjectConnection } from '@nestjs/sequelize';
+import { Op, Sequelize, Transaction } from 'sequelize';
+import type { InferAttributes } from 'sequelize';
 import {
   ImplementationEvent,
   ImplementationEventType,
-} from './models/implementation-event.model.js';
-import type { ImplementationTaskAttributesUnsafe } from './models/implementation-task.model.js';
+} from '../../database/models/implementation-event.model.js';
 import {
   ImplementationTask,
   ImplementationTaskStatus,
-} from './models/implementation-task.model.js';
+} from '../../database/models/implementation-task.model.js';
 import { CreateImplementationTaskDto } from './dto/create-implementation-task.dto.js';
 import { ListImplementationTasksDto } from './dto/list-implementation-tasks.dto.js';
 import { ScheduleImplementationTaskDto } from './dto/schedule-implementation-task.dto.js';
 import { CompleteImplementationTaskDto } from './dto/complete-implementation-task.dto.js';
 import { MarkUnsuccessfulImplementationTaskDto } from './dto/unsuccessful-implementation-task.dto.js';
 import { MoveImplementationTaskDto } from './dto/move-implementation-task.dto.js';
-import {
-  IMPLEMENTATION_MODELS,
-  ImplementationModelRegistry,
-} from './implementation.providers.js';
 
 interface PaginatedResult<T> {
   data: T[];
@@ -37,19 +27,16 @@ interface PaginatedResult<T> {
   };
 }
 
+type ImplementationTaskAttributesUnsafe = InferAttributes<ImplementationTask>;
+type ImplementationEventAttributesUnsafe = InferAttributes<ImplementationEvent>;
+
 @Injectable()
 export class ImplementationService {
-  private readonly taskModel: ModelStatic<ImplementationTask>;
-
-  private readonly eventModel: ModelStatic<ImplementationEvent>;
-
   constructor(
-    @Inject(IMPLEMENTATION_MODELS) models: ImplementationModelRegistry,
-    @Inject(SEQUELIZE) private readonly sequelize: Sequelize,
-  ) {
-    this.taskModel = models.task;
-    this.eventModel = models.event;
-  }
+    @InjectModel(ImplementationTask) private readonly taskModel: typeof ImplementationTask,
+    @InjectModel(ImplementationEvent) private readonly eventModel: typeof ImplementationEvent,
+    @InjectConnection() private readonly sequelize: Sequelize,
+  ) {}
 
   async list(
     query: ListImplementationTasksDto,

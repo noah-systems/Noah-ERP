@@ -1,6 +1,8 @@
 import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsPositive, IsString, MaxLength } from 'class-validator';
 import { PartnerAccountStatus } from '../../database/enums.js';
 
+type PartnerAccountStatusType = typeof PartnerAccountStatus[keyof typeof PartnerAccountStatus];
+
 class ModuleFlagsDto {
   @IsOptional()
   campaign?: boolean;
@@ -107,7 +109,7 @@ export class CreateChangeRequestDto {
 
 export class ResolveChangeDto {
   @IsEnum(PartnerAccountStatus)
-  status!: PartnerAccountStatus;
+  status!: PartnerAccountStatusType;
 
   @IsOptional()
   @IsString()

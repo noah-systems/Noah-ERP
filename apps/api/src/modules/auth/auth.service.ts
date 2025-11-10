@@ -1,25 +1,26 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service.js';
+import { InjectModel } from '@nestjs/sequelize';
 import { JwtService } from '../jwt/jwt.service.js';
 import bcrypt from 'bcryptjs';
+import { User } from '../../database/models/user.model.js';
 
 @Injectable()
 export class AuthService {
-  constructor(private db: DatabaseService, private jwt: JwtService) {}
+  constructor(@InjectModel(User) private readonly users: typeof User, private jwt: JwtService) {}
 
   async login(email: string, password: string) {
-    const user = await this.db.user.findOne({ where: { email } });
+    const user = await this.users.findOne({ where: { email } });
     if (!user) throw new UnauthorizedException();
-    const ok = await bcrypt.compare(password, user.get('passwordHash') as string);
+    const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) throw new UnauthorizedException();
-    const token = await this.jwt.signAsync({ sub: user.get('id'), role: user.get('role') });
+    const token = await this.jwt.signAsync({ sub: user.id, role: user.role });
     return {
       token,
       user: {
-        id: user.get('id'),
-        name: user.get('name'),
-        role: user.get('role'),
-        email: user.get('email'),
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        email: user.email,
       },
     };
   }
@@ -27,7 +28,7 @@ export class AuthService {
   async me(token: string) {
     try {
       const payload = await this.jwt.verifyAsync<{ sub: string }>(token);
-      const user = await this.db.user.findByPk(payload.sub, {
+      const user = await this.users.findByPk(payload.sub, {
         attributes: ['id', 'name', 'email', 'role', 'createdAt', 'updatedAt'],
       });
       if (!user) throw new UnauthorizedException();

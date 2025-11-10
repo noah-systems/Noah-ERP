@@ -1,0 +1,8 @@
+{
+  "name": "@nestjs/sequelize",
+  "version": "10.0.0-noah",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "license": "MIT"
+}

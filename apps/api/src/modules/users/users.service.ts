@@ -1,21 +1,16 @@
-import { Inject, Injectable } from '@nestjs/common';
-import type { ModelStatic } from 'sequelize';
-import { User } from './user.model.js';
-import { USER_MODEL } from './users.providers.js';
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/sequelize';
+import { User } from '../../database/models/user.model.js';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @Inject(USER_MODEL)
-    private readonly userModel: ModelStatic<User>,
-  ) {}
+  constructor(@InjectModel(User) private readonly userModel: typeof User) {}
 
-  list() {
-    return this.userModel
-      .findAll({
-        attributes: ['id', 'name', 'email', 'role', 'createdAt', 'updatedAt'],
-        order: [['name', 'ASC']],
-      })
-      .then((users) => users.map((user) => user.toJSON()));
+  async list() {
+    const users = await this.userModel.findAll({
+      attributes: ['id', 'name', 'email', 'role', 'createdAt', 'updatedAt'],
+      order: [['name', 'ASC']],
+    });
+    return users.map((user) => user.toJSON());
   }
 }

@@ -12,7 +12,6 @@ if (!existsSync(join(distDir, 'main.js'))) {
 }
 
 const { AppModule } = require('../dist/modules/app.module');
-const { DatabaseService } = require('../dist/database/database.service');
 const { LeadsService } = require('../dist/modules/leads/leads.service');
 const { OppsService } = require('../dist/modules/opps/opps.service');
 const { PricingService } = require('../dist/modules/pricing/pricing.service');
@@ -21,8 +20,6 @@ const { JwtService } = require('../dist/modules/jwt/jwt.service');
 const { Role } = require('../dist/modules/auth/roles.enum');
 const { WorkerService } = require('../dist/modules/worker/worker.service');
 
-DatabaseService.prototype.onModuleInit = async function noop() {};
-DatabaseService.prototype.enableShutdownHooks = async function noop() {};
 WorkerService.prototype.onModuleInit = async function noop() {};
 WorkerService.prototype.enqueue = async () => undefined;
 WorkerService.prototype.health = () => ({ ok: true });
@@ -38,10 +35,6 @@ async function expectStatus(url, init, expected) {
 async function main() {
   const app = await NestFactory.create(AppModule, { logger: false });
   app.setGlobalPrefix('api');
-
-  const database = app.get(DatabaseService);
-  database.queryRaw = async () => [{ ok: 1 }];
-  database.transaction = async (fn) => fn({});
 
   const leads = app.get(LeadsService);
   leads.list = async () => [{ id: 'lead-1' }];

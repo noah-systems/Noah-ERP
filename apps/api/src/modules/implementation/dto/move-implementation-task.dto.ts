@@ -1,6 +1,8 @@
 import { Transform } from 'class-transformer';
 import { IsEnum, IsInt, IsOptional, IsUUID, Max, Min } from 'class-validator';
-import { ImplementationTaskStatus } from '../models/implementation-task.model.js';
+import { ImplementationTaskStatus } from '../../../database/models/implementation-task.model.js';
+
+type ImplementationTaskStatusType = typeof ImplementationTaskStatus[keyof typeof ImplementationTaskStatus];
 
 function toInteger(value: unknown): number {
   const parsed = Number(value);
@@ -9,7 +11,7 @@ function toInteger(value: unknown): number {
 
 export class MoveImplementationTaskDto {
   @IsEnum(ImplementationTaskStatus)
-  status!: ImplementationTaskStatus;
+  status!: ImplementationTaskStatusType;
 
   @Transform(({ value }) => Math.max(0, toInteger(value)))
   @IsInt()

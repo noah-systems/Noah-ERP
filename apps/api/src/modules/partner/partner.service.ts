@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service.js';
+import { InjectModel } from '@nestjs/sequelize';
 import { PartnerAccountStatus } from '../../database/enums.js';
+import { Partner } from '../../database/models/partner.model.js';
+import { PartnerAccount } from '../../database/models/partner-account.model.js';
+import { PartnerChangeRequest } from '../../database/models/partner-change-request.model.js';
 import {
   CreateChangeRequestDto,
   CreatePartnerAccountDto,
@@ -19,10 +22,14 @@ const toJsonInput = (
 
 @Injectable()
 export class PartnerService {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    @InjectModel(Partner) private readonly partners: typeof Partner,
+    @InjectModel(PartnerAccount) private readonly partnerAccounts: typeof PartnerAccount,
+    @InjectModel(PartnerChangeRequest) private readonly partnerChanges: typeof PartnerChangeRequest,
+  ) {}
 
-  createPartner(dto: CreatePartnerDto) {
-    return this.db.partner.create({
+  async createPartner(dto: CreatePartnerDto) {
+    const partner = await this.partners.create({
       legalName: dto.legalName,
       cnpj: dto.cnpj,
       nickname: dto.nickname,
@@ -32,13 +39,14 @@ export class PartnerService {
       financeEmail: dto.financeEmail ?? null,
       domain: dto.domain ?? null,
       priceTable: toJsonInput(dto.priceTable ? { ...dto.priceTable } : undefined),
-    }).then((partner) => partner.toJSON());
+    });
+    return partner.toJSON();
   }
 
-  createAccount(partnerId: string, dto: CreatePartnerAccountDto) {
+  async createAccount(partnerId: string, dto: CreatePartnerAccountDto) {
     const connections = dto.connections ? { ...dto.connections } : undefined;
     const modules = dto.modules ? { ...dto.modules } : undefined;
-    return this.db.partnerAccount.create({
+    const account = await this.partnerAccounts.create({
       partnerId,
       legalName: dto.legalName,
       cnpj: dto.cnpj,
@@ -52,21 +60,21 @@ export class PartnerService {
       connections: toJsonInput(connections),
       modules: toJsonInput(modules),
       status: PartnerAccountStatus.PENDING_CREATE,
-    }).then((account) => account.toJSON());
+    });
+    return account.toJSON();
   }
 
-  requestChange(accountId: string, dto: CreateChangeRequestDto) {
-    return this.db.partnerChangeRequest
-      .create({
-        accountId,
-        type: dto.type,
-        payload: toJsonInput(dto.payload ? { ...dto.payload } : undefined),
-      })
-      .then((change) => change.toJSON());
+  async requestChange(accountId: string, dto: CreateChangeRequestDto) {
+    const change = await this.partnerChanges.create({
+      accountId,
+      type: dto.type,
+      payload: toJsonInput(dto.payload ? { ...dto.payload } : undefined),
+    });
+    return change.toJSON();
   }
 
   async resolveChange(accountId: string, dto: ResolveChangeDto) {
-    const account = await this.db.partnerAccount.findByPk(accountId);
+    const account = await this.partnerAccounts.findByPk(accountId);
     if (!account) {
       throw new NotFoundException('partnerAccount');
     }
