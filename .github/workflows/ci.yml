@@ -49,12 +49,11 @@ jobs:
       - name: Install API deps
         working-directory: apps/api
         run: npm ci || npm i
-      - name: Prisma generate + migrate + seed
+      - name: Database migrate + seed
         working-directory: apps/api
         run: |
-          npx prisma generate
-          npx prisma migrate deploy
-          npm run seed || true
+          npx sequelize-cli db:migrate --config src/database/config/config.js --migrations-path src/database/migrations
+          npx sequelize-cli db:seed:all --config src/database/config/config.js --seeders-path src/database/seeders
       - name: Build web
         run: npm run build:web
       - name: Start API
