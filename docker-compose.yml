@@ -1,11 +1,11 @@
 version: "3.9"
 
 services:
-  noah-db:
+  db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-noah_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-q@9dlyU0AAJ9}
+      POSTGRES_USER: ${POSTGRES_USER:-noah}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-noah}
       POSTGRES_DB: ${POSTGRES_DB:-noah_erp}
     ports:
       - "5432:5432"
@@ -18,7 +18,7 @@ services:
       timeout: 3s
       retries: 20
 
-  noah-redis:
+  redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
@@ -28,7 +28,7 @@ services:
       timeout: 3s
       retries: 20
 
-  noah-api:
+  api:
     build:
       context: ./apps/api
       dockerfile: Dockerfile
@@ -36,20 +36,20 @@ services:
       NODE_ENV: production
       API_PORT: 3000
       PORT: 3000
-      DATABASE_URL: postgresql://${POSTGRES_USER:-noah_user}:${POSTGRES_PASSWORD:-q@9dlyU0AAJ9}@noah-db:5432/${POSTGRES_DB:-noah_erp}
-      REDIS_URL: redis://noah-redis:6379
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-noah}:${POSTGRES_PASSWORD:-noah}@db:5432/${POSTGRES_DB:-noah_erp}?schema=public}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:8080}
       JWT_SECRET: ${JWT_SECRET:-dev-insecure-secret}
     depends_on:
-      noah-db:
+      db:
         condition: service_healthy
-      noah-redis:
+      redis:
         condition: service_healthy
     ports:
       - "3000:3000"
     command: >
       sh -c "
-        until pg_isready -h noah-db -U ${POSTGRES_USER:-noah_user}; do sleep 2; done &&
+        until pg_isready -h db -U ${POSTGRES_USER:-noah}; do sleep 2; done &&
         npx sequelize-cli db:migrate --migrations-path apps/api/src/database/migrations --config apps/api/src/database/config/config.js &&
         npx sequelize-cli db:seed:all --seeders-path apps/api/src/database/seeders --config apps/api/src/database/config/config.js &&
         npm run start:prod
@@ -65,7 +65,7 @@ services:
     environment:
       VITE_API_BASE: ${VITE_API_BASE:-/api}
     depends_on:
-      noah-api:
+      api:
         condition: service_started
     ports:
       - "8080:80"

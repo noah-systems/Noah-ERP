@@ -18,7 +18,7 @@ Este roteiro documenta o estado esperado do ambiente de produção após um merg
 
 ## Banco de dados
 
-- **Conexão**: `DATABASE_URL=postgresql://noah...@127.0.0.1:5432/noah` está funcional.
+- **Conexão**: `DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DATABASE?schema=public` está funcional e aponta para o cluster correto.
 - **Seed formal**: utilize `npm --prefix apps/api run db:seed` para garantir o usuário administrador padrão em reinstalações.
 
 ## Front / branding / UX
